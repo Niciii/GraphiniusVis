@@ -1,0 +1,27 @@
+{
+  "name": "graphiniusvis",
+  "version": "1.0.0",
+  "description": "visualisation with graphinius js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Niciii/GraphiniusVis.git"
+  },
+  "keywords": [
+    "graph",
+    "visualisation",
+    "graphinius"
+  ],
+  "author": "Nicole Neuhold",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Niciii/GraphiniusVis/issues"
+  },
+  "homepage": "https://github.com/Niciii/GraphiniusVis#readme",
+  "devDependencies": {
+    "gulp": "^3.9.0"
+  }
+}
