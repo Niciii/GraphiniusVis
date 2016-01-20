@@ -7,71 +7,56 @@
     <script type="text/javascript" src="lib/plotly-latest.min.js"></script>
 		<script type="text/javascript" src="lib/sigma.min.js"></script>
     <script type="text/javascript" src="lib/sigma.parsers.json.min.js"></script>
-    <script type="text/javascript" src="lib/cytoscape.min.js"></script>
+    <script type="text/javascript" src="lib/cytoscape.min.js"></script>    
+    <script type="text/javascript" src="lib/vis.min.js"></script>
     <script type="text/javascript" src="lib/graphinius.js"></script>
     <link rel="stylesheet" type="text/css" href="src/css/index.css">
 	</head> 
 
 	<body>
-  <div class="container-col">
-    <div><h1>Graphs</h1></div>
-    <div class="container-row">
-      <div class="left"><ul>
-        <h2>Choose a graph library</h2>
-        <li><input name="library" id="dthree" type="radio" onclick />
+    <div class="container">
+      <div><h2>Options</h2>
+      <h3>Choose a file to generate a graph</h3>
+        <input id="input" class="button" type="file" onchange>
+        
+      <h3>Choose a graph library</h3>
+        <ul><li><input name="library" id="dthree" type="radio" onclick />
         <label for="dthree">d3 (svg based)</label></li>
         
         <li><input name="library" id="plotly" type="radio" onclick />
         <label for="plotly">plotly (svg based)</label></li>
         
-        <li><input name="library" id="cytoscape" type="radio" onclick />
-        <label for="cytoscape">Cytoscape (canvas based)</label> </li>
+        <li><input name="library" id="cyto" type="radio" onclick />
+        <label for="cyto">Cytoscape (canvas based)</label> </li>
         
-        <li><input name="library" id="vis" type="radio" onclick />
-        <label for="vis">vis.js (canvas based)</label></li>
+        <li><input name="library" id="visjs" type="radio" onclick />
+        <label for="visjs">vis.js (canvas based)</label></li>
         
         <li><input name="library" id="sigmaJS" type="radio" onclick />
         <label for="sigmaJS">SigmaJS (canvas based)</label></li>
+        </ul>
         
-        <li><input name="library" id="graphiniusJS" type="radio" onclick />
-        <label for="graphiniusJS">GraphiniusJS (Bernd based)</label></li>
-      </ul></div>
-
-      <div class="right">  
-        <h2>Choose a file to generate a graph</h2>
-        <input id="input" class="button" type="file" onchange="test()">
+        <h3>Information about the graph</h3>
+        <div id="graphInfo"><ul>
+          <li>Number of nodes <span id="nodes"></span></li>
+          <li>Number of edges <span id="edges"></span></li>      
+          <li>Time to read <span id="time"></span></li>      
+        </ul></div>
+      </div>
+      
+      <div><h2>Visualisation</h2>
+        <div class="graphVis" width="100%">
+          <svg id="svgGraph" class="svgGraph"></svg>
+          <div id="containerGraph" class="containerGraph"></div>   
+        </div>
       </div>
     </div>
-    <div class="info">
-      <h2>Information about the graph</h2>
-      <div id="graphInfo"><ul>
-        <li>Number of nodes <span id="nodes"></span></li>
-        <li>Number of edges <span id="edges"></span></li>      
-        <li>Time to read <span id="time"></span></li>      
-      </ul></div>
-    </div>  
-    <div class="graph">
-      <h2>Visualisation of the graph</h2>
-      <div id="graphVis">
-        <svg id="svgGraph"></svg>
-        <div id="container"></div>
-        <canvas id="canvasGraph"></canvas>
-      </div>
-    </div> 
-  </div>
-  
-  <script>
-    cytoscape.onclick = function(e) {
-      console.log("cyto");
-    }
-  </script>
-
-	<script type="text/javascript" src="src/js/readJSON.js"></script>
-	<script type="text/javascript" src="src/js/graphD3.js"></script>
-	<script type="text/javascript" src="src/js/graphPlotly.js"></script>
-	<script type="text/javascript" src="src/js/graphCytoscape.js"></script>
-	<script type="text/javascript" src="src/js/graphVis.js"></script>
-	<script type="text/javascript" src="src/js/graphSigma.js"></script>
-	<script type="text/javascript" src="src/js/graphGraphinius.js"></script>
-	</body>
+    
+    <script type="text/javascript" src="src/js/readJSON.js"></script>
+    <script type="text/javascript" src="src/js/graphD3.js"></script>
+    <script type="text/javascript" src="src/js/graphPlotly.js"></script>
+    <script type="text/javascript" src="src/js/graphCytoscape.js"></script>
+    <script type="text/javascript" src="src/js/graphVis.js"></script>
+    <script type="text/javascript" src="src/js/graphSigma.js"></script>
+  </body>
 </html>

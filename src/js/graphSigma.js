@@ -1,60 +1,58 @@
-sigmaJS.onclick = function(e) {
+sigmaJS.onclick = function() {
   console.log("click sigma");
   
   //canvas based
-  //document.getElementById("svgGraph").style.display = "none";
-  //document.getElementById("canvasGraph").style.display = "initial";
+  //document.getElementById("containerGraph").style.display = "initial";
+  document.getElementById("svgGraph").style.display = "none";
+        
+  initGraph();
+  renderGraphSigma();
+}
+
+function renderGraphSigma() {
+  var i,
+  N = 100,
+  E = 200,
+  s = new sigma();
+
+  for(key in node_keys)
+    s.graph.addNode({
+      id: 'n' + key,
+      //label: 'Node ' + key,
+      x: nodes_obj[key].getFeature('coords').x,
+      y: nodes_obj[key].getFeature('coords').y,
+      size: 0.08
+    });
   
-  sigma.parsers.json('json/data.json', {
-    container: 'canvasGraph',
-    settings: {
-      defaultNodeColor: '#ec5148'
+    var edgesArray = [];
+    //undirected graph
+    if(und_edges_keys.length > 0) {
+      edgesArray = und_edges_keys;
+    } else { //directed graph
+      edgesArray = dir_edges_keys;
     }
-  });
-  
-  /*// these are just some preliminary settings 
-    var g = {
-        nodes: [],
-        edges: []
-    };
-
-   // Create new Sigma instance in graph-container div (use your div name here) 
-   s = new sigma({
-   graph: g,
-   container: 'canvasGraph',
-   renderer: {
-    container: document.getElementById('canvasGraph'),
-    type: 'canvas'
-   },
-   settings: {
-    minNodeSize: 8,
-    maxNodeSize: 16
-   }
-   });
-
-   // first you load a json with (important!) s parameter to refer to the sigma instance   
-
-   sigma.parsers.json(
-        'json/data.json',
-        s,
-        function() {
-            // this below adds x, y attributes as well as size = degree of the node 
-            var i,
-                    nodes = s.graph.nodes(),
-                    len = nodes.length;
-
-            for (i = 0; i < len; i++) {
-                nodes[i].x = Math.random();
-                nodes[i].y = Math.random();
-                nodes[i].size = s.graph.degree(nodes[i].id);
-                nodes[i].color = nodes[i].center ? '#333' : '#666';
-            }
-
-            // Refresh the display:
-            s.refresh();
-
-            // ForceAtlas Layout
-            //s.startForceAtlas2();
-        }
-   );*/
+    
+    for(var i = 0; i < edgesArray.length; i++) {
+      splitEdge = edgesArray[i].split("_");
+      s.graph.addEdge({
+        id: 'e' + i,
+        source: 'n' + splitEdge[0],
+        target: 'n' + splitEdge[1],
+        size: 1
+      });
+    }
+        
+    // Initialize two distinct renderers, each with its own settings:
+    s.addRenderer({
+      container: document.getElementById('containerGraph'),
+      type: 'svg',
+      settings: {
+        hideEdgesOnMove: true,
+        defaultLabelColor: '#fff',
+        defaultNodeColor: '#999',
+        defaultEdgeColor: '#333',
+        edgeColor: 'default'
+      }
+    });
+    s.refresh();
 }
