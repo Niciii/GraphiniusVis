@@ -1,9 +1,6 @@
 cyto.onclick = function(e) {
-  console.log("click cytoscape");
-  
   //canvas based
-  document.getElementById("svgGraph").style.display = "none";
-  //document.getElementById("containerGraph").style.display = "initial";
+  setElementVisible('containerGraph', 'svgGraph');
   
   initGraph();
   renderGraphCytoscape();
@@ -68,4 +65,8 @@ function renderGraphCytoscape() {
     name: 'preset'
   }
   });
+}
+
+function graphCytoscapeMutilate() {
+  console.log("cyto");
 }

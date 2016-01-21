@@ -1,9 +1,6 @@
 sigmaJS.onclick = function() {
-  console.log("click sigma");
-  
   //canvas based
-  //document.getElementById("containerGraph").style.display = "initial";
-  document.getElementById("svgGraph").style.display = "none";
+  setElementVisible('containerGraph', 'svgGraph');
         
   initGraph();
   renderGraphSigma();
@@ -55,4 +52,8 @@ function renderGraphSigma() {
       }
     });
     s.refresh();
+}
+
+function graphSigmaMutilate() {
+  console.log("sigmaJS");
 }

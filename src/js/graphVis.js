@@ -1,9 +1,6 @@
 visjs.onclick = function(e) {
-  console.log("click vis");
-  
   //canvas based
-  document.getElementById("svgGraph").style.display = "none";
-  //document.getElementById("containerGraph").style.display = "initial";
+  setElementVisible('containerGraph', 'svgGraph');
   
   initGraph();
   renderGraphVis();
@@ -15,7 +12,11 @@ function renderGraphVis() {
       
   // create an array with nodes
   for(key in node_keys){
-    graphNodes.push({'id': key});
+    graphNodes.push({
+        id: key, 
+        x: nodes_obj[key].getFeature('coords').x,
+        y: nodes_obj[key].getFeature('coords').y
+      });
   }
 
   // create an array with edges
@@ -57,4 +58,8 @@ function renderGraphVis() {
     }
   };
   var network = new vis.Network(container, data, options);
+}
+
+function graphVisMultilate() {
+  console.log("visjs");
 }

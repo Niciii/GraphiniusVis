@@ -9,17 +9,11 @@ var scale_y = d3.scale.linear()
             .domain([0, HEIGHT])  // Data space
             .range([0, HEIGHT]); // Pixel space
 
-var svg = d3.select("svg")
-            .attr('width', WIDTH)
-            .attr('height', HEIGHT);
-
 dthree.onclick = function(e) {
-  console.log("click d3");
-  console.log(graph);
+  //console.log(graph);
   
   //svg based
-  document.getElementById("containerGraph").style.display = "none";
-  document.getElementById("svgGraph").style.display = "initial";
+  setElementVisible('svgGraph', 'containerGraph');
           
   initGraph();
   renderGraphD3();
@@ -35,6 +29,9 @@ function getYCoord(key) {
 
 // but we need an array for D3.js
 function renderGraphD3() {
+  var svg = d3.select("svg")
+            .attr('width', WIDTH)
+            .attr('height', HEIGHT);
   // Select elements
   var elements = svg.selectAll("circle");  
   // Bind data to elements
@@ -48,6 +45,10 @@ function renderGraphD3() {
     .attr("class", "node");
 
   nodes.exit().remove();
+}
+
+function graphD3Mutilate() {
+  console.log("d3");
 }
 
 /*

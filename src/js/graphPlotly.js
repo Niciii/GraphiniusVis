@@ -1,51 +1,74 @@
-plotly.onclick = function(e) {
-  console.log("click plotly");
-  
+plotly.onclick = function(e) {  
   //svg based
-  document.getElementById("containerGraph").style.display = "initial";
-  document.getElementById("svgGraph").style.display = "none";
+  setElementVisible('containerGraph', 'svgGraph');
   
   initGraph();
   renderGraphPlotly();
 }
 
 function renderGraphPlotly() {
-  container = document.getElementById('containerGraph');  
+  container = document.querySelector('.containerGraph');  
   var WIDTH = 1000;
   var HEIGHT = 400;
 
-  var xCoordinates = [],
-      yCoordinates = [];
+  var xNodes = [],
+      yNodes = [];
       
   for( key in node_keys) {
-    xCoordinates.push(nodes_obj[key].getFeature('coords').x);
-    yCoordinates.push(nodes_obj[key].getFeature('coords').y);
+    xNodes.push(nodes_obj[key].getFeature('coords').x);
+    yNodes.push(nodes_obj[key].getFeature('coords').y);
   }
-
-  //plot only nodes
-  /*var trace1 = {
+  
+  var xEdges = [],
+      yEdges = [];
+  //undirected graph
+  if(und_edges_keys.length > 0) {
+    edgesArray = und_edges_keys;
+  } else { //directed graph
+    edgesArray = dir_edges_keys;
+  }
+  
+  for(var i = 0; i < edgesArray.length; i++) {
+    splitEdge = edgesArray[i].split("_");
+    src = splitEdge[0];
+    target = splitEdge[1];
+       
+    xEdges.push(nodes_obj[src].getFeature('coords').x);
+    yEdges.push(nodes_obj[src].getFeature('coords').y);
+    
+    xEdges.push(nodes_obj[target].getFeature('coords').x);
+    yEdges.push(nodes_obj[target].getFeature('coords').y);
+    
+    xEdges.push(null);
+    yEdges.push(null);
+  }
+  
+    var edges = {
     type: 'scatter',
-    x: xCoordinates,
-    y: yCoordinates,
+    x: xEdges,
+    y: yEdges,
+    mode: 'lines',
+    line: {
+      width: 1,
+      color: 'rgb(219, 64, 82)',
+      opacity: 0.3
+    }
+  };
+  
+  var nodes = {
+    type: 'scatter',
+    x: xNodes,
+    y: yNodes,
     mode: 'markers',
     marker: {
       symbol: 'circle',
-      //size: 5
-    }
-  };*/
-  
-  var trace1 = {
-    type: 'scatter',
-    x: xCoordinates,
-    y: yCoordinates,
-    mode: 'lines+markers',
-    marker: {
-      symbol: 'circle',
+      color: 'rgb(219, 64, 82)',
+      opacity: 0.8
       //size: 5
     }
   };
 
-  var data = [trace1];
+  var data = [nodes, edges];
   
   var layout = {
     showlegend: false,
@@ -66,4 +89,8 @@ function renderGraphPlotly() {
   };
 
   Plotly.newPlot(container, data, layout);
+}
+
+function graphPlotlyMutilate() {
+  console.log("plotly");
 }

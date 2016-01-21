@@ -42,12 +42,12 @@ h1 {
 
 .containerGraph {
   //background-color: grey;
-  height: 580;
-  //display: hidden;
+  height: 580px;
+  //display: none;
 }
 
 .svgGraph {
   //background-color: blue;
-  height: 580;
-  //display: hidden;
+  height: 580px;
+  //display: none;
 }
