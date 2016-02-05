@@ -25,5 +25,8 @@
     "browser-sync": "^2.11.0",
     "gulp": "^3.9.0",
     "gulp-sass": "^2.1.1"
+  },
+  "dev-dependencies": {
+    "pixel.layout": "^0.1.2"
   }
 }

@@ -15,4 +15,7 @@ mutilate.onclick = function() {
   else if (document.querySelector('#sigmaJS').checked) {
     graphSigmaMutilate();
   }
+  else if (document.querySelector('#viva').checked) {
+    graphVivaMutilate();
+  }
 }
