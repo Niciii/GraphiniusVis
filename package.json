@@ -24,6 +24,7 @@
   "devDependencies": {
     "browser-sync": "^2.11.0",
     "browserify": "^13.0.0",
+    "glob": "^6.0.4",
     "gulp": "^3.9.0",
     "gulp-sass": "^2.1.1",
     "pixel.layout": "^0.1.2",
@@ -33,6 +34,7 @@
     "graphinius": "^0.2.3",
     "ngraph.graph": "0.0.12",
     "ngraph.pixel": "^2.0.0",
-    "pixel.layout": "^0.1.2"
+    "pixel.layout": "^0.1.2",
+    "pixel.static": "^2.1.1"
   }
 }

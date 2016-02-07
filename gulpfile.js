@@ -1,9 +1,10 @@
-var gulp = require('gulp');
+var gulp        = require('gulp');
 var browserSync = require('browser-sync')
-var sass = require('gulp-sass');
+var sass        = require('gulp-sass');
 // var cytoscape = require('cytoscape');
-var browserify = require('browserify');
-var source = require('vinyl-source-stream');
+var browserify  = require('browserify');
+var source      = require('vinyl-source-stream');
+var glob        = require('glob');
 
 gulp.task('browserSync', ['browserify'], function() {
   browserSync({
@@ -28,8 +29,9 @@ gulp.task('sass', function() {
     .pipe(gulp.dest('lib/plotly/css'))
 });
 
+// TODO use globs...
 gulp.task('browserify', function() {
-    return browserify({ entries: ['src/node_js/node.js', 'src/node_js/testNGraphPin.js'] })
+    return browserify({ entries: ['src/node_js/firstTest.js', 'src/node_js/testNGraphPin.js', 'src/node_js/testPixelStatic.js'] })
         .bundle()
         .pipe(source('bundle-node.js'))
         .pipe(gulp.dest('bundle'))
