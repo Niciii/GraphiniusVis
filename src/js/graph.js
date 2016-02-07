@@ -1,5 +1,5 @@
 function initGraph() {
-  if ( !window.node_obj || !window.node_keys ) {
+  if ( !window.nodes_obj || !window.node_keys ) {
     window.nodes_obj = window.graph.getNodes();
     window.node_keys = Object.keys(window.nodes_obj);
     window.und_edges = window.graph.getUndEdges();

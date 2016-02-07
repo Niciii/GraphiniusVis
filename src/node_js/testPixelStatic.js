@@ -1,9 +1,9 @@
 function render() {
   window.nGraph = require('ngraph.graph')();
   window.layout = require('pixel.static');
+  initGraph();
 
-
-  for(node in node_keys) {
+  for(node in nodes_obj) {
     var new_node = nGraph.addNode(node, {
       x: nodes_obj[node].getFeature('coords').x,
       y: nodes_obj[node].getFeature('coords').y,
@@ -63,37 +63,37 @@ function render() {
 
 // TODO doesn't work with renderer / animationFrame / whatever... freezes..
 // However: it did work using the force directed layout...
-var mut_count = 50;
-function mutilateNGraph() {
-  var nr_nodes = nGraph.getNodesCount(),
-      count = mut_count;
-
-  if ( nr_nodes ) {
-    while (count-- && nr_nodes--) {
-      // Graphinius
-      // key = node_keys[nr_nodes];
-      // graph.deleteNode(graph.getNodeById(key));
-
-      // update UI
-      document.querySelector('#graphInfo #nodes').innerHTML = nGraph.getNodesCount();
-      document.querySelector('#graphInfo #edges').innerHTML = nGraph.getLinksCount();
-
-      nGraph.removeNode(nr_nodes);
-
-    }
-    console.log("Nodes remaining: " + nr_nodes);
-
-    requestAnimationFrame(mutilateNGraph);
-  }
-}
+// var mut_count = 50;
+// function mutilateNGraph() {
+//   var nr_nodes = nGraph.getNodesCount(),
+//       count = mut_count;
+//
+//   if ( nr_nodes ) {
+//     while (count-- && nr_nodes--) {
+//       // Graphinius
+//       // key = node_keys[nr_nodes];
+//       // graph.deleteNode(graph.getNodeById(key));
+//
+//       // update UI
+//       document.querySelector('#graphInfo #nodes').innerHTML = nGraph.getNodesCount();
+//       document.querySelector('#graphInfo #edges').innerHTML = nGraph.getLinksCount();
+//
+//       nGraph.removeNode(nr_nodes);
+//
+//     }
+//     console.log("Nodes remaining: " + nr_nodes);
+//
+//     requestAnimationFrame(mutilateNGraph);
+//   }
+// }
 
 
 if (window !== 'undefined') {
   // window.test = test;
 
   window.$GV = {
-    render: render,
-    mut_count: mut_count,
-    mutilateGraph: mutilateNGraph
+    render: render//,
+    // mut_count: mut_count,
+    // mutilateGraph: mutilateNGraph
   }
 }
