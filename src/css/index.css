@@ -1,6 +1,6 @@
-ul { 
-  list-style: none 
-} 
+ul {
+  list-style: none
+}
 
 .container {
 	display: -ms-flex;
@@ -36,18 +36,43 @@ h1 {
   font-size: 14px;
 }
 
-.graphVis {
+#graphVis {
   width: 100%;
+  position: relative;
 }
 
-.containerGraph {
+#containerGraph {
+  position: relative;
   //background-color: grey;
-  height: 580px;
+  width: 800px;
+  height: 600px;
   //display: none;
 }
+
+/* DOES NOT WORK AS SPECIFIED
+#containerGraph:fullscreen {
+	width: 100%;
+  height: 100%;
+}
+*/
+
 
 .svgGraph {
   //background-color: blue;
-  height: 580px;
+  height: 100%;
   //display: none;
+}
+
+#fullscreenSwitch {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 20;
+  font-size: 18px;
+  color: white;
+  text-decoration: none;
+}
+
+#fullscreenSwitch:hover {
+  cursor: pointer;
 }

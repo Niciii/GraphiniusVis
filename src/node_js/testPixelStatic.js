@@ -48,7 +48,7 @@ function render() {
 
   function createNodeUI(node) {
     return {
-      color:0x538eff,
+      color: 0x538eff,
       size: 6
     };
   }

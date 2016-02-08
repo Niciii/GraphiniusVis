@@ -48,9 +48,13 @@
       </div>
 
       <div><h2>Visualisation</h2>
-        <div class="graphVis" width="100%">
-          <svg id="svgGraph" class="svgGraph"></svg>
-          <div id="containerGraph" class="containerGraph"></div>
+        <div id="graphVis" width="100%">
+					<div id="fullscreenSwitch" onclick="switchToFullScreen('#containerGraph')"> Fullscreen </div>
+          <div id="containerGraph" class="containerGraph">
+
+						<!-- TODO: REMOVE LATER -->
+	          <svg id="svgGraph" class="svgGraph"></svg>
+					</div>
         </div>
       </div>
     </div>
@@ -65,5 +69,6 @@
     <!-- <script type="text/javascript" src="src/js/graphSigma.js"></script> -->
     <script type="text/javascript" src="src/js/graphViva.js"></script>
     <script type="text/javascript" src="src/js/graphMutilate.js"></script>
+		<script type="text/javascript" src="src/js/fullScreenControl.js"></script
   </body>
 </html>
