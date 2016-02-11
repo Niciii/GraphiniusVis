@@ -9,8 +9,8 @@ function initGraph() {
   }
 }
 
-function setElementVisible(showElement, hideElement) {
-  document.querySelector('.' + hideElement).style.display = "none";
-  document.querySelector('.' + showElement).style.display = "block";
-  document.querySelector('.' + showElement).innerHTML = "";
-}
+//function setElementVisible(showElement, hideElement) {
+  //document.querySelector('.' + hideElement).style.display = "none";
+  //document.querySelector('.' + showElement).style.display = "block";
+  //document.querySelector('.' + showElement).innerHTML = "";
+//}

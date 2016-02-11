@@ -6,7 +6,19 @@ var browserify  = require('browserify');
 var source      = require('vinyl-source-stream');
 var glob        = require('glob');
 
-gulp.task('browserSync', ['browserify'], function() {
+gulp.task('browserSync', function() {
+  browserSync({
+	files: ['src/js/*', 'src/css/*', 'index.html'],
+    server: {
+      baseDir: './'
+    },
+  })
+
+  gulp.watch('*.html').on('change', browserSync.reload);
+  gulp.watch('src/js/*.js').on('change', browserSync.reload);
+});
+
+gulp.task('browserSync-viva', ['browserify-bundle'], function() {
   browserSync({
 	files: ['src/js/*', 'src/node_js/*', 'src/css/*', 'index.html'],
     server: {
@@ -30,7 +42,7 @@ gulp.task('sass', function() {
 });
 
 // TODO use globs...
-gulp.task('browserify', function() {
+gulp.task('browserify-bundle', function() {
     return browserify({ entries: ['src/node_js/firstTest.js', 'src/node_js/testNGraphPin.js', 'src/node_js/testPixelStatic.js'] })
         .bundle()
         .pipe(source('bundle-node.js'))

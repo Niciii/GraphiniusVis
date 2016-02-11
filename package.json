@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "graphinius": "^0.2.3",
+    "ngraph.events": "0.0.3",
     "ngraph.graph": "0.0.12",
     "ngraph.pixel": "^2.0.0",
     "pixel.layout": "^0.1.2",

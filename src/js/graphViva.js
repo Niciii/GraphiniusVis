@@ -19,8 +19,8 @@ viva.onclick = function() {
   //webGL based
   setElementVisible('containerGraph', 'svgGraph');
 
-  initGraph();
-  window.$GV.render();
+  //initGraph();
+  //window.$GV.render();
   //renderGraphViva();
 }
 
