@@ -12,7 +12,9 @@ var ZOOM_FACTOR = 0.05,
     KEY_C = 99,
     KEY_SX = 88,
     KEY_SY = 89,
-    KEY_SC = 67;
+    KEY_SC = 67,
+    WIDTH = 1500,
+    HEIGHT = 900;
 
 
 renderButton.onclick = function() {
@@ -26,11 +28,13 @@ function render() {
       MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z;
 
   var scene = new THREE.Scene(); // Create a Three.js scene object.
-  var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000); // Define the perspective camera's attributes.
+  var camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000); // Define the perspective camera's attributes.
 
   var renderer = window.WebGLRenderingContext ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(); // Fallback to canvas renderer, if necessary.
-  renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the WebGL viewport.
-  document.body.appendChild(renderer.domElement); // Append the WebGL viewport to the DOM.
+  renderer.setSize(WIDTH, HEIGHT); // Set the size of the WebGL viewport.
+  //document.body.appendChild(renderer.domElement); // Append the WebGL viewport to the DOM.
+  var element = document.getElementById("containerGraph");
+  element.appendChild(renderer.domElement); // Append the WebGL viewport to the DOM.
 
   var edges = new THREE.Group();
   var nodes = new THREE.Group();
@@ -179,7 +183,7 @@ function render() {
     //wheel up: positive value
     camera.fov -= ZOOM_FACTOR * event.wheelDeltaY;
     camera.fov = Math.max( Math.min( camera.fov, MAX_FOV ), MIN_FOV );
-    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, window.innerWidth / window.innerHeight, camera.near, camera.far);
+    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
     window.requestAnimationFrame(render);
   }
 
@@ -190,8 +194,8 @@ function render() {
 
     event.preventDefault();
 
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1; //renderer.domElement.width
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1; //renderer.domElement.height
+    mouse.x = ( event.clientX / WIDTH ) * 2 - 1; //renderer.domElement.width
+    mouse.y = - ( event.clientY / HEIGHT ) * 2 + 1; //renderer.domElement.height
 
     // update the picking ray with the camera and mouse position
     raycaster.setFromCamera( mouse, camera );
@@ -206,9 +210,9 @@ function render() {
 
   window.addEventListener('resize', windowResize, false);
   function windowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = WIDTH / HEIGHT;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(WIDTH, HEIGHT);
   }
 }
 
