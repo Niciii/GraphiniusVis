@@ -16,7 +16,6 @@ var ZOOM_FACTOR = 0.05,
     WIDTH = 1500,
     HEIGHT = 900;
 
-
 renderButton.onclick = function() {
   initGraph();
   window.$GV.renderGraph();
@@ -40,7 +39,7 @@ function renderGraph() {
   
   var i = 0;
   var vertices = new Float32Array( graph.nrNodes() * 3 );
-  for(node in node_keys) {
+  for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
     var y = nodes_obj[node].getFeature('coords').y;
     var z = nodes_obj[node].getFeature('coords').z;
@@ -74,7 +73,9 @@ function renderGraph() {
 
   //EDGE
   var materialLine = new THREE.LineBasicMaterial({
-    color: 0x81cf28
+    color: 0x81cf28,
+    transparent : true,
+    opacity: 0.5//default is 1; range: 0.0 - 1.0
    //vertexColors: THREE.VertexColors  //,
     //linewidth: 1
   });  
@@ -162,6 +163,7 @@ function renderGraph() {
     window.requestAnimationFrame(updateGraph);
   }
 
+  //zoom in and out
   window.addEventListener('mousewheel', mousewheel, false);
   function mousewheel(event) {
     //wheel down: negative value
@@ -171,26 +173,46 @@ function renderGraph() {
     camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
     window.requestAnimationFrame(updateGraph);
   }
-
+  
+  document.addEventListener( 'mousemove', mouseMove, false );
+  function mouseMove(event) {
+    //console.log(event);
+    //console.log(event.clientX);
+    //console.log(event.clientY);
+    //mouseX = event.clientX - 20;
+		//mouseY = event.clientY - 20;
+    
+    //left mouse button
+    if(event.which == 1) {
+      console.log("left");
+    }
+  }
+  
+  window.addEventListener('mouseup', mouseup, false);
+  function mouseup(event) {
+    console.log("up");
+  }
+  
   window.addEventListener('click', mousedown, false);
   function mousedown(event) {
-    var raycaster = new THREE.Raycaster(); // create once
-    var mouse = new THREE.Vector2();
 
-    event.preventDefault();
+    //var raycaster = new THREE.Raycaster(); // create once
+    //var mouse = new THREE.Vector2();
 
-    mouse.x = ( event.clientX / WIDTH ) * 2 - 1; //renderer.domElement.width
-    mouse.y = - ( event.clientY / HEIGHT ) * 2 + 1; //renderer.domElement.height
+    //event.preventDefault();
 
-    // update the picking ray with the camera and mouse position
-    raycaster.setFromCamera( mouse, camera );
-    // calculate objects intersecting the picking ray
-    var intersects = raycaster.intersectObjects( nodes.children );
-    for ( var i = 0; i < intersects.length; i++ ) {
-      intersects[ i ].object.material.color.set( 0xff0000 );
-    }
-    //console.log(nodes.children);
-    updateGraph();
+    //mouse.x = ( event.clientX / WIDTH ) * 2 - 1; //renderer.domElement.width
+    //mouse.y = - ( event.clientY / HEIGHT ) * 2 + 1; //renderer.domElement.height
+
+    //// update the picking ray with the camera and mouse position
+    //raycaster.setFromCamera( mouse, camera );
+    //// calculate objects intersecting the picking ray
+    //var intersects = raycaster.intersectObjects( nodes.children );
+    //for ( var i = 0; i < intersects.length; i++ ) {
+      //intersects[ i ].object.material.color.set( 0xff0000 );
+    //}
+    ////console.log(nodes.children);
+    //updateGraph();
   }
 
   window.addEventListener('resize', windowResize, false);
@@ -203,7 +225,6 @@ function renderGraph() {
 
 function switchTo2D(network) {
   for(var i = 0; i < network.children[0].children.length; i++) {
-    //console.log(network.children[0].children.position.z);
     network.children[0].children[i].position.setZ(0);
   }
 
@@ -258,6 +279,5 @@ if (window !== 'undefined') {
     renderGraph: renderGraph,
     switchTo2D: switchTo2D,
     switchTo3D: switchTo3D
-    // mutilateGraph: mutilateNGraph
   }
 }

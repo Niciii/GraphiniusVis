@@ -31,6 +31,19 @@ gulp.task('browserSync-viva', ['browserify-bundle'], function() {
   gulp.watch('src/node_js/*', ['browserify']);
 });
 
+gulp.task('browserSync-orbit', ['browserify-orbit'], function() {
+  browserSync({
+	files: ['src/js/*', 'src/node_js/*', 'src/css/*', 'index.html'],
+    server: {
+      baseDir: './'
+    },
+  })
+
+  gulp.watch('*.html').on('change', browserSync.reload);
+  gulp.watch('src/js/*.js').on('change', browserSync.reload);
+  gulp.watch('src/node_js/*', ['browserify']);
+});
+
 gulp.task('default', function() {
   console.log('graphinius vis');
 });
@@ -49,3 +62,12 @@ gulp.task('browserify-bundle', function() {
         .pipe(gulp.dest('bundle'))
         .pipe(browserSync.stream());
 });
+
+gulp.task('browserify-orbit', function() {
+    return browserify({ entries: ['src/js/graphThree.js'] })
+        .bundle()
+        .pipe(source('bundle-orbit.js'))
+        .pipe(gulp.dest('bundle'))
+        .pipe(browserSync.stream());
+});
+

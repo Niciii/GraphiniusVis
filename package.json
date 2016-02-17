@@ -36,6 +36,8 @@
     "ngraph.graph": "0.0.12",
     "ngraph.pixel": "^2.0.0",
     "pixel.layout": "^0.1.2",
-    "pixel.static": "^2.1.1"
+    "pixel.static": "^2.1.1",
+    "three-js": "^74.0.1",
+    "three-orbit-controls": "^72.0.0"
   }
 }
