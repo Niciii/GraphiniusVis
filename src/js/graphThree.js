@@ -15,6 +15,10 @@ var ZOOM_FACTOR = 0.05,
     KEY_SC = 67,
     WIDTH = 1500,
     HEIGHT = 900;
+    
+window.axis_x = new THREE.Vector3( 1, 0, 0 );
+window.axis_y = new THREE.Vector3( 0, 1, 0 );
+window.axis_z = new THREE.Vector3( 0, 0, 1 );
 
 renderButton.onclick = function() {
   initGraph();
@@ -24,7 +28,25 @@ renderButton.onclick = function() {
 function renderGraph() {
   var MIN_X = MAX_X = nodes_obj[0].getFeature('coords').x,
       MIN_Y = MAX_Y = nodes_obj[0].getFeature('coords').y,
-      MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z;
+      MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z,
+      AVG_X = AVG_Y = AVG_Z = 0;
+
+  for(node in nodes_obj) {
+    var x = nodes_obj[node].getFeature('coords').x;
+    var y = nodes_obj[node].getFeature('coords').y;
+    var z = nodes_obj[node].getFeature('coords').z;
+    
+    MIN_X = Math.min(MIN_X, x);
+    MIN_Y = Math.min(MIN_Y, y);
+    MIN_Z = Math.min(MIN_Z, z);
+    
+    MAX_X = Math.max(MAX_X, x);
+    MAX_Y = Math.max(MAX_Y, y);
+    MAX_Z = Math.max(MAX_Z, z);
+  }
+  AVG_X = (MAX_X - MIN_X) / 2;
+  AVG_Y = (MAX_Y - MIN_Y) / 2;
+  AVG_Z = (MAX_Z - MIN_Z) / 2;
 
   var scene = new THREE.Scene(); // Create a Three.js scene object.
   var camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000); //TODO change to 0.1// Define the perspective camera's attributes.
@@ -44,18 +66,10 @@ function renderGraph() {
     var y = nodes_obj[node].getFeature('coords').y;
     var z = nodes_obj[node].getFeature('coords').z;
     
-    vertices[ i*3 ] = x;
-    vertices[ i*3 + 1 ] = y;
-    vertices[ i*3 + 2 ] = z;
+    vertices[ i*3 ] = x - AVG_X;
+    vertices[ i*3 + 1 ] = y - AVG_Y;
+    vertices[ i*3 + 2 ] = z - AVG_Z;
     i++;
-    
-    MIN_X = Math.min(MIN_X, x);
-    MIN_Y = Math.min(MIN_Y, y);
-    MIN_Z = Math.min(MIN_Z, z);
-    
-    MAX_X = Math.max(MAX_X, x);
-    MAX_Y = Math.max(MAX_Y, y);
-    MAX_Z = Math.max(MAX_Z, z);
   }
 
   var geometry = new THREE.BufferGeometry();    
@@ -81,6 +95,7 @@ function renderGraph() {
   });  
 
   window.network = new THREE.Group();
+  console.log(network);
   network.add(particles);
   
   [und_edges, dir_edges].forEach(function(edges) {
@@ -91,12 +106,12 @@ function renderGraph() {
       var node_a_id = edge._node_a.getID();
       var node_b_id = edge._node_b.getID();
       
-      positionLine[ i * 6 ] = nodes_obj[node_a_id].getFeature('coords').x;
-      positionLine[ i * 6 + 1 ] = nodes_obj[node_a_id].getFeature('coords').y;
-      positionLine[ i * 6 + 2 ] = nodes_obj[node_a_id].getFeature('coords').z;
-      positionLine[ i * 6 + 3 ] = nodes_obj[node_b_id].getFeature('coords').x;
-      positionLine[ i * 6 + 4 ] = nodes_obj[node_b_id].getFeature('coords').y;
-      positionLine[ i * 6 + 5 ] = nodes_obj[node_b_id].getFeature('coords').z;
+      positionLine[ i * 6 ] = nodes_obj[node_a_id].getFeature('coords').x - AVG_X;
+      positionLine[ i * 6 + 1 ] = nodes_obj[node_a_id].getFeature('coords').y - AVG_Y;
+      positionLine[ i * 6 + 2 ] = nodes_obj[node_a_id].getFeature('coords').z - AVG_Z;
+      positionLine[ i * 6 + 3 ] = nodes_obj[node_b_id].getFeature('coords').x - AVG_X;
+      positionLine[ i * 6 + 4 ] = nodes_obj[node_b_id].getFeature('coords').y - AVG_Y;
+      positionLine[ i * 6 + 5 ] = nodes_obj[node_b_id].getFeature('coords').z - AVG_Z;
       i++;
     }
     var geometryLine = new THREE.BufferGeometry();
@@ -116,6 +131,14 @@ function renderGraph() {
   //camera.position.z = 500; // Move the camera away from the origin, down the positive z-axis.
   //camera.lookat(new THREE.Vector3(0,0,0));
 
+  //The X axis is red. The Y axis is green. The Z axis is blue.
+  var axisHelper = new THREE.AxisHelper( Math.max(MAX_X, Math.max(MAX_Y, MAX_Z)) );
+  scene.add( axisHelper );
+  console.log(axisHelper);
+  
+  console.log(network);
+  network.applyMatrix(axisHelper.matrixWorld);  
+
   var updateGraph = function () {
     renderer.render(scene, camera); // Each time we change the position of the cube object, we must re-render it.
     //requestAnimationFrame(render); // Call the render() function up to 60 times per second (i.e., up to 60 animation frames per second).
@@ -126,7 +149,7 @@ function renderGraph() {
   function key(event) {
     var deltaDistance = 10; //distance to move
     var deltaRotation = 0.05; //rotation step
-
+    
     switch (event.charCode) {
       case KEY_W: //zoom in
         camera.position.y = camera.position.y - deltaDistance; break;
@@ -144,18 +167,43 @@ function renderGraph() {
         network.translateZ(deltaDistance); break;
       case KEY_F:
         network.translateZ(-deltaDistance); break;
+        
       case KEY_X:
-        network.rotation.x += deltaRotation; break;
+        //network.rotation.x += deltaRotation; break;
+        network.rotateOnAxis(axis_x, deltaRotation);
+        axis_y.applyAxisAngle(axis_x, -deltaRotation);
+        axis_z.applyAxisAngle(axis_x, -deltaRotation);
+        break;
       case KEY_SX:
-        network.rotation.x -= deltaRotation; break;
+        //network.rotation.x -= deltaRotation; break;
+        network.rotateOnAxis(axis_x, -deltaRotation); 
+        axis_y.applyAxisAngle(axis_x, deltaRotation);
+        axis_z.applyAxisAngle(axis_x, deltaRotation);
+        break;
       case KEY_Y:
-        network.rotation.y += deltaRotation; break;
+        //network.rotation.y += deltaRotation; break;
+        network.rotateOnAxis(axis_y, deltaRotation); 
+        axis_x.applyAxisAngle(axis_y, -deltaRotation);
+        axis_z.applyAxisAngle(axis_y, -deltaRotation);
+        break;
       case KEY_SY:
-        network.rotation.y -= deltaRotation; break;
+        //network.rotation.y -= deltaRotation; break;
+        network.rotateOnAxis(axis_y, -deltaRotation); 
+        axis_x.applyAxisAngle(axis_y, deltaRotation);
+        axis_z.applyAxisAngle(axis_y, deltaRotation);
+        break;
       case KEY_C:
-        network.rotation.z += deltaRotation; break;
+        //network.rotation.z += deltaRotation; break;
+        network.rotateOnAxis(axis_z, deltaRotation); 
+        axis_x.applyAxisAngle(axis_z, -deltaRotation);
+        axis_y.applyAxisAngle(axis_z, -deltaRotation);
+        break;
       case KEY_SC:
-        network.rotation.z -= deltaRotation; break;
+        //network.rotation.z -= deltaRotation; break;
+        network.rotateOnAxis(axis_z, -deltaRotation); 
+        axis_x.applyAxisAngle(axis_z, deltaRotation);
+        axis_y.applyAxisAngle(axis_z, deltaRotation);
+        break;
       default:
         break;
     }
@@ -177,14 +225,15 @@ function renderGraph() {
   document.addEventListener( 'mousemove', mouseMove, false );
   function mouseMove(event) {
     //console.log(event);
-    //console.log(event.clientX);
-    //console.log(event.clientY);
+    
     //mouseX = event.clientX - 20;
 		//mouseY = event.clientY - 20;
     
     //left mouse button
     if(event.which == 1) {
-      console.log("left");
+      //console.log("left");
+      //console.log(event.clientX);
+      //console.log(event.clientY);
     }
   }
   
