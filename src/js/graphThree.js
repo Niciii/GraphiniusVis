@@ -51,9 +51,9 @@ function renderGraph() {
   AVG_Y = (MAX_Y - MIN_Y) / 2;
   AVG_Z = (MAX_Z - MIN_Z) / 2;
 
-  var scene = new THREE.Scene(); // Create a Three.js scene object.
-  var camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000); //TODO change to 0.1// Define the perspective camera's attributes.
-  var renderer = new THREE.WebGLRenderer({ antialias: false }); //window.WebGLRenderingContext ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(); // Fallback to canvas renderer, if necessary.
+  window.scene = new THREE.Scene(); // Create a Three.js scene object.
+  window.camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000); //TODO change to 0.1// Define the perspective camera's attributes.
+  window.renderer = new THREE.WebGLRenderer({ antialias: false }); //window.WebGLRenderingContext ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(); // Fallback to canvas renderer, if necessary.
   renderer.setSize(WIDTH, HEIGHT); // Set the size of the WebGL viewport.
   renderer.setClearColor( 0x000000, 1 );
   //renderer.setPixelRatio( window.devicePixelRatio );
@@ -117,6 +117,7 @@ function renderGraph() {
       positionLine[ i * 6 + 5 ] = nodes_obj[node_b_id].getFeature('coords').z - AVG_Z;
       i++;
     }
+    
     var geometryLine = new THREE.BufferGeometry();
     geometryLine.addAttribute('position', new THREE.BufferAttribute(positionLine, 3));
     //geometryLine.addAttribute('color', new THREE.BufferAttribute( 0xff700e, 3));
@@ -124,7 +125,7 @@ function renderGraph() {
     var line = new THREE.Line( geometryLine, materialLine );
     //scene.add( line );
     network.add(line);
-  });
+  });  
 
   // network.translateX(-MAX_X/2);
   // network.translateY(-MAX_Y/2);
@@ -270,11 +271,6 @@ function renderGraph() {
     window.requestAnimationFrame(updateGraph);
   }
 
-  window.addEventListener('mouseup', mouseup, false);
-  function mouseup(event) {
-    //console.log("up");
-  }
-
   window.addEventListener('click', mousedown, false);
   function mousedown(event) {
 
@@ -306,16 +302,27 @@ function renderGraph() {
 }
 
 function switchTo2D(network) {
-  for(var i = 0; i < network.children[0].children.length; i++) {
-    network.children[0].children[i].position.setZ(0);
-  }
+  var array = network.children[0].geometry.attributes.position.array;
+  for(var i = 0; i < array.length;) {
+    array[i + 2] = 0;
+    i+=3;
+  }  
+  network.children[0].geometry.attributes.position.needsUpdate = true;
 
-  for(var i = 0; i < network.children[1].children.length; i++) {
-    network.children[1].children[i].geometry.vertices[0].setZ(0);
-    network.children[1].children[i].geometry.vertices[1].setZ(0);
-    network.children[1].children[i].geometry.verticesNeedUpdate = true;
+  array = network.children[1].geometry.attributes.position.array;
+  var childID = 1;
+  if(array.length == 0) {
+    childID = 2;
+    array = network.children[2].geometry.attributes.position.array;
   }
-  window.requestAnimationFrame(updateGraph);
+  
+  for(var i = 0; i < array.length;) {
+    array[i + 2] = 0;
+    i+=3;
+  }
+  network.children[childID].geometry.attributes.position.needsUpdate = true;
+  
+  window.renderer.render(window.scene, window.camera);
 }
 
 function switchTo3D() {
@@ -324,7 +331,7 @@ function switchTo3D() {
     network.children[0].children[node].position.setZ(z);
   }
 
-  var i = 0; //TODO
+  var i = 0;
   for (var u_edge in und_edges) {
     edge = und_edges[u_edge];
     node_a_id = edge._node_a.getID();
@@ -359,6 +366,9 @@ if (window !== 'undefined') {
 
   window.$GV = {
     renderGraph: renderGraph,
+    //addNode: addNode,
+    //removeNode: removeNode,
+    //colorNode: colorNode,
     switchTo2D: switchTo2D,
     switchTo3D: switchTo3D
   }
