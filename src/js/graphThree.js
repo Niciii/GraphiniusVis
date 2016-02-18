@@ -16,7 +16,7 @@ var ZOOM_FACTOR = 0.05,
     WIDTH = 1500,
     HEIGHT = 900,
     mouse = [0.5, 0.5];
-    
+
 window.axis_x = new THREE.Vector3( 1, 0, 0 );
 window.axis_y = new THREE.Vector3( 0, 1, 0 );
 window.axis_z = new THREE.Vector3( 0, 0, 1 );
@@ -38,11 +38,11 @@ function renderGraph() {
     var x = nodes_obj[node].getFeature('coords').x;
     var y = nodes_obj[node].getFeature('coords').y;
     var z = nodes_obj[node].getFeature('coords').z;
-    
+
     MIN_X = Math.min(MIN_X, x);
     MIN_Y = Math.min(MIN_Y, y);
     MIN_Z = Math.min(MIN_Z, z);
-    
+
     MAX_X = Math.max(MAX_X, x);
     MAX_Y = Math.max(MAX_Y, y);
     MAX_Z = Math.max(MAX_Z, z);
@@ -61,21 +61,21 @@ function renderGraph() {
 	//renderer.gammaOutput = true;
   var element = document.getElementById("containerGraph");
   element.appendChild(renderer.domElement); // Append the WebGL viewport to the DOM.
-  
+
   var i = 0;
   var vertices = new Float32Array( graph.nrNodes() * 3 );
   for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
     var y = nodes_obj[node].getFeature('coords').y;
     var z = nodes_obj[node].getFeature('coords').z;
-    
+
     vertices[ i*3 ] = x - AVG_X;
     vertices[ i*3 + 1 ] = y - AVG_Y;
     vertices[ i*3 + 2 ] = z - AVG_Z;
     i++;
   }
 
-  var geometry = new THREE.BufferGeometry();    
+  var geometry = new THREE.BufferGeometry();
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
   geometry.addAttribute('color', new THREE.BufferAttribute( 0x8aa7ff, 3));
 
@@ -83,7 +83,7 @@ function renderGraph() {
     color: 0x8aa7ff,
     size: 10
     //map: texture
-  });  
+  });
 
   particles = new THREE.Points( geometry, material );
 	//scene.add( particles );
@@ -95,12 +95,12 @@ function renderGraph() {
     opacity: 0.5//default is 1; range: 0.0 - 1.0
    //vertexColors: THREE.VertexColors  //,
     //linewidth: 1
-  });  
+  });
 
   window.network = new THREE.Group();
   console.log(network);
   network.add(particles);
-  
+
   [und_edges, dir_edges].forEach(function(edges) {
     var i = 0;
     var positionLine = new Float32Array(Object.keys(edges).length * 6); //2 vertices * 3 xyz
@@ -108,7 +108,7 @@ function renderGraph() {
       var edge = edges[edge_index];
       var node_a_id = edge._node_a.getID();
       var node_b_id = edge._node_b.getID();
-      
+
       positionLine[ i * 6 ] = nodes_obj[node_a_id].getFeature('coords').x - AVG_X;
       positionLine[ i * 6 + 1 ] = nodes_obj[node_a_id].getFeature('coords').y - AVG_Y;
       positionLine[ i * 6 + 2 ] = nodes_obj[node_a_id].getFeature('coords').z - AVG_Z;
@@ -126,9 +126,9 @@ function renderGraph() {
     network.add(line);
   });
 
-  network.translateX(-MAX_X/2);
-  network.translateY(-MAX_Y/2);
-  network.translateZ(-MAX_Z/2);
+  // network.translateX(-MAX_X/2);
+  // network.translateY(-MAX_Y/2);
+  // network.translateZ(-MAX_Z/2);
   scene.add(network);
   camera.position.z = Math.max(MAX_X, MAX_Y);
   //camera.position.z = 500; // Move the camera away from the origin, down the positive z-axis.
@@ -137,7 +137,7 @@ function renderGraph() {
   //The X axis is red. The Y axis is green. The Z axis is blue.
   //var axisHelper = new THREE.AxisHelper( Math.max(MAX_X, Math.max(MAX_Y, MAX_Z)) );
   //scene.add( axisHelper );
-  //network.applyMatrix(axisHelper.matrixWorld);  
+  //network.applyMatrix(axisHelper.matrixWorld);
 
   var updateGraph = function () {
     renderer.render(scene, camera); // Each time we change the position of the cube object, we must re-render it.
@@ -146,7 +146,7 @@ function renderGraph() {
   window.requestAnimationFrame(updateGraph);
 
   window.addEventListener('keypress', key, false);
-  function key(event) {    
+  function key(event) {
     switch (event.charCode) {
       case KEY_W: //zoom in
         camera.position.y = camera.position.y - deltaDistance; break;
@@ -164,40 +164,40 @@ function renderGraph() {
         network.translateZ(deltaDistance); break;
       case KEY_F:
         network.translateZ(-deltaDistance); break;
-        
+
       case KEY_X:
         //network.rotation.x += deltaRotation; break;
         network.rotateOnAxis(axis_x, deltaRotation);
         axis_y.applyAxisAngle(axis_x, -deltaRotation);
-        axis_z.applyAxisAngle(axis_x, -deltaRotation);
+        // axis_z.applyAxisAngle(axis_x, -deltaRotation);
         break;
       case KEY_SX:
         //network.rotation.x -= deltaRotation; break;
-        network.rotateOnAxis(axis_x, -deltaRotation); 
+        network.rotateOnAxis(axis_x, -deltaRotation);
         axis_y.applyAxisAngle(axis_x, deltaRotation);
-        axis_z.applyAxisAngle(axis_x, deltaRotation);
+        // axis_z.applyAxisAngle(axis_x, deltaRotation);
         break;
       case KEY_Y:
         //network.rotation.y += deltaRotation; break;
-        network.rotateOnAxis(axis_y, deltaRotation); 
+        network.rotateOnAxis(axis_y, deltaRotation);
         axis_x.applyAxisAngle(axis_y, -deltaRotation);
-        axis_z.applyAxisAngle(axis_y, -deltaRotation);
+        // axis_z.applyAxisAngle(axis_y, -deltaRotation);
         break;
       case KEY_SY:
         //network.rotation.y -= deltaRotation; break;
-        network.rotateOnAxis(axis_y, -deltaRotation); 
+        network.rotateOnAxis(axis_y, -deltaRotation);
         axis_x.applyAxisAngle(axis_y, deltaRotation);
-        axis_z.applyAxisAngle(axis_y, deltaRotation);
+        // axis_z.applyAxisAngle(axis_y, deltaRotation);
         break;
       case KEY_C:
         //network.rotation.z += deltaRotation; break;
-        network.rotateOnAxis(axis_z, deltaRotation); 
+        network.rotateOnAxis(axis_z, deltaRotation);
         axis_x.applyAxisAngle(axis_z, -deltaRotation);
         axis_y.applyAxisAngle(axis_z, -deltaRotation);
         break;
       case KEY_SC:
         //network.rotation.z -= deltaRotation; break;
-        network.rotateOnAxis(axis_z, -deltaRotation); 
+        network.rotateOnAxis(axis_z, -deltaRotation);
         axis_x.applyAxisAngle(axis_z, deltaRotation);
         axis_y.applyAxisAngle(axis_z, deltaRotation);
         break;
@@ -212,20 +212,17 @@ function renderGraph() {
   window.addEventListener('mousewheel', mousewheel, false);
   function mousewheel(event) {
     //wheel down: negative value
-    //wheel up: positive value    
+    //wheel up: positive value
     if(event.shiftKey) {
-      var delta = deltaRotation;
-      if(event.wheelDelta < 0) {      
-        network.rotateOnAxis(axis_z, -deltaRotation);   
-        delta *= -1;      
-        axis_x.applyAxisAngle(axis_z, deltaRotation);
-        axis_y.applyAxisAngle(axis_z, deltaRotation);
+      if(event.wheelDelta < 0) {
+        network.rotateOnAxis(axis_y, -deltaRotation);
+        axis_x.applyAxisAngle(axis_y, deltaRotation);
+        // axis_z.applyAxisAngle(axis_y, deltaRotation);
       }
       else {
-        network.rotateOnAxis(axis_z, deltaRotation); 
-        delta *= -1;
-        axis_x.applyAxisAngle(axis_z, -deltaRotation);
-        axis_y.applyAxisAngle(axis_z, -deltaRotation);
+        network.rotateOnAxis(axis_y, deltaRotation);
+        axis_x.applyAxisAngle(axis_y, -deltaRotation);
+        // axis_z.applyAxisAngle(axis_y, -deltaRotation);
       }
     }
     else {
@@ -235,49 +232,49 @@ function renderGraph() {
     }
     window.requestAnimationFrame(updateGraph);
   }
-  
+
   document.addEventListener( 'mousemove', mouseMove, false );
   function mouseMove(event) {
-    
+
     if(event.shiftKey && event.which == 1) {
       if(event.movementX > 0) {
-        network.rotateOnAxis(axis_y, deltaRotation); 
-        axis_x.applyAxisAngle(axis_y, -deltaRotation);
-        axis_z.applyAxisAngle(axis_y, -deltaRotation);
+        network.rotateOnAxis(axis_z, deltaRotation);
+        axis_x.applyAxisAngle(axis_z, -deltaRotation);
+        axis_y.applyAxisAngle(axis_z, -deltaRotation);
       }
       else if(event.movementX < 0) {
-        network.rotateOnAxis(axis_y, -deltaRotation); 
-        axis_x.applyAxisAngle(axis_y, deltaRotation);
-        axis_z.applyAxisAngle(axis_y, deltaRotation);
+        network.rotateOnAxis(axis_z, -deltaRotation);
+        axis_x.applyAxisAngle(axis_z, deltaRotation);
+        axis_y.applyAxisAngle(axis_z, deltaRotation);
       }
       else if(event.movementY > 0) {
         network.rotateOnAxis(axis_x, deltaRotation);
         axis_y.applyAxisAngle(axis_x, -deltaRotation);
-        axis_z.applyAxisAngle(axis_x, -deltaRotation);
+        // axis_z.applyAxisAngle(axis_x, -deltaRotation);
       }
       else if(event.movementY < 0) {
         network.rotateOnAxis(axis_x, -deltaRotation);
         axis_y.applyAxisAngle(axis_x, deltaRotation);
-        axis_z.applyAxisAngle(axis_x, deltaRotation);
+        // axis_z.applyAxisAngle(axis_x, deltaRotation);
       }
     }
     //left mouse button
-    else if(event.which == 1) {      
+    else if(event.which == 1) {
       var mouseX = event.clientX / WIDTH;
       var mouseY = event.clientY / HEIGHT;
       //movement in y: up is negative, down is positive
       camera.position.x = camera.position.x - (mouseX * event.movementX);
       camera.position.y = camera.position.y + (mouseY * event.movementY);
     }
-    
+
     window.requestAnimationFrame(updateGraph);
   }
-  
+
   window.addEventListener('mouseup', mouseup, false);
   function mouseup(event) {
     //console.log("up");
   }
-  
+
   window.addEventListener('click', mousedown, false);
   function mousedown(event) {
 
