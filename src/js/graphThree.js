@@ -14,11 +14,14 @@ var ZOOM_FACTOR = 0.05,
     KEY_SY = 89,
     KEY_SC = 67,
     WIDTH = 1500,
-    HEIGHT = 900;
+    HEIGHT = 900,
+    mouse = [0.5, 0.5];
     
 window.axis_x = new THREE.Vector3( 1, 0, 0 );
 window.axis_y = new THREE.Vector3( 0, 1, 0 );
 window.axis_z = new THREE.Vector3( 0, 0, 1 );
+var deltaDistance = 10; //distance to move
+var deltaRotation = 0.05; //rotation step
 
 renderButton.onclick = function() {
   initGraph();
@@ -132,12 +135,9 @@ function renderGraph() {
   //camera.lookat(new THREE.Vector3(0,0,0));
 
   //The X axis is red. The Y axis is green. The Z axis is blue.
-  var axisHelper = new THREE.AxisHelper( Math.max(MAX_X, Math.max(MAX_Y, MAX_Z)) );
-  scene.add( axisHelper );
-  console.log(axisHelper);
-  
-  console.log(network);
-  network.applyMatrix(axisHelper.matrixWorld);  
+  //var axisHelper = new THREE.AxisHelper( Math.max(MAX_X, Math.max(MAX_Y, MAX_Z)) );
+  //scene.add( axisHelper );
+  //network.applyMatrix(axisHelper.matrixWorld);  
 
   var updateGraph = function () {
     renderer.render(scene, camera); // Each time we change the position of the cube object, we must re-render it.
@@ -146,10 +146,7 @@ function renderGraph() {
   window.requestAnimationFrame(updateGraph);
 
   window.addEventListener('keypress', key, false);
-  function key(event) {
-    var deltaDistance = 10; //distance to move
-    var deltaRotation = 0.05; //rotation step
-    
+  function key(event) {    
     switch (event.charCode) {
       case KEY_W: //zoom in
         camera.position.y = camera.position.y - deltaDistance; break;
@@ -215,31 +212,70 @@ function renderGraph() {
   window.addEventListener('mousewheel', mousewheel, false);
   function mousewheel(event) {
     //wheel down: negative value
-    //wheel up: positive value
-    camera.fov -= ZOOM_FACTOR * event.wheelDeltaY;
-    camera.fov = Math.max( Math.min( camera.fov, MAX_FOV ), MIN_FOV );
-    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
+    //wheel up: positive value    
+    if(event.shiftKey) {
+      var delta = deltaRotation;
+      if(event.wheelDelta < 0) {      
+        network.rotateOnAxis(axis_z, -deltaRotation);   
+        delta *= -1;      
+        axis_x.applyAxisAngle(axis_z, deltaRotation);
+        axis_y.applyAxisAngle(axis_z, deltaRotation);
+      }
+      else {
+        network.rotateOnAxis(axis_z, deltaRotation); 
+        delta *= -1;
+        axis_x.applyAxisAngle(axis_z, -deltaRotation);
+        axis_y.applyAxisAngle(axis_z, -deltaRotation);
+      }
+    }
+    else {
+      camera.fov -= ZOOM_FACTOR * event.wheelDeltaY;
+      camera.fov = Math.max( Math.min( camera.fov, MAX_FOV ), MIN_FOV );
+      camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
+    }
     window.requestAnimationFrame(updateGraph);
   }
   
   document.addEventListener( 'mousemove', mouseMove, false );
   function mouseMove(event) {
-    //console.log(event);
     
-    //mouseX = event.clientX - 20;
-		//mouseY = event.clientY - 20;
-    
-    //left mouse button
-    if(event.which == 1) {
-      //console.log("left");
-      //console.log(event.clientX);
-      //console.log(event.clientY);
+    if(event.shiftKey && event.which == 1) {
+      if(event.movementX > 0) {
+        network.rotateOnAxis(axis_y, deltaRotation); 
+        axis_x.applyAxisAngle(axis_y, -deltaRotation);
+        axis_z.applyAxisAngle(axis_y, -deltaRotation);
+      }
+      else if(event.movementX < 0) {
+        network.rotateOnAxis(axis_y, -deltaRotation); 
+        axis_x.applyAxisAngle(axis_y, deltaRotation);
+        axis_z.applyAxisAngle(axis_y, deltaRotation);
+      }
+      else if(event.movementY > 0) {
+        network.rotateOnAxis(axis_x, deltaRotation);
+        axis_y.applyAxisAngle(axis_x, -deltaRotation);
+        axis_z.applyAxisAngle(axis_x, -deltaRotation);
+      }
+      else if(event.movementY < 0) {
+        network.rotateOnAxis(axis_x, -deltaRotation);
+        axis_y.applyAxisAngle(axis_x, deltaRotation);
+        axis_z.applyAxisAngle(axis_x, deltaRotation);
+      }
     }
+    //left mouse button
+    else if(event.which == 1) {      
+      var mouseX = event.clientX / WIDTH;
+      var mouseY = event.clientY / HEIGHT;
+      //movement in y: up is negative, down is positive
+      camera.position.x = camera.position.x - (mouseX * event.movementX);
+      camera.position.y = camera.position.y + (mouseY * event.movementY);
+    }
+    
+    window.requestAnimationFrame(updateGraph);
   }
   
   window.addEventListener('mouseup', mouseup, false);
   function mouseup(event) {
-    console.log("up");
+    //console.log("up");
   }
   
   window.addEventListener('click', mousedown, false);
