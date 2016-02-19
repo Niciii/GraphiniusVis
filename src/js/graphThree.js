@@ -310,55 +310,59 @@ function switchTo2D(network) {
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
   array = network.children[1].geometry.attributes.position.array;
-  var childID = 1;
-  if(array.length == 0) {
-    childID = 2;
-    array = network.children[2].geometry.attributes.position.array;
-  }
-  
   for(var i = 0; i < array.length;) {
     array[i + 2] = 0;
     i+=3;
   }
-  network.children[childID].geometry.attributes.position.needsUpdate = true;
+  network.children[1].geometry.attributes.position.needsUpdate = true;
+  
+  array = network.children[2].geometry.attributes.position.array;  
+  for(var i = 0; i < array.length;) {
+    array[i + 2] = 0;
+    i+=3;
+  }
+  network.children[2].geometry.attributes.position.needsUpdate = true;
   
   window.renderer.render(window.scene, window.camera);
 }
 
-function switchTo3D() {
-  for(node in node_keys) {
-    var z = nodes_obj[node].getFeature('coords').z;
-    network.children[0].children[node].position.setZ(z);
-  }
-
+function switchTo3D() {  
+  var array = network.children[0].geometry.attributes.position.array;
   var i = 0;
-  for (var u_edge in und_edges) {
-    edge = und_edges[u_edge];
-    node_a_id = edge._node_a.getID();
-    node_b_id = edge._node_b.getID();
+  for(node in nodes_obj) {
+    var z = nodes_obj[node].getFeature('coords').z;
+    array[i + 2] = z;
+    i+=3;
+  } 
+  network.children[0].geometry.attributes.position.needsUpdate = true;
 
-    var z_a = nodes_obj[node_a_id].getFeature('coords').z;
-    var z_b = nodes_obj[node_b_id].getFeature('coords').z;
-
-    network.children[1].children[i].geometry.vertices[0].setZ(z_a);
-    network.children[1].children[i].geometry.vertices[1].setZ(z_b);
-    network.children[1].children[i].geometry.verticesNeedUpdate = true;
-    i++;
+  array = network.children[1].geometry.attributes.position.array;
+  var i = 0;
+  for (var edge_index in und_edges) {
+    var edge = und_edges[edge_index];
+    var node_a_id = edge._node_a.getID();
+    var node_b_id = edge._node_b.getID();
+    
+    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
+    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
+    i += 6;
   }
-  for (var d_edge in dir_edges) {
-    edge = dir_edges[d_edge];
-    node_a_id = edge._node_a.getID();
-    node_b_id = edge._node_b.getID();
+  network.children[1].geometry.attributes.position.needsUpdate = true;
+  
+  i = 0;
+  array = network.children[2].geometry.attributes.position.array;
+  for (var edge_index in dir_edges) {
+    var edge = dir_edges[edge_index];
+    var node_a_id = edge._node_a.getID();
+    var node_b_id = edge._node_b.getID();
 
-    var z_a = nodes_obj[node_a_id].getFeature('coords').z;
-    var z_b = nodes_obj[node_b_id].getFeature('coords').z;
-
-    network.children[1].children[i].geometry.vertices[0].setZ(z_a);
-    network.children[1].children[i].geometry.vertices[1].setZ(z_b);
-    network.children[1].children[i].geometry.verticesNeedUpdate = true;
-    i++;
+    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
+    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z; 
+    i += 6;
   }
-  window.requestAnimationFrame(updateGraph);
+  network.children[2].geometry.attributes.position.needsUpdate = true;
+  
+  window.renderer.render(window.scene, window.camera);
 }
 
 if (window !== 'undefined') {
