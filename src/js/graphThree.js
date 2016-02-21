@@ -16,8 +16,9 @@ var ZOOM_FACTOR = 0.05,
     WIDTH = 1500,
     HEIGHT = 900,
     TWO_D_MODE = 0,
-    INDEX = 0;
-    
+    INDEX = 0,
+    NR_MUTILATE = 1;
+
 var randomColors = [
   0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
   0xec2337, 0x008744, 0xffa700, 0x1df726,
@@ -82,13 +83,13 @@ function renderGraph() {
     vertices[i*3] = x - AVG_X;
     vertices[i*3 + 1] = y - AVG_Y;
     vertices[i*3 + 2] = z - AVG_Z;
-    
+
     nodeColors[i*3] = nodeColor.r;
     nodeColors[i*3 + 1] = nodeColor.g;
     nodeColors[i*3 + 2] = nodeColor.b;
     i++;
   }
-  
+
   var geometry = new THREE.BufferGeometry();
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
   geometry.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
@@ -125,7 +126,7 @@ function renderGraph() {
       positionLine[i * 6 + 3] = nodes_obj[node_b_id].getFeature('coords').x - AVG_X;
       positionLine[i * 6 + 4] = nodes_obj[node_b_id].getFeature('coords').y - AVG_Y;
       positionLine[i * 6 + 5] = nodes_obj[node_b_id].getFeature('coords').z - AVG_Z;
-      
+
       nodeColors[i * 6] = nodeColor.r;
       nodeColors[i * 6 + 1] = nodeColor.g;
       nodeColors[i * 6 + 2] = nodeColor.b;
@@ -134,14 +135,14 @@ function renderGraph() {
       nodeColors[i * 6 + 5] = nodeColor.b;
       i++;
     }
-    
+
     var geometryLine = new THREE.BufferGeometry();
     geometryLine.addAttribute('position', new THREE.BufferAttribute(positionLine, 3));
     geometryLine.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
     //geometry.computeBoundingSphere();
     var line = new THREE.Line( geometryLine, materialLine );
     network.add(line);
-  });  
+  });
 
   // network.translateX(-MAX_X/2);
   // network.translateY(-MAX_Y/2);
@@ -161,8 +162,8 @@ function renderGraph() {
     //requestAnimationFrame(render); // Call the render() function up to 60 times per second (i.e., up to 60 animation frames per second).
   };
   window.requestAnimationFrame(updateGraph);
-  
-  
+
+
 
   window.addEventListener('keypress', key, false);
   function key(event) {
@@ -325,7 +326,7 @@ function switchTo2D() {
   for(var i = 0; i < array.length;) {
     array[i + 2] = 0;
     i+=3;
-  }  
+  }
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
   array = network.children[1].geometry.attributes.position.array;
@@ -334,14 +335,14 @@ function switchTo2D() {
     i+=3;
   }
   network.children[1].geometry.attributes.position.needsUpdate = true;
-  
-  array = network.children[2].geometry.attributes.position.array;  
+
+  array = network.children[2].geometry.attributes.position.array;
   for(var i = 0; i < array.length;) {
     array[i + 2] = 0;
     i+=3;
   }
   network.children[2].geometry.attributes.position.needsUpdate = true;
-  
+
   window.renderer.render(window.scene, window.camera);
 }
 
@@ -353,7 +354,7 @@ function switchTo3D() {
     var z = nodes_obj[node].getFeature('coords').z;
     array[i + 2] = z;
     i+=3;
-  } 
+  }
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
   array = network.children[1].geometry.attributes.position.array;
@@ -362,13 +363,13 @@ function switchTo3D() {
     var edge = und_edges[edge_index];
     var node_a_id = edge._node_a.getID();
     var node_b_id = edge._node_b.getID();
-    
+
     array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
     array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
     i += 6;
   }
   network.children[1].geometry.attributes.position.needsUpdate = true;
-  
+
   i = 0;
   array = network.children[2].geometry.attributes.position.array;
   for (var edge_index in dir_edges) {
@@ -377,47 +378,47 @@ function switchTo3D() {
     var node_b_id = edge._node_b.getID();
 
     array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
-    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z; 
+    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
     i += 6;
   }
   network.children[2].geometry.attributes.position.needsUpdate = true;
-  
+
   window.renderer.render(window.scene, window.camera);
 }
 
 //TODO: add/remove node graphinius
 //add node to graph but without an edge
 function addNode(x, y, z) {
-  
+
   if(x < 0 || y < 0 || z < 0) {
     console.log("ERROR: coordinates are negative");
     return;
   }
-  
+
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_colors = network.children[0].geometry.getAttribute('color').array;
   var new_nodes = new Float32Array(old_nodes.length + 3);
   var new_colors = new Float32Array(new_nodes.length);
   var new_color = new THREE.Color(0xff7373);
-  
+
   for(var i = 0; i < old_nodes.length; i++) {
     new_nodes[i] = old_nodes[i];
     new_colors[i] = old_colors[i];
   }
-  
+
   new_nodes[new_nodes.length - 3] = x;
   new_nodes[new_nodes.length - 2] = y;
   new_nodes[new_nodes.length - 1] = z;
   new_colors[new_nodes.length - 3] = new_color.r;
   new_colors[new_nodes.length - 2] = new_color.g;
   new_colors[new_nodes.length - 1] = new_color.b;
-  
+
   if(TWO_D_MODE) {
     new_nodes[new_nodes.length - 1] = 0;
   }
-  
+
   graph.addNode(new_nodes.length - 1);
-  
+
   network.children[0].geometry.addAttribute('position', new THREE.BufferAttribute(new_nodes, 3));
   network.children[0].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
   network.children[0].geometry.attributes.position.needsUpdate = true;
@@ -428,23 +429,23 @@ function addNode(x, y, z) {
 //TODO update edges
 //update node and edge position
 function updateNodePosition(nodeID, x, y, z) {
-  
+
   if(!graph.hasNodeID(nodeID)) {
     console.log("ERROR: wrong node id");
     return;
-  }  
+  }
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
-  
+
   //update nodes - works if node id is sequential
   old_nodes[nodeID * 3] = x;
   old_nodes[nodeID * 3 + 1] = y
   old_nodes[nodeID * 3 + 2] = z;
-  
+
   if(TWO_D_MODE) {
     old_nodes[nodeID * 3 + 2] = 0;
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
-  
+
   //update edges - TODO - how get id
   //var old_edges = network.children[1].geometry.getAttribute('position').array;
   //old_edges[nodeID * 6 - 6] = x;
@@ -456,7 +457,7 @@ function updateNodePosition(nodeID, x, y, z) {
   //network.children[1].geometry.attributes.position.needsUpdate = true;
 
   //network.children[2].geometry.attributes.position.needsUpdate = true;
-  
+
   window.renderer.render(window.scene, window.camera);
 }
 
@@ -467,16 +468,16 @@ function removeNode(nodeID) {
     console.log("ERROR: wrong node id");
     return;
   }
-  
+
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   //var new_nodes = new Float32Array(old_nodes.length - 3);
   old_nodes[nodeID * 3] = NaN;
   old_nodes[nodeID * 3 + 1] = NaN;
   old_nodes[nodeID * 3 + 2] = NaN;
-  
+
   //TODO nimmt nur node object
   //graph.deleteNode();
-  
+
   network.children[0].geometry.attributes.position.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
 }
@@ -485,28 +486,28 @@ function colorSingleNode(nodeID, hexColor) {
   if(!graph.hasNodeID(nodeID)) {
     console.log("ERROR: wrong node id");
     return;
-  } 
-  
+  }
+
   var newColor = new THREE.Color(hexColor);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
-  
+
   nodeColors[nodeID * 3] = newColor.r;
   nodeColors[nodeID * 3 + 1] = newColor.g;
   nodeColors[nodeID * 3 + 2] = newColor.b;
   network.children[0].geometry.attributes.color.needsUpdate = true;
-  
+
   window.renderer.render(window.scene, window.camera);
 }
 
-function colorAllNodes(hexColor) {  
+function colorAllNodes(hexColor) {
   if(hexColor == 0) {
-    var randomIndex = Math.floor((Math.random() * randomColors.length)); 
+    var randomIndex = Math.floor((Math.random() * randomColors.length));
     hexColor = randomColors[randomIndex];
   }
-  
+
   var newColor = new THREE.Color(hexColor);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
-  
+
   for(var i = 0; i < nodeColors.length;) {
     nodeColors[i] = newColor.r;
     nodeColors[i + 1] = newColor.g;
@@ -531,17 +532,24 @@ function colorSingleEdge() {
 function colorAllEdges() {
 }
 
-function mutilateGraph() {  
+function mutilateGraph() {
   var nodes_len = network.children[0].geometry.getAttribute('position').array.length;
 
   if(INDEX < nodes_len) {
-    removeNode(INDEX);
-    INDEX++;
+    var i = 0;
+    while (INDEX < nodes_len && i++ < NR_MUTILATE) {
+      removeNode(INDEX);
+      INDEX++;
+    }
   }
   else {
     return;
   }
   requestAnimationFrame(mutilateGraph);
+}
+
+function setNrMutilate(nr_mutilate) {
+  NR_MUTILATE = nr_mutilate;
 }
 
 if (window !== 'undefined') {
@@ -554,6 +562,7 @@ if (window !== 'undefined') {
     colorSingleEdge: colorSingleEdge,
     colorAllEdges: colorAllEdges,
     switchTo2D: switchTo2D,
-    switchTo3D: switchTo3D
+    switchTo3D: switchTo3D,
+    setNrMutilate: setNrMutilate
   }
 }

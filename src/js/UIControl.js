@@ -49,6 +49,12 @@ function FShandler( event ) {
   }
 }
 
+function setAndUpdateNrMutilate() {
+  var val = document.querySelector("#nr_mutilate_per_frame").value;
+  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
+  window.$GV.setNrMutilate(val);
+}
+
 document.addEventListener("fullscreenchange", FShandler);
 document.addEventListener("webkitfullscreenchange", FShandler);
 document.addEventListener("mozfullscreenchange", FShandler);
