@@ -14,11 +14,11 @@
         <input id="input" class="button" type="file" onchange>
 
       <h3>Do something with the graph</h3>
-        <input id="renderButton" class="renderButton" value="Render" type="button" onclick><br/>        
-        <button class='zoomIn'>Zoom In</button> <br/>
-        <button class='zoomOut'>Zoom Out</button> <br/>
-        <button class='reset'>Reset</button> <br/>
-        <input id="mutilate" class="button" value="Mutilate Graph" type="button" onclick>
+        <input id="renderButton" value="Render Graph" type="button" onclick=renderGraph()><br/>
+        <input id="switch2DButton" value="Switch to 2D" type="button" onclick=switchTo2D()><br/>
+        <input id="switch3DButton" value="Switch to 3D" type="button" onclick=switchTo3D()><br/>
+        <input id="changeColorButton" value="Change node color of Graph" type="button" onclick=colorAllNodes(0)><br/>
+        <input id="mutilateButton" value="Mutilate Graph" type="button" onclick=mutilateGraph()>
           
         <h3>Information about the graph</h3>
         <div id="graphInfo"><ul>
