@@ -482,10 +482,6 @@ function removeNode(remove_node) {
 }
 
 function colorSingleNode(nodeID, hexColor) {
-  if(!graph.hasNodeID(nodeID)) {
-    console.log("ERROR: wrong node id");
-    return;
-  }
 
   var newColor = new THREE.Color(hexColor);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
@@ -572,18 +568,25 @@ function updateAllNodes() {
   }
   window.cnt = 0;
   requestAnimationFrame(updateRandomPostions);
-  
 }
 
 function updateRandomPostions() {
   var node_obj = graph.getNodes();
+  var old_nodes = network.children[0].geometry.getAttribute('position').array;
   for(node in node_obj) {
     var index = nodes_obj_idx[node];      
     node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - AVG_X;
     node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - AVG_Y;
     node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - AVG_Z;
-    updateNodePosition(node_obj[node]);
+    //updateNodePosition(node_obj[node]);
+
+    old_nodes[index] = node_obj[node].getFeature('coords').x;
+    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
+    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
   } 
+
+  network.children[0].geometry.attributes.position.needsUpdate = true;
+  window.renderer.render(window.scene, window.camera);
 
   if(window.cnt++ < 20) {
     requestAnimationFrame(updateRandomPostions);
