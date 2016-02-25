@@ -31,6 +31,10 @@ window.axis_z = new THREE.Vector3( 0, 0, 1 );
 var deltaDistance = 10; //distance to move
 var deltaRotation = 0.05; //rotation step
 var network = new THREE.Group();
+//var nodes_obj_idx = new Array();
+var nodes_obj_idx = new Object();
+var MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z = 
+    MAX_Z = AVG_X = AVG_Y = AVG_Z = 0;
 
 renderButton.onclick = function() {
   initGraph();
@@ -38,10 +42,10 @@ renderButton.onclick = function() {
 }
 
 function renderGraph() {
-  var MIN_X = MAX_X = nodes_obj[0].getFeature('coords').x,
-      MIN_Y = MAX_Y = nodes_obj[0].getFeature('coords').y,
-      MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z,
-      AVG_X = AVG_Y = AVG_Z = 0;
+  MIN_X = MAX_X = nodes_obj[0].getFeature('coords').x,
+  MIN_Y = MAX_Y = nodes_obj[0].getFeature('coords').y,
+  MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z,
+  AVG_X = AVG_Y = AVG_Z = 0;
 
   for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
@@ -87,6 +91,13 @@ function renderGraph() {
     nodeColors[i*3] = nodeColor.r;
     nodeColors[i*3 + 1] = nodeColor.g;
     nodeColors[i*3 + 2] = nodeColor.b;
+    
+    //id of node
+    //index of coordinates-array
+    //var new_element = {id: node, index: i};
+    //nodes_obj_idx.push(new_element);
+    //node -> id, i -> index
+    nodes_obj_idx[node]= i*3;
     i++;
   }
 
@@ -162,8 +173,6 @@ function renderGraph() {
     //requestAnimationFrame(render); // Call the render() function up to 60 times per second (i.e., up to 60 animation frames per second).
   };
   window.requestAnimationFrame(updateGraph);
-
-
 
   window.addEventListener('keypress', key, false);
   function key(event) {
@@ -388,12 +397,7 @@ function switchTo3D() {
 
 //TODO: add/remove node graphinius
 //add node to graph but without an edge
-function addNode(x, y, z) {
-
-  if(x < 0 || y < 0 || z < 0) {
-    console.log("ERROR: coordinates are negative");
-    return;
-  }
+function addNode(new_node) {
 
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_colors = network.children[0].geometry.getAttribute('color').array;
@@ -406,9 +410,9 @@ function addNode(x, y, z) {
     new_colors[i] = old_colors[i];
   }
 
-  new_nodes[new_nodes.length - 3] = x;
-  new_nodes[new_nodes.length - 2] = y;
-  new_nodes[new_nodes.length - 1] = z;
+  new_nodes[new_nodes.length - 3] = new_node.getFeature('coords').x;
+  new_nodes[new_nodes.length - 2] = new_node.getFeature('coords').y;
+  new_nodes[new_nodes.length - 1] = new_node.getFeature('coords').z;
   new_colors[new_nodes.length - 3] = new_color.r;
   new_colors[new_nodes.length - 2] = new_color.g;
   new_colors[new_nodes.length - 1] = new_color.b;
@@ -417,7 +421,10 @@ function addNode(x, y, z) {
     new_nodes[new_nodes.length - 1] = 0;
   }
 
-  graph.addNode(new_nodes.length - 1);
+  //index: last element of old_nodes array
+  //var new_element = {id: new_node.getID(), index: old_nodes.length};
+  //nodes_obj_idx.push(new_element);
+  nodes_obj_idx[new_node.getID()] = Object.keys(nodes_obj_idx).length;
 
   network.children[0].geometry.addAttribute('position', new THREE.BufferAttribute(new_nodes, 3));
   network.children[0].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
@@ -428,21 +435,18 @@ function addNode(x, y, z) {
 
 //TODO update edges
 //update node and edge position
-function updateNodePosition(nodeID, x, y, z) {
+function updateNodePosition(update_node) {
 
-  if(!graph.hasNodeID(nodeID)) {
-    console.log("ERROR: wrong node id");
-    return;
-  }
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
-
-  //update nodes - works if node id is sequential
-  old_nodes[nodeID * 3] = x;
-  old_nodes[nodeID * 3 + 1] = y
-  old_nodes[nodeID * 3 + 2] = z;
+  var node_id = update_node.getID();
+  var index = nodes_obj_idx[node_id];
+  
+  old_nodes[index] = update_node.getFeature('coords').x;
+  old_nodes[index + 1] = update_node.getFeature('coords').y;
+  old_nodes[index + 2] = update_node.getFeature('coords').z;
 
   if(TWO_D_MODE) {
-    old_nodes[nodeID * 3 + 2] = 0;
+    old_nodes[index + 2] = 0;
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
@@ -463,20 +467,15 @@ function updateNodePosition(nodeID, x, y, z) {
 
 //TODO remove edges
 //remove node and their edges
-function removeNode(nodeID) {
-  if(!graph.hasNodeID(nodeID)) {
-    console.log("ERROR: wrong node id");
-    return;
-  }
+function removeNode(remove_node) {
+  
+  var node_id = remove_node.getID();
+  var index = nodes_obj_idx[node_id];
 
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
-  //var new_nodes = new Float32Array(old_nodes.length - 3);
-  old_nodes[nodeID * 3] = NaN;
-  old_nodes[nodeID * 3 + 1] = NaN;
-  old_nodes[nodeID * 3 + 2] = NaN;
-
-  //TODO nimmt nur node object
-  //graph.deleteNode();
+  old_nodes[index] = NaN;
+  old_nodes[index + 1] = NaN;
+  old_nodes[index + 2] = NaN;
 
   network.children[0].geometry.attributes.position.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
@@ -550,6 +549,45 @@ function mutilateGraph() {
 
 function setNrMutilate(nr_mutilate) {
   NR_MUTILATE = nr_mutilate;
+}
+
+function addRandomNodes() {
+  var x_ = Math.floor((Math.random() * MAX_X) - AVG_X),
+      y_ = Math.floor((Math.random() * MAX_Y) - AVG_Y),
+      z_ = Math.floor((Math.random() * MAX_Z) - AVG_Z),
+      idx = Object.keys(nodes_obj_idx).length;
+  var new_node = graph.addNode(idx, {coords: {x: x_, y: y_, z:z_}});
+  addNode(new_node);
+}
+
+function updateAllNodes() {
+  window.old_coordinates = new Float32Array( graph.nrNodes() * 3 );
+  var node_obj = graph.getNodes();
+  var i = 0;
+  for(node in nodes_obj) {
+    old_coordinates[i] = node_obj[node].getFeature('coords').x;
+    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
+    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+    i += 3;
+  }
+  window.cnt = 0;
+  requestAnimationFrame(updateRandomPostions);
+  
+}
+
+function updateRandomPostions() {
+  var node_obj = graph.getNodes();
+  for(node in node_obj) {
+    var index = nodes_obj_idx[node];      
+    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - AVG_X;
+    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - AVG_Y;
+    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - AVG_Z;
+    updateNodePosition(node_obj[node]);
+  } 
+
+  if(window.cnt++ < 20) {
+    requestAnimationFrame(updateRandomPostions);
+  }
 }
 
 if (window !== 'undefined') {
