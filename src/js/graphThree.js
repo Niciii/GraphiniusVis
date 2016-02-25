@@ -391,14 +391,12 @@ function switchTo3D() {
     i += 6;
   }
   network.children[2].geometry.attributes.position.needsUpdate = true;
-
   window.renderer.render(window.scene, window.camera);
 }
 
-//TODO: add/remove node graphinius
 //add node to graph but without an edge
 function addNode(new_node) {
-
+  
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_colors = network.children[0].geometry.getAttribute('color').array;
   var new_nodes = new Float32Array(old_nodes.length + 3);
@@ -467,8 +465,7 @@ function updateNodePosition(update_node) {
 
 //TODO remove edges
 //remove node and their edges
-function removeNode(remove_node) {
-  
+function removeNode(remove_node) {  
   var node_id = remove_node.getID();
   var index = nodes_obj_idx[node_id];
 
@@ -481,14 +478,15 @@ function removeNode(remove_node) {
   window.renderer.render(window.scene, window.camera);
 }
 
-function colorSingleNode(nodeID, hexColor) {
-
+function colorSingleNode(node, hexColor) {
   var newColor = new THREE.Color(hexColor);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
-  nodeColors[nodeID * 3] = newColor.r;
-  nodeColors[nodeID * 3 + 1] = newColor.g;
-  nodeColors[nodeID * 3 + 2] = newColor.b;
+  var node_id = remove_node.getID();
+  var index = nodes_obj_idx[node_id];
+  nodeColors[index] = newColor.r;
+  nodeColors[index + 1] = newColor.g;
+  nodeColors[index + 2] = newColor.b;
   network.children[0].geometry.attributes.color.needsUpdate = true;
 
   window.renderer.render(window.scene, window.camera);
@@ -513,7 +511,8 @@ function colorAllNodes(hexColor) {
   window.renderer.render(window.scene, window.camera);
 }
 
-function addEdge() {
+function addEdge(nodeFrom, nodeTo) {
+  
   window.renderer.render(window.scene, window.camera);
 }
 
@@ -524,7 +523,32 @@ function removeEdge() {
 function colorSingleEdge() {
 }
 
-function colorAllEdges() {
+function colorAllEdges(hexColor) {
+  if(hexColor == 0) {
+    var randomIndex = Math.floor((Math.random() * randomColors.length));
+    hexColor = randomColors[randomIndex];
+  }
+
+  var newColor = new THREE.Color(hexColor);
+  var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
+  var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
+
+  for(var i = 0; i < edgeColors1.length;) {
+    edgeColors1[i] = newColor.r;
+    edgeColors1[i + 1] = newColor.g;
+    edgeColors1[i + 2] = newColor.b;
+    i += 3;
+  }
+  for(var i = 0; i < edgeColors2.length;) {
+    edgeColors2[i] = newColor.r;
+    edgeColors2[i + 1] = newColor.g;
+    edgeColors2[i + 2] = newColor.b;
+    i += 3;
+  }
+  
+  network.children[1].geometry.attributes.color.needsUpdate = true;
+  network.children[2].geometry.attributes.color.needsUpdate = true;
+  window.renderer.render(window.scene, window.camera);
 }
 
 function mutilateGraph() {
@@ -556,7 +580,7 @@ function addRandomNodes() {
   addNode(new_node);
 }
 
-function updateAllNodes() {
+function updateAll() {
   window.old_coordinates = new Float32Array( graph.nrNodes() * 3 );
   var node_obj = graph.getNodes();
   var i = 0;
@@ -573,23 +597,78 @@ function updateAllNodes() {
 function updateRandomPostions() {
   var node_obj = graph.getNodes();
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
+  var old_edges = network.children[1].geometry.getAttribute('position').array;
   for(node in node_obj) {
     var index = nodes_obj_idx[node];      
     node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - AVG_X;
     node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - AVG_Y;
     node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - AVG_Z;
-    //updateNodePosition(node_obj[node]);
 
     old_nodes[index] = node_obj[node].getFeature('coords').x;
     old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
     old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
   } 
+  
+  var und_edges = graph.getUndEdges();
+  var dir_edges = graph.getDirEdges();
+  [und_edges, dir_edges].forEach(function(edges) {
+    var i = 0;
+    for (var edge_index in edges) {
+      var edge = edges[edge_index];
+      var node_a_id = edge._node_a.getID();
+      var node_b_id = edge._node_b.getID();
 
+      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
+      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
+      old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
+      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
+      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
+      old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
+      i += 6;
+    }
+  });
+  
   network.children[0].geometry.attributes.position.needsUpdate = true;
+  network.children[1].geometry.attributes.position.needsUpdate = true;
+  network.children[2].geometry.attributes.position.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
 
-  if(window.cnt++ < 20) {
+  if(window.cnt++ < 100) {
     requestAnimationFrame(updateRandomPostions);
+  }
+  else {
+    var i = 0;
+    for(node in node_obj) {
+      var index = nodes_obj_idx[node];
+      node_obj[node].getFeature('coords').x = window.old_coordinates[i];
+      node_obj[node].getFeature('coords').y = window.old_coordinates[i + 1];
+      node_obj[node].getFeature('coords').z = window.old_coordinates[i + 2];
+      i += 3;
+      
+      old_nodes[index] = node_obj[node].getFeature('coords').x - AVG_X;
+      old_nodes[index + 1] = node_obj[node].getFeature('coords').y - AVG_Y;
+      old_nodes[index + 2] = node_obj[node].getFeature('coords').z - AVG_Z;
+    }
+    [und_edges, dir_edges].forEach(function(edges) {
+      var i = 0;
+      for (var edge_index in edges) {
+        var edge = edges[edge_index];
+        var node_a_id = edge._node_a.getID();
+        var node_b_id = edge._node_b.getID();
+
+        old_edges[i] = node_obj[node_a_id].getFeature('coords').x - AVG_X;
+        old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y - AVG_Y;
+        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z - AVG_Z;
+        old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - AVG_X;
+        old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - AVG_Y;
+        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - AVG_Z;
+        i += 6;
+      }
+    });
+    network.children[0].geometry.attributes.position.needsUpdate = true;
+    network.children[1].geometry.attributes.position.needsUpdate = true;
+    network.children[2].geometry.attributes.position.needsUpdate = true;
+    window.renderer.render(window.scene, window.camera);
   }
 }
 
