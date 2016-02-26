@@ -33,6 +33,7 @@ var deltaRotation = 0.05; //rotation step
 var network = new THREE.Group();
 //var nodes_obj_idx = new Array();
 var nodes_obj_idx = new Object();
+var edges_obj_idx = new Object();
 var MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z = 
     MAX_Z = AVG_X = AVG_Y = AVG_Z = 0;
 
@@ -144,6 +145,8 @@ function renderGraph() {
       nodeColors[i * 6 + 3] = nodeColor.r;
       nodeColors[i * 6 + 4] = nodeColor.g;
       nodeColors[i * 6 + 5] = nodeColor.b;
+      
+      edges_obj_idx[edge_index] = i*6;
       i++;
     }
 
@@ -394,7 +397,7 @@ function switchTo3D() {
   window.renderer.render(window.scene, window.camera);
 }
 
-//add node to graph but without an edge
+//add node to graph but without edges
 function addNode(new_node) {
   
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
@@ -431,14 +434,14 @@ function addNode(new_node) {
   window.renderer.render(window.scene, window.camera);
 }
 
-//TODO update edges
 //update node and edge position
 function updateNodePosition(update_node) {
-
-  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+  
   var node_id = update_node.getID();
   var index = nodes_obj_idx[node_id];
   
+  //update nodes
+  var old_nodes = network.children[0].geometry.getAttribute('position').array;
   old_nodes[index] = update_node.getFeature('coords').x;
   old_nodes[index + 1] = update_node.getFeature('coords').y;
   old_nodes[index + 2] = update_node.getFeature('coords').z;
@@ -447,25 +450,37 @@ function updateNodePosition(update_node) {
     old_nodes[index + 2] = 0;
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
-
-  //update edges - TODO - how get id
-  //var old_edges = network.children[1].geometry.getAttribute('position').array;
-  //old_edges[nodeID * 6 - 6] = x;
-  //old_edges[nodeID * 6 - 5] = x;
-  //old_edges[nodeID * 6 - 3] = x;
-  //old_edges[nodeID * 6 - 3] = x;
-  //old_edges[nodeID * 6 - 2] = x;
-  //old_edges[nodeID * 6 - 1] = x;
-  //network.children[1].geometry.attributes.position.needsUpdate = true;
-
+  
+  //update edges
+  var old_edges = network.children[1].geometry.getAttribute('position').array;  
+  var und_edges = update_node.undEdges();   
+  for(var i = 0; i < Object.keys(und_edges).length; i++) {
+    var edge = und_edges[Object.keys(update_node.undEdges())[i]];
+    
+    //update from-node
+    var edge_index = edges_obj_idx[edge.getID()];
+    if(edge._node_a === update_node) {            
+      old_edges[edge_index] = update_node.getFeature('coords').x;
+      old_edges[edge_index + 1] = update_node.getFeature('coords').y;
+      old_edges[edge_index + 2] = update_node.getFeature('coords').z;
+    }
+    //update to-node
+    else if(edge._node_b === update_node) {
+      old_edges[edge_index + 3] = update_node.getFeature('coords').x;
+      old_edges[edge_index + 4] = update_node.getFeature('coords').y;
+      old_edges[edge_index + 5] = update_node.getFeature('coords').z;
+    }
+  }
+  network.children[1].geometry.attributes.position.needsUpdate = true;
+  //TODO for directed and undirected edges    
   //network.children[2].geometry.attributes.position.needsUpdate = true;
-
   window.renderer.render(window.scene, window.camera);
 }
 
-//TODO remove edges
 //remove node and their edges
 function removeNode(remove_node) {  
+  //remove node
+  console.log(remove_node);
   var node_id = remove_node.getID();
   var index = nodes_obj_idx[node_id];
 
@@ -473,8 +488,26 @@ function removeNode(remove_node) {
   old_nodes[index] = NaN;
   old_nodes[index + 1] = NaN;
   old_nodes[index + 2] = NaN;
-
-  network.children[0].geometry.attributes.position.needsUpdate = true;
+  
+  //remove edge
+  var old_edges = network.children[1].geometry.getAttribute('position').array;
+  var und_edges = remove_node.undEdges();   
+  for(var i = 0; i < Object.keys(und_edges).length; i++) {
+    var edge = und_edges[Object.keys(remove_node.undEdges())[i]];
+    
+    //update from-node
+    var edge_index = edges_obj_idx[edge.getID()];
+    old_edges[edge_index] = NaN;
+    old_edges[edge_index + 1] = NaN;
+    old_edges[edge_index + 2] = NaN;
+    old_edges[edge_index + 3] = NaN;
+    old_edges[edge_index + 4] = NaN;
+    old_edges[edge_index + 5] = NaN;
+  }
+  network.children[0].geometry.attributes.position.needsUpdate = true;  
+  network.children[1].geometry.attributes.position.needsUpdate = true;
+  //TODO for directed and undirected edges
+  //network.children[2].geometry.attributes.position.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
 }
 
@@ -516,10 +549,6 @@ function addEdge(nodeFrom, nodeTo) {
   window.renderer.render(window.scene, window.camera);
 }
 
-function removeEdge() {
-  window.renderer.render(window.scene, window.camera);
-}
-
 function colorSingleEdge() {
 }
 
@@ -552,19 +581,28 @@ function colorAllEdges(hexColor) {
 }
 
 function mutilateGraph() {
-  var nodes_len = network.children[0].geometry.getAttribute('position').array.length;
+  var nodes_obj = window.graph.getNodes();
 
-  if(INDEX < nodes_len) {
-    var i = 0;
-    while (INDEX < nodes_len && i++ < NR_MUTILATE) {
-      removeNode(INDEX);
-      INDEX++;
-    }
+  if(INDEX < Object.keys(nodes_obj).length) {
+    console.log(INDEX);
+    removeNode(nodes_obj[INDEX]);
+    INDEX++;
   }
   else {
     return;
   }
   requestAnimationFrame(mutilateGraph);
+
+  //if(INDEX < nodes_len) {
+    ////var i = 0;
+    ////while (INDEX < nodes_len && i++ < NR_MUTILATE) {
+      ////removeNode(INDEX);
+    ////}
+  //}
+  //else {
+    //return;
+  //}
+  //requestAnimationFrame(mutilateGraph);
 }
 
 function setNrMutilate(nr_mutilate) {
