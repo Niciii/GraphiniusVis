@@ -17,7 +17,8 @@ var ZOOM_FACTOR = 0.05,
     HEIGHT = 900,
     TWO_D_MODE = 0,
     INDEX = 0,
-    NR_MUTILATE = 1;
+    NR_MUTILATE = 1,
+    DEFAULT_NODE_SIZE = 6;
 
 var randomColors = [
   0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
@@ -34,7 +35,7 @@ var network = new THREE.Group();
 //var nodes_obj_idx = new Array();
 var nodes_obj_idx = new Object();
 var edges_obj_idx = new Object();
-var MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z = 
+var MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z =
     MAX_Z = AVG_X = AVG_Y = AVG_Z = 0;
 
 renderButton.onclick = function() {
@@ -92,7 +93,7 @@ function renderGraph() {
     nodeColors[i*3] = nodeColor.r;
     nodeColors[i*3 + 1] = nodeColor.g;
     nodeColors[i*3 + 2] = nodeColor.b;
-    
+
     //id of node
     //index of coordinates-array
     //var new_element = {id: node, index: i};
@@ -108,7 +109,7 @@ function renderGraph() {
 
   var material = new THREE.PointsMaterial({
     vertexColors: THREE.VertexColors,
-    size: 10
+    size: DEFAULT_NODE_SIZE
   });
 
   particles = new THREE.Points( geometry, material );
@@ -145,7 +146,7 @@ function renderGraph() {
       nodeColors[i * 6 + 3] = nodeColor.r;
       nodeColors[i * 6 + 4] = nodeColor.g;
       nodeColors[i * 6 + 5] = nodeColor.b;
-      
+
       edges_obj_idx[edge_index] = i*6;
       i++;
     }
@@ -154,7 +155,7 @@ function renderGraph() {
     geometryLine.addAttribute('position', new THREE.BufferAttribute(positionLine, 3));
     geometryLine.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
     //geometry.computeBoundingSphere();
-    var line = new THREE.Line( geometryLine, materialLine );
+    var line = new THREE.LineSegments( geometryLine, materialLine );
     network.add(line);
   });
 
@@ -399,7 +400,7 @@ function switchTo3D() {
 
 //add node to graph but without edges
 function addNode(new_node) {
-  
+
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_colors = network.children[0].geometry.getAttribute('color').array;
   var new_nodes = new Float32Array(old_nodes.length + 3);
@@ -436,10 +437,10 @@ function addNode(new_node) {
 
 //update node and edge position
 function updateNodePosition(update_node) {
-  
+
   var node_id = update_node.getID();
   var index = nodes_obj_idx[node_id];
-  
+
   //update nodes
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   old_nodes[index] = update_node.getFeature('coords').x;
@@ -450,16 +451,16 @@ function updateNodePosition(update_node) {
     old_nodes[index + 2] = 0;
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
-  
+
   //update edges
-  var old_edges = network.children[1].geometry.getAttribute('position').array;  
-  var und_edges = update_node.undEdges();   
+  var old_edges = network.children[1].geometry.getAttribute('position').array;
+  var und_edges = update_node.undEdges();
   for(var i = 0; i < Object.keys(und_edges).length; i++) {
     var edge = und_edges[Object.keys(update_node.undEdges())[i]];
-    
+
     //update from-node
     var edge_index = edges_obj_idx[edge.getID()];
-    if(edge._node_a === update_node) {            
+    if(edge._node_a === update_node) {
       old_edges[edge_index] = update_node.getFeature('coords').x;
       old_edges[edge_index + 1] = update_node.getFeature('coords').y;
       old_edges[edge_index + 2] = update_node.getFeature('coords').z;
@@ -472,13 +473,13 @@ function updateNodePosition(update_node) {
     }
   }
   network.children[1].geometry.attributes.position.needsUpdate = true;
-  //TODO for directed and undirected edges    
+  //TODO for directed and undirected edges
   //network.children[2].geometry.attributes.position.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
 }
 
 //remove node and their edges
-function removeNode(remove_node) {  
+function removeNode(remove_node) {
   //remove node
   console.log(remove_node);
   var node_id = remove_node.getID();
@@ -488,13 +489,13 @@ function removeNode(remove_node) {
   old_nodes[index] = NaN;
   old_nodes[index + 1] = NaN;
   old_nodes[index + 2] = NaN;
-  
+
   //remove edge
   var old_edges = network.children[1].geometry.getAttribute('position').array;
-  var und_edges = remove_node.undEdges();   
+  var und_edges = remove_node.undEdges();
   for(var i = 0; i < Object.keys(und_edges).length; i++) {
     var edge = und_edges[Object.keys(remove_node.undEdges())[i]];
-    
+
     //update from-node
     var edge_index = edges_obj_idx[edge.getID()];
     old_edges[edge_index] = NaN;
@@ -504,7 +505,7 @@ function removeNode(remove_node) {
     old_edges[edge_index + 4] = NaN;
     old_edges[edge_index + 5] = NaN;
   }
-  network.children[0].geometry.attributes.position.needsUpdate = true;  
+  network.children[0].geometry.attributes.position.needsUpdate = true;
   network.children[1].geometry.attributes.position.needsUpdate = true;
   //TODO for directed and undirected edges
   //network.children[2].geometry.attributes.position.needsUpdate = true;
@@ -545,7 +546,7 @@ function colorAllNodes(hexColor) {
 }
 
 function addEdge(nodeFrom, nodeTo) {
-  
+
   window.renderer.render(window.scene, window.camera);
 }
 
@@ -574,7 +575,7 @@ function colorAllEdges(hexColor) {
     edgeColors2[i + 2] = newColor.b;
     i += 3;
   }
-  
+
   network.children[1].geometry.attributes.color.needsUpdate = true;
   network.children[2].geometry.attributes.color.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
@@ -637,7 +638,7 @@ function updateRandomPostions() {
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_edges = network.children[1].geometry.getAttribute('position').array;
   for(node in node_obj) {
-    var index = nodes_obj_idx[node];      
+    var index = nodes_obj_idx[node];
     node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - AVG_X;
     node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - AVG_Y;
     node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - AVG_Z;
@@ -645,8 +646,8 @@ function updateRandomPostions() {
     old_nodes[index] = node_obj[node].getFeature('coords').x;
     old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
     old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
-  } 
-  
+  }
+
   var und_edges = graph.getUndEdges();
   var dir_edges = graph.getDirEdges();
   [und_edges, dir_edges].forEach(function(edges) {
@@ -665,7 +666,7 @@ function updateRandomPostions() {
       i += 6;
     }
   });
-  
+
   network.children[0].geometry.attributes.position.needsUpdate = true;
   network.children[1].geometry.attributes.position.needsUpdate = true;
   network.children[2].geometry.attributes.position.needsUpdate = true;
@@ -682,7 +683,7 @@ function updateRandomPostions() {
       node_obj[node].getFeature('coords').y = window.old_coordinates[i + 1];
       node_obj[node].getFeature('coords').z = window.old_coordinates[i + 2];
       i += 3;
-      
+
       old_nodes[index] = node_obj[node].getFeature('coords').x - AVG_X;
       old_nodes[index + 1] = node_obj[node].getFeature('coords').y - AVG_Y;
       old_nodes[index + 2] = node_obj[node].getFeature('coords').z - AVG_Z;
