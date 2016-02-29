@@ -90,9 +90,14 @@ function renderGraph() {
     vertices[i*3 + 1] = y - AVG_Y;
     vertices[i*3 + 2] = z - AVG_Z;
 
-    nodeColors[i*3] = nodeColor.r;
-    nodeColors[i*3 + 1] = nodeColor.g;
-    nodeColors[i*3 + 2] = nodeColor.b;
+    // Trying to set original color
+    nodeColors[i*3] = nodes_obj[node].getFeature('color').r/256.0;
+    nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
+    nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
+
+    // nodeColors[i*3] = nodeColor.r;
+    // nodeColors[i*3 + 1] = nodeColor.g;
+    // nodeColors[i*3 + 2] = nodeColor.b;
 
     //id of node
     //index of coordinates-array
@@ -126,7 +131,7 @@ function renderGraph() {
   [und_edges, dir_edges].forEach(function(edges) {
     var i = 0;
     var positionLine = new Float32Array(Object.keys(edges).length * 6); //2 vertices * 3 xyz
-    var nodeColors = new Float32Array( positionLine.length);
+    var lineColors = new Float32Array( positionLine.length);
     var nodeColor = new THREE.Color(0x81cf28);
     for (var edge_index in edges) {
       var edge = edges[edge_index];
@@ -140,12 +145,12 @@ function renderGraph() {
       positionLine[i * 6 + 4] = nodes_obj[node_b_id].getFeature('coords').y - AVG_Y;
       positionLine[i * 6 + 5] = nodes_obj[node_b_id].getFeature('coords').z - AVG_Z;
 
-      nodeColors[i * 6] = nodeColor.r;
-      nodeColors[i * 6 + 1] = nodeColor.g;
-      nodeColors[i * 6 + 2] = nodeColor.b;
-      nodeColors[i * 6 + 3] = nodeColor.r;
-      nodeColors[i * 6 + 4] = nodeColor.g;
-      nodeColors[i * 6 + 5] = nodeColor.b;
+      lineColors[i * 6] = nodes_obj[node_a_id].getFeature('color').r/256.0;
+      lineColors[i * 6 + 1] = nodes_obj[node_a_id].getFeature('color').g/256.0;
+      lineColors[i * 6 + 2] = nodes_obj[node_a_id].getFeature('color').b/256.0;
+      lineColors[i * 6 + 3] = nodes_obj[node_b_id].getFeature('color').r/256.0;
+      lineColors[i * 6 + 4] = nodes_obj[node_b_id].getFeature('color').g/256.0;
+      lineColors[i * 6 + 5] = nodes_obj[node_b_id].getFeature('color').b/256.0;
 
       edges_obj_idx[edge_index] = i*6;
       i++;
@@ -153,7 +158,7 @@ function renderGraph() {
 
     var geometryLine = new THREE.BufferGeometry();
     geometryLine.addAttribute('position', new THREE.BufferAttribute(positionLine, 3));
-    geometryLine.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
+    geometryLine.addAttribute('color', new THREE.BufferAttribute( lineColors, 3));
     //geometry.computeBoundingSphere();
     var line = new THREE.LineSegments( geometryLine, materialLine );
     network.add(line);
@@ -582,28 +587,29 @@ function colorAllEdges(hexColor) {
 }
 
 function mutilateGraph() {
-  var nodes_obj = window.graph.getNodes();
+  var nodes_obj = window.graph.getNodes(),
+      nodes_len = Object.keys(nodes_obj).length;
 
-  if(INDEX < Object.keys(nodes_obj).length) {
-    console.log(INDEX);
-    removeNode(nodes_obj[INDEX]);
-    INDEX++;
+  // if(INDEX < nodes_len) {
+  //   console.log(INDEX);
+  //   removeNode(nodes_obj[INDEX]);
+  //   INDEX++;
+  // }
+  // else {
+  //   return;
+  // }
+  // requestAnimationFrame(mutilateGraph);
+
+  if(INDEX < nodes_len) {
+    var i = 0;
+    while (INDEX < nodes_len && i++ < NR_MUTILATE) {
+      removeNode(nodes_obj[INDEX++]);
+    }
   }
   else {
     return;
   }
   requestAnimationFrame(mutilateGraph);
-
-  //if(INDEX < nodes_len) {
-    ////var i = 0;
-    ////while (INDEX < nodes_len && i++ < NR_MUTILATE) {
-      ////removeNode(INDEX);
-    ////}
-  //}
-  //else {
-    //return;
-  //}
-  //requestAnimationFrame(mutilateGraph);
 }
 
 function setNrMutilate(nr_mutilate) {
