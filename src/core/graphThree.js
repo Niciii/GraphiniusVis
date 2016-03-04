@@ -18,7 +18,9 @@ var ZOOM_FACTOR = 0.05,
     TWO_D_MODE = 0,
     INDEX = 0,
     NR_MUTILATE = 1,
-    DEFAULT_NODE_SIZE = 6;
+    DEFAULT_NODE_SIZE = 6,
+    MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z =
+    MAX_Z = AVG_X = AVG_Y = AVG_Z = 0;
 
 var randomColors = [
   0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
@@ -26,17 +28,20 @@ var randomColors = [
   0x8fd621, 0x2d049b, 0x873bd3, 0x85835f
 ];
 
-window.axis_x = new THREE.Vector3( 1, 0, 0 );
-window.axis_y = new THREE.Vector3( 0, 1, 0 );
-window.axis_z = new THREE.Vector3( 0, 0, 1 );
-var deltaDistance = 10; //distance to move
-var deltaRotation = 0.05; //rotation step
-var network = new THREE.Group();
-//var nodes_obj_idx = new Array();
-var nodes_obj_idx = new Object();
-var edges_obj_idx = new Object();
-var MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z =
-    MAX_Z = AVG_X = AVG_Y = AVG_Z = 0;
+var axis_x = new THREE.Vector3( 1, 0, 0 ),
+    axis_y = new THREE.Vector3( 0, 1, 0 ),
+    axis_z = new THREE.Vector3( 0, 0, 1 ),
+    deltaDistance = 10, //distance to move
+    deltaRotation = 0.05, //rotation step
+    network = new THREE.Group(),
+    nodes_obj_idx = new Object(),
+    edges_obj_idx = new Object(),
+    raycaster = new THREE.Raycaster(),
+    mouse = new THREE.Vector2(),
+    camera  = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000),
+    scene = new THREE.Scene(),
+    renderer = new THREE.WebGLRenderer({ antialias: false }),
+    particles = null;
 
 renderButton.onclick = function() {
   initGraph();
@@ -66,20 +71,15 @@ function renderGraph() {
   AVG_Y = (MAX_Y - MIN_Y) / 2;
   AVG_Z = (MAX_Z - MIN_Z) / 2;
 
-  window.scene = new THREE.Scene(); // Create a Three.js scene object.
-  window.camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 0.1, 1000); //TODO change to 0.1// Define the perspective camera's attributes.
-  window.renderer = new THREE.WebGLRenderer({ antialias: false }); //window.WebGLRenderingContext ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(); // Fallback to canvas renderer, if necessary.
-  renderer.setSize(WIDTH, HEIGHT); // Set the size of the WebGL viewport.
-  renderer.setClearColor( 0x000000, 1 );
-  //renderer.setPixelRatio( window.devicePixelRatio );
-  //renderer.gammaInput = true;
-	//renderer.gammaOutput = true;
+  renderer.setSize(WIDTH, HEIGHT); 
+  renderer.setClearColor(0x000000, 1);
+
   var element = document.getElementById("containerGraph");
-  element.appendChild(renderer.domElement); // Append the WebGL viewport to the DOM.
+  element.appendChild(renderer.domElement);
 
   var i = 0;
-  var vertices = new Float32Array( graph.nrNodes() * 3 );
-  var nodeColors = new Float32Array( graph.nrNodes() * 3);
+  var vertices = new Float32Array(graph.nrNodes() * 3);
+  var nodeColors = new Float32Array(graph.nrNodes() * 3);
   var nodeColor = new THREE.Color(0x003fff);
   for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
@@ -95,15 +95,6 @@ function renderGraph() {
     nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
     nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
 
-    // nodeColors[i*3] = nodeColor.r;
-    // nodeColors[i*3 + 1] = nodeColor.g;
-    // nodeColors[i*3 + 2] = nodeColor.b;
-
-    //id of node
-    //index of coordinates-array
-    //var new_element = {id: node, index: i};
-    //nodes_obj_idx.push(new_element);
-    //node -> id, i -> index
     nodes_obj_idx[node]= i*3;
     i++;
   }
@@ -117,14 +108,14 @@ function renderGraph() {
     size: DEFAULT_NODE_SIZE
   });
 
-  particles = new THREE.Points( geometry, material );
+  particles = new THREE.Points(geometry, material);
   network.add(particles);
 
   //EDGE
   var materialLine = new THREE.LineBasicMaterial({
     transparent : true,
     opacity: 0.5, //default is 1; range: 0.0 - 1.0
-    vertexColors: THREE.VertexColors  //color: 0x81cf28
+    vertexColors: THREE.VertexColors
     //linewidth: 1
   });
 
@@ -158,184 +149,219 @@ function renderGraph() {
 
     var geometryLine = new THREE.BufferGeometry();
     geometryLine.addAttribute('position', new THREE.BufferAttribute(positionLine, 3));
-    geometryLine.addAttribute('color', new THREE.BufferAttribute( lineColors, 3));
-    //geometry.computeBoundingSphere();
-    var line = new THREE.LineSegments( geometryLine, materialLine );
+    geometryLine.addAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+    var line = new THREE.LineSegments(geometryLine, materialLine);
     network.add(line);
   });
 
-  // network.translateX(-MAX_X/2);
-  // network.translateY(-MAX_Y/2);
-  // network.translateZ(-MAX_Z/2);
   scene.add(network);
   camera.position.z = Math.max(MAX_X, MAX_Y);
-  //camera.position.z = 500; // Move the camera away from the origin, down the positive z-axis.
-  //camera.lookat(new THREE.Vector3(0,0,0));
-
-  //The X axis is red. The Y axis is green. The Z axis is blue.
-  //var axisHelper = new THREE.AxisHelper( Math.max(MAX_X, Math.max(MAX_Y, MAX_Z)) );
-  //scene.add( axisHelper );
-  //network.applyMatrix(axisHelper.matrixWorld);
-
-  var updateGraph = function () {
-    renderer.render(scene, camera); // Each time we change the position of the cube object, we must re-render it.
-    //requestAnimationFrame(render); // Call the render() function up to 60 times per second (i.e., up to 60 animation frames per second).
-  };
   window.requestAnimationFrame(updateGraph);
+}
 
-  window.addEventListener('keypress', key, false);
-  function key(event) {
-    switch (event.charCode) {
-      case KEY_W: //zoom in
-        camera.position.y = camera.position.y - deltaDistance; break;
-        //network.translateY(deltaDistance); break;
-      case KEY_S: //zoom out
-        camera.position.y = camera.position.y + deltaDistance; break;
-        //network.translateY(-deltaDistance); break;
-      case KEY_A: //move left
-        camera.position.x = camera.position.x + deltaDistance; break;
-        //network.translateX(-deltaDistance); break;
-      case KEY_D: //move right
-        camera.position.x = camera.position.x - deltaDistance; break;
-        //network.translateX(deltaDistance); break;
-      case KEY_R:
-        network.translateZ(deltaDistance); break;
-      case KEY_F:
-        network.translateZ(-deltaDistance); break;
-
-      case KEY_X:
-        //network.rotation.x += deltaRotation; break;
-        network.rotateOnAxis(axis_x, deltaRotation);
-        axis_y.applyAxisAngle(axis_x, -deltaRotation);
-        // axis_z.applyAxisAngle(axis_x, -deltaRotation);
-        break;
-      case KEY_SX:
-        //network.rotation.x -= deltaRotation; break;
-        network.rotateOnAxis(axis_x, -deltaRotation);
-        axis_y.applyAxisAngle(axis_x, deltaRotation);
-        // axis_z.applyAxisAngle(axis_x, deltaRotation);
-        break;
-      case KEY_Y:
-        //network.rotation.y += deltaRotation; break;
-        network.rotateOnAxis(axis_y, deltaRotation);
-        axis_x.applyAxisAngle(axis_y, -deltaRotation);
-        // axis_z.applyAxisAngle(axis_y, -deltaRotation);
-        break;
-      case KEY_SY:
-        //network.rotation.y -= deltaRotation; break;
-        network.rotateOnAxis(axis_y, -deltaRotation);
-        axis_x.applyAxisAngle(axis_y, deltaRotation);
-        // axis_z.applyAxisAngle(axis_y, deltaRotation);
-        break;
-      case KEY_C:
-        //network.rotation.z += deltaRotation; break;
-        network.rotateOnAxis(axis_z, deltaRotation);
-        axis_x.applyAxisAngle(axis_z, -deltaRotation);
-        axis_y.applyAxisAngle(axis_z, -deltaRotation);
-        break;
-      case KEY_SC:
-        //network.rotation.z -= deltaRotation; break;
-        network.rotateOnAxis(axis_z, -deltaRotation);
-        axis_x.applyAxisAngle(axis_z, deltaRotation);
-        axis_y.applyAxisAngle(axis_z, deltaRotation);
-        break;
-      default:
-        break;
-    }
-    //camera.updateProjectionMatrix();
-    window.requestAnimationFrame(updateGraph);
+var updateGraph = function () {
+  // update the picking ray with the camera and mouse position
+  raycaster.setFromCamera( mouse, camera );
+  raycaster.params.Points.threshold = 15;
+  // calculate objects intersecting the picking ray
+  //TODO 
+  var test = new Array();
+  test.push(network.children[0]);
+  intersects = raycaster.intersectObjects(test); //network.children
+  //console.log(particles);
+  if ( intersects.length > 0 ) {
+    console.log("intersected objects");
+    console.log(intersects);
+    intersects[0].object.material.color.set( 0xe0f600 );
+    intersects[0].object.material.needsUpdate = true;
   }
+  
+  
+  //for ( var i = 0; i < intersects.length; i++ ) {
+    //intersects[ i ].object.material.color.set( 0xff0000 );
+  //}
+  
+  
+  //var intersects = raycaster.intersectObjects( scene.children );
 
-  //zoom in and out
-  window.addEventListener('mousewheel', mousewheel, false);
-  function mousewheel(event) {
-    //wheel down: negative value
-    //wheel up: positive value
-    if(event.shiftKey) {
-      if(event.wheelDelta < 0) {
-        network.rotateOnAxis(axis_y, -deltaRotation);
-        axis_x.applyAxisAngle(axis_y, deltaRotation);
-        // axis_z.applyAxisAngle(axis_y, deltaRotation);
-      }
-      else {
-        network.rotateOnAxis(axis_y, deltaRotation);
-        axis_x.applyAxisAngle(axis_y, -deltaRotation);
-        // axis_z.applyAxisAngle(axis_y, -deltaRotation);
-      }
+  //if ( intersects.length > 0 ) {
+    //if ( INTERSECTED != intersects[0].object ) {
+      //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke;
+         //console.log("> 0");
+      //}
+      //INTERSECTED = intersects[ 0 ].object;
+      ////INTERSECTED.material.program = programFill;
+    //}
+
+  //} else {
+    //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke; 
+      //console.log("< 0");
+    //}
+    //INTERSECTED = null;
+  //}
+  
+  renderer.render(scene, camera); 
+};
+
+window.addEventListener('click', mousedown, false);
+function mousedown(event) {
+
+  //var raycaster = new THREE.Raycaster(); // create once
+  //var mouse = new THREE.Vector2();
+
+  //event.preventDefault();
+
+  //mouse.x = ( event.clientX / WIDTH ) * 2 - 1; //renderer.domElement.width
+  //mouse.y = - ( event.clientY / HEIGHT ) * 2 + 1; //renderer.domElement.height
+
+  //// update the picking ray with the camera and mouse position
+  //raycaster.setFromCamera( mouse, camera );
+  //// calculate objects intersecting the picking ray
+  //var intersects = raycaster.intersectObjects( network.children[0].geometry.getAttribute('position').array );
+  //for ( var i = 0; i < intersects.length; i++ ) {
+    //intersects[ i ].object.material.color.set( 0xff0000 );
+  //}
+  ////console.log(nodes.children);
+  //updateGraph();
+}
+
+window.addEventListener('resize', windowResize, false);
+function windowResize() {
+  camera.aspect = WIDTH / HEIGHT;
+  camera.updateProjectionMatrix();
+  renderer.setSize(WIDTH, HEIGHT);
+}
+
+window.addEventListener('keypress', key, false);
+function key(event) {
+  switch (event.charCode) {
+    case KEY_W: //zoom in
+      camera.position.y = camera.position.y - deltaDistance; break;
+      //network.translateY(deltaDistance); break;
+    case KEY_S: //zoom out
+      camera.position.y = camera.position.y + deltaDistance; break;
+      //network.translateY(-deltaDistance); break;
+    case KEY_A: //move left
+      camera.position.x = camera.position.x + deltaDistance; break;
+      //network.translateX(-deltaDistance); break;
+    case KEY_D: //move right
+      camera.position.x = camera.position.x - deltaDistance; break;
+      //network.translateX(deltaDistance); break;
+    case KEY_R:
+      network.translateZ(deltaDistance); break;
+    case KEY_F:
+      network.translateZ(-deltaDistance); break;
+
+    case KEY_X:
+      //network.rotation.x += deltaRotation; break;
+      network.rotateOnAxis(axis_x, deltaRotation);
+      axis_y.applyAxisAngle(axis_x, -deltaRotation);
+      // axis_z.applyAxisAngle(axis_x, -deltaRotation);
+      break;
+    case KEY_SX:
+      //network.rotation.x -= deltaRotation; break;
+      network.rotateOnAxis(axis_x, -deltaRotation);
+      axis_y.applyAxisAngle(axis_x, deltaRotation);
+      // axis_z.applyAxisAngle(axis_x, deltaRotation);
+      break;
+    case KEY_Y:
+      //network.rotation.y += deltaRotation; break;
+      network.rotateOnAxis(axis_y, deltaRotation);
+      axis_x.applyAxisAngle(axis_y, -deltaRotation);
+      // axis_z.applyAxisAngle(axis_y, -deltaRotation);
+      break;
+    case KEY_SY:
+      //network.rotation.y -= deltaRotation; break;
+      network.rotateOnAxis(axis_y, -deltaRotation);
+      axis_x.applyAxisAngle(axis_y, deltaRotation);
+      // axis_z.applyAxisAngle(axis_y, deltaRotation);
+      break;
+    case KEY_C:
+      //network.rotation.z += deltaRotation; break;
+      network.rotateOnAxis(axis_z, deltaRotation);
+      axis_x.applyAxisAngle(axis_z, -deltaRotation);
+      axis_y.applyAxisAngle(axis_z, -deltaRotation);
+      break;
+    case KEY_SC:
+      //network.rotation.z -= deltaRotation; break;
+      network.rotateOnAxis(axis_z, -deltaRotation);
+      axis_x.applyAxisAngle(axis_z, deltaRotation);
+      axis_y.applyAxisAngle(axis_z, deltaRotation);
+      break;
+    default:
+      break;
+  }
+  //camera.updateProjectionMatrix();
+  window.requestAnimationFrame(updateGraph);
+}
+
+//zoom in and out
+window.addEventListener('mousewheel', mousewheel, false);
+function mousewheel(event) {
+  //wheel down: negative value
+  //wheel up: positive value
+  if(event.shiftKey) {
+    if(event.wheelDelta < 0) {
+      network.rotateOnAxis(axis_y, -deltaRotation);
+      axis_x.applyAxisAngle(axis_y, deltaRotation);
+      // axis_z.applyAxisAngle(axis_y, deltaRotation);
     }
     else {
-      camera.fov -= ZOOM_FACTOR * event.wheelDeltaY;
-      camera.fov = Math.max( Math.min( camera.fov, MAX_FOV ), MIN_FOV );
-      camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
+      network.rotateOnAxis(axis_y, deltaRotation);
+      axis_x.applyAxisAngle(axis_y, -deltaRotation);
+      // axis_z.applyAxisAngle(axis_y, -deltaRotation);
     }
-    window.requestAnimationFrame(updateGraph);
   }
+  else {
+    camera.fov -= ZOOM_FACTOR * event.wheelDeltaY;
+    camera.fov = Math.max( Math.min( camera.fov, MAX_FOV ), MIN_FOV );
+    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, WIDTH / HEIGHT, camera.near, camera.far);
+  }
+  window.requestAnimationFrame(updateGraph);
+}
 
-  document.addEventListener( 'mousemove', mouseMove, false );
-  function mouseMove(event) {
+window.addEventListener( 'mousemove', mouseMove, false );
+function mouseMove(event) {
 
-    if(event.shiftKey && event.which == 1) {
-      if(event.movementX > 0) {
-        network.rotateOnAxis(axis_z, deltaRotation);
-        axis_x.applyAxisAngle(axis_z, -deltaRotation);
-        axis_y.applyAxisAngle(axis_z, -deltaRotation);
-      }
-      else if(event.movementX < 0) {
-        network.rotateOnAxis(axis_z, -deltaRotation);
-        axis_x.applyAxisAngle(axis_z, deltaRotation);
-        axis_y.applyAxisAngle(axis_z, deltaRotation);
-      }
-      else if(event.movementY > 0) {
-        network.rotateOnAxis(axis_x, deltaRotation);
-        axis_y.applyAxisAngle(axis_x, -deltaRotation);
-        // axis_z.applyAxisAngle(axis_x, -deltaRotation);
-      }
-      else if(event.movementY < 0) {
-        network.rotateOnAxis(axis_x, -deltaRotation);
-        axis_y.applyAxisAngle(axis_x, deltaRotation);
-        // axis_z.applyAxisAngle(axis_x, deltaRotation);
-      }
+  if(event.shiftKey && event.which == 1) {
+    if(event.movementX > 0) {
+      network.rotateOnAxis(axis_z, deltaRotation);
+      axis_x.applyAxisAngle(axis_z, -deltaRotation);
+      axis_y.applyAxisAngle(axis_z, -deltaRotation);
     }
-    //left mouse button
-    else if(event.which == 1) {
-      var mouseX = event.clientX / WIDTH;
-      var mouseY = event.clientY / HEIGHT;
-      //movement in y: up is negative, down is positive
-      camera.position.x = camera.position.x - (mouseX * event.movementX);
-      camera.position.y = camera.position.y + (mouseY * event.movementY);
+    else if(event.movementX < 0) {
+      network.rotateOnAxis(axis_z, -deltaRotation);
+      axis_x.applyAxisAngle(axis_z, deltaRotation);
+      axis_y.applyAxisAngle(axis_z, deltaRotation);
     }
-
-    window.requestAnimationFrame(updateGraph);
+    else if(event.movementY > 0) {
+      network.rotateOnAxis(axis_x, deltaRotation);
+      axis_y.applyAxisAngle(axis_x, -deltaRotation);
+      // axis_z.applyAxisAngle(axis_x, -deltaRotation);
+    }
+    else if(event.movementY < 0) {
+      network.rotateOnAxis(axis_x, -deltaRotation);
+      axis_y.applyAxisAngle(axis_x, deltaRotation);
+      // axis_z.applyAxisAngle(axis_x, deltaRotation);
+    }
   }
-
-  window.addEventListener('click', mousedown, false);
-  function mousedown(event) {
-
-    //var raycaster = new THREE.Raycaster(); // create once
-    //var mouse = new THREE.Vector2();
-
-    //event.preventDefault();
-
-    //mouse.x = ( event.clientX / WIDTH ) * 2 - 1; //renderer.domElement.width
-    //mouse.y = - ( event.clientY / HEIGHT ) * 2 + 1; //renderer.domElement.height
-
-    //// update the picking ray with the camera and mouse position
-    //raycaster.setFromCamera( mouse, camera );
-    //// calculate objects intersecting the picking ray
-    //var intersects = raycaster.intersectObjects( nodes.children );
-    //for ( var i = 0; i < intersects.length; i++ ) {
-      //intersects[ i ].object.material.color.set( 0xff0000 );
-    //}
-    ////console.log(nodes.children);
-    //updateGraph();
+  //left mouse button
+  else if(event.which == 1) {
+    var mouseX = event.clientX / WIDTH;
+    var mouseY = event.clientY / HEIGHT;
+    //movement in y: up is negative, down is positive
+    camera.position.x = camera.position.x - (mouseX * event.movementX);
+    camera.position.y = camera.position.y + (mouseY * event.movementY);
   }
-
-  window.addEventListener('resize', windowResize, false);
-  function windowResize() {
-    camera.aspect = WIDTH / HEIGHT;
-    camera.updateProjectionMatrix();
-    renderer.setSize(WIDTH, HEIGHT);
-  }
+  
+  //raycaster
+  // calculate mouse position in normalized device coordinates
+  // (-1 to +1) for both components
+  event.preventDefault();
+  mouse.x = (event.clientX / WIDTH) * 2 - 1;
+  mouse.y = - (event.clientY / HEIGHT) * 2 + 1;
+  
+  window.requestAnimationFrame(updateGraph);
 }
 
 function switchTo2D() {
@@ -405,7 +431,6 @@ function switchTo3D() {
 
 //add node to graph but without edges
 function addNode(new_node) {
-
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
   var old_colors = network.children[0].geometry.getAttribute('color').array;
   var new_nodes = new Float32Array(old_nodes.length + 3);
@@ -431,7 +456,7 @@ function addNode(new_node) {
   //index: last element of old_nodes array
   //var new_element = {id: new_node.getID(), index: old_nodes.length};
   //nodes_obj_idx.push(new_element);
-  nodes_obj_idx[new_node.getID()] = Object.keys(nodes_obj_idx).length;
+  nodes_obj_idx[new_node.getID()] = old_nodes.length;//Object.keys(nodes_obj_idx).length;
 
   network.children[0].geometry.addAttribute('position', new THREE.BufferAttribute(new_nodes, 3));
   network.children[0].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
@@ -550,12 +575,63 @@ function colorAllNodes(hexColor) {
   window.renderer.render(window.scene, window.camera);
 }
 
-function addEdge(nodeFrom, nodeTo) {
+function addEdge(edge) {
+  var index = 1;
+  if(edge._directed) {
+    index = 2;
+  } 
 
+  var old_edges = network.children[index].geometry.getAttribute('position').array;
+  var old_colors = network.children[index].geometry.getAttribute('color').array;
+  var new_edges = new Float32Array(old_edges.length + 6); // 3 xyz-coordinate * 2 nodes
+  var new_colors = new Float32Array(old_colors.length + 6);
+  var new_color = new THREE.Color(0xff7373);
+  for(var i = 0; i < old_edges.length; i++) {
+    new_edges[i] = old_edges[i];
+    new_colors[i] = old_colors[i];
+  }
+  
+  new_edges[new_edges.length - 6] = edge._node_a.getFeature('coords').x;
+  new_edges[new_edges.length - 5] = edge._node_a.getFeature('coords').y;
+  new_edges[new_edges.length - 4] = edge._node_a.getFeature('coords').z;
+  new_edges[new_edges.length - 3] = edge._node_b.getFeature('coords').x;
+  new_edges[new_edges.length - 2] = edge._node_b.getFeature('coords').y;
+  new_edges[new_edges.length - 1] = edge._node_b.getFeature('coords').z;
+
+  new_colors[new_colors.length - 6] = new_color.r;
+  new_colors[new_colors.length - 5] = new_color.g;
+  new_colors[new_colors.length - 4] = new_color.b;
+  new_colors[new_colors.length - 3] = new_color.r;
+  new_colors[new_colors.length - 2] = new_color.g;
+  new_colors[new_colors.length - 1] = new_color.b;
+  
+  //network.children[index].geometry.removeAttribute ('position');
+  network.children[index].geometry.addAttribute('position', new THREE.BufferAttribute(new_edges, 3));
+  network.children[index].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
+  network.children[index].geometry.attributes.position.needsUpdate = true;
+  network.children[index].geometry.attributes.color.needsUpdate = true;
   window.renderer.render(window.scene, window.camera);
 }
 
-function colorSingleEdge() {
+function colorSingleEdge(edge, hexColor) {  
+  var new_color = new THREE.Color(hexColor);
+  var index = 1;
+  if(edge._directed) {
+    index = 2;
+  }
+  var edge_olors = network.children[index].geometry.getAttribute('color').array;
+  var edge_id = edge.getID();
+  var idx = edges_obj_idx[edge_id];
+  
+  edge_olors[idx] = new_color.r;
+  edge_olors[idx + 1] = new_color.g;
+  edge_olors[idx + 2] = new_color.b;
+  edge_olors[idx + 3] = new_color.r;
+  edge_olors[idx + 4] = new_color.g;
+  edge_olors[idx + 5] = new_color.b;
+    
+  network.children[index].geometry.attributes.color.needsUpdate = true;
+  window.renderer.render(window.scene, window.camera);
 }
 
 function colorAllEdges(hexColor) {
@@ -586,10 +662,20 @@ function colorAllEdges(hexColor) {
   window.renderer.render(window.scene, window.camera);
 }
 
-function mutilateGraph() {
+//TODO
+function mutilateGraph() {  
   var nodes_obj = window.graph.getNodes(),
       nodes_len = Object.keys(nodes_obj).length;
-
+  
+  //console.log(nodes_obj);
+  for(id in nodes_obj) {
+    requestAnimationFrame(function() {
+      removeNode(nodes_obj[id]);
+    });
+    INDEX++; 
+  }
+  
+  //requestAnimationFrame(mutilateGraph);
   // if(INDEX < nodes_len) {
   //   console.log(INDEX);
   //   removeNode(nodes_obj[INDEX]);
@@ -600,16 +686,16 @@ function mutilateGraph() {
   // }
   // requestAnimationFrame(mutilateGraph);
 
-  if(INDEX < nodes_len) {
-    var i = 0;
-    while (INDEX < nodes_len && i++ < NR_MUTILATE) {
-      removeNode(nodes_obj[INDEX++]);
-    }
-  }
-  else {
-    return;
-  }
-  requestAnimationFrame(mutilateGraph);
+  //if(INDEX < nodes_len) {
+    //var i = 0;
+    //while (INDEX < nodes_len && i++ < NR_MUTILATE) {
+      //removeNode(nodes_obj[INDEX++]);
+    //}
+  //}
+  //else {
+    //return;
+  //}
+  //requestAnimationFrame(mutilateGraph);
 }
 
 function setNrMutilate(nr_mutilate) {
@@ -721,6 +807,7 @@ if (window !== 'undefined') {
   window.$GV = {
     renderGraph: renderGraph,
     addNode: addNode,
+    addEdge: addEdge,
     removeNode: removeNode,
     colorSingleNode: colorSingleNode,
     colorAllNodes: colorAllNodes,

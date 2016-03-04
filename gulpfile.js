@@ -8,14 +8,14 @@ var glob        = require('glob');
 
 gulp.task('browserSync', function() {
   browserSync({
-	files: ['src/js/*', 'src/css/*', 'index.html'],
+	files: ['src/core/*', 'index.html'],
     server: {
       baseDir: './'
     },
   })
 
   gulp.watch('*.html').on('change', browserSync.reload);
-  gulp.watch('src/js/*.js').on('change', browserSync.reload);
+  gulp.watch('src/core/*.js').on('change', browserSync.reload);
 });
 
 gulp.task('default', function() {

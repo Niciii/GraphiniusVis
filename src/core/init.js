@@ -1,6 +1,6 @@
 var json_config;
 
-(function init(json) {
+(function init(json_config) {
   console.log('GRAPHINIUS VIS INITIALIZED');
   window.GraphiniusVIS = {
       config : {
@@ -9,4 +9,4 @@ var json_config;
       }
     }
   };
-})(json || {});
+})(json_config || {});
