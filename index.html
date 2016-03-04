@@ -16,11 +16,11 @@
         <input id="switch3DButton" value="Switch to 3D" type="button" onclick=switchTo3D()><br/>
         <input id="changeNodeColorButton" value="Change node color of Graph" type="button" onclick=colorAllNodes(0)><br/>
         <input id="changeEdgeColorButton" value="Change edge color of Graph" type="button" onclick=colorAllEdges(0)><br/>
-				<input id="nr_mutilate_per_frame" type=range min=1 max=501 value=50 step=10 onInput="setAndUpdateNrMutilate()"><br/>
-				<span id="nr_mutilate_per_frame_val">50</span><br/>
-				<input id="mutilateButton" value="Mutilate Graph" type="button" onclick="mutilateGraph()"><br/>
-				<input id="addRandomNodesButton" value="Add random node" type="button" onclick="addRandomNodes()"><br/>
-				<input id="updateAllNodesButton" value="Update all nodes" type="button" onclick="updateAll()">
+        <input id="nr_mutilate_per_frame" type=range min=1 max=501 value=50 step=10 onInput="setAndUpdateNrMutilate()"><br/>
+        <span id="nr_mutilate_per_frame_val">50</span><br/>
+        <input id="mutilateButton" value="Mutilate Graph" type="button" onclick="mutilateGraph()"><br/>
+        <input id="addRandomNodesButton" value="Add random node" type="button" onclick="addRandomNodes()"><br/>
+        <input id="updateAllNodesButton" value="Update all nodes" type="button" onclick="updateAll()">
 
         <h3>Information about the graph</h3>
         <div id="graphInfo"><ul>
@@ -41,13 +41,21 @@
 		<script type="text/javascript" src="lib/three.min.js"></script>
 		<script type="text/javascript" src="lib/graphinius.js"></script>
 
-		<script type="text/javascript" src="src/core/init.js"></script>
+        <script type="text/javascript" src="graphinius.vis.js"></script>
 
-    <script type="text/javascript" src="src/input/readCSV.js"></script>
-		<script type="text/javascript" src="src/input/readJSON.js"></script>
+        <script>
+            (function() {
+                var render = $GV.core.render;
+            })();
+        </script>
 
-    <script type="text/javascript" src="src/core/graph.js"></script>
-    <script type="text/javascript" src="src/core/graphThree.js"></script>
-		<script type="text/javascript" src="src/view/fullscreen.js"></script>
+		<!--<script type="text/javascript" src="src/core/init.js"></script>-->
+
+         <!--<script type="text/javascript" src="src/input/readCSV.js"></script>-->
+		<!--<script type="text/javascript" src="src/input/readJSON.js"></script>-->
+
+        <!--<script type="text/javascript" src="src/core/graph.js"></script>-->
+        <!--<script type="text/javascript" src="src/core/graphThree.js"></script>-->
+		<!--<script type="text/javascript" src="src/view/fullscreen.js"></script>-->
   </body>
 </html>

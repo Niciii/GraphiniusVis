@@ -1,21 +1,31 @@
 var gulp        = require('gulp');
-var browserSync = require('browser-sync')
+var browserSync = require('browser-sync');
 var sass        = require('gulp-sass');
-// var cytoscape = require('cytoscape');
 var browserify  = require('browserify');
 var source      = require('vinyl-source-stream');
 var glob        = require('glob');
+var webpack     = require('webpack-stream');
+var uglify      = require('gulp-uglify');
+
 
 gulp.task('browserSync', function() {
   browserSync({
 	files: ['src/core/*', 'index.html'],
     server: {
       baseDir: './'
-    },
-  })
+    }
+  });
 
   gulp.watch('*.html').on('change', browserSync.reload);
   gulp.watch('src/core/*.js').on('change', browserSync.reload);
+});
+
+// Packaging - Webpack
+gulp.task('pack', function() {
+  return gulp.src('./index.js')
+    .pipe(webpack( require('./webpack.config.js') ))
+    // .pipe(uglify())
+    .pipe(gulp.dest('./'));
 });
 
 gulp.task('default', function() {
