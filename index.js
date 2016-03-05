@@ -44,5 +44,5 @@ out.$GV = {
 };
 
 module.exports = {
-  $GV			:	out.$GV
+  $GV:	out.$GV
 };
