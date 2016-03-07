@@ -177,8 +177,8 @@
 	    //basics
 	var network = new THREE.Group(),
 	    camera = new THREE.PerspectiveCamera(
-	      70, 
-	      container.WIDTH / container.HEIGHT, 
+	      70,
+	      container.WIDTH / container.HEIGHT,
 	      0.1, 1000),
 	    scene = new THREE.Scene(),
 	    renderer = new THREE.WebGLRenderer({antialias: false}),
@@ -186,17 +186,6 @@
 	    //tmp object to find indices
 	    nodes_obj_idx = {},
 	    edges_obj_idx = {};
-	    
-	//coordinates
-	var MIN_X = dims.MIN_X,
-	    MAX_X = dims.MAX_X,
-	    AVG_X = dims.AVG_X,
-	    MIN_Y = dims.MIN_Y,
-	    MAX_Y = dims.MAX_Y,
-	    AVG_Y = dims.AVG_Y,
-	    MIN_Z = dims.MIN_Z,
-	    MAX_Z = dims.MAX_Z,
-	    AVG_Z = dims.AVG_Z;
 
 
 	function renderGraph(graph) {
@@ -206,7 +195,7 @@
 	  if (!graph) {
 	    throw new Error("No graph object present, unable to render anything.");
 	  }
-	  
+
 	  if ( !window.nodes_obj || !window.node_keys ) {
 	    window.nodes_obj = window.graph.getNodes();
 	    window.node_keys = Object.keys(window.nodes_obj);
@@ -215,29 +204,29 @@
 	    window.dir_edges = window.graph.getDirEdges();
 	    window.dir_edges_keys = Object.keys(window.dir_edges);
 	  }
-	  
-	  MIN_X = MAX_X = nodes_obj[0].getFeature('coords').x;
-	  MIN_Y = MAX_Y = nodes_obj[0].getFeature('coords').y;
-	  MIN_Z = MAX_Z = nodes_obj[0].getFeature('coords').z;  
+
+	  dims.MIN_X = dims.MAX_X = nodes_obj[0].getFeature('coords').x;
+	  dims.MIN_Y = dims.MAX_Y = nodes_obj[0].getFeature('coords').y;
+	  dims.MIN_Z = dims.MAX_Z = nodes_obj[0].getFeature('coords').z;
 
 	  for(node in nodes_obj) {
 	    var x = nodes_obj[node].getFeature('coords').x;
 	    var y = nodes_obj[node].getFeature('coords').y;
 	    var z = nodes_obj[node].getFeature('coords').z;
 
-	    MIN_X = Math.min(MIN_X, x);
-	    MIN_Y = Math.min(MIN_Y, y);
-	    MIN_Z = Math.min(MIN_Z, z);
+	    dims.MIN_X = Math.min(dims.MIN_X, x);
+	    dims.MIN_Y = Math.min(dims.MIN_Y, y);
+	    dims.MIN_Z = Math.min(dims.MIN_Z, z);
 
-	    MAX_X = Math.max(MAX_X, x);
-	    MAX_Y = Math.max(MAX_Y, y);
-	    MAX_Z = Math.max(MAX_Z, z);
+	    dims.MAX_X = Math.max(dims.MAX_X, x);
+	    dims.MAX_Y = Math.max(dims.MAX_Y, y);
+	    dims.MAX_Z = Math.max(dims.MAX_Z, z);
 	  }
-	  AVG_X = (MAX_X - MIN_X) / 2;
-	  AVG_Y = (MAX_Y - MIN_Y) / 2;
-	  AVG_Z = (MAX_Z - MIN_Z) / 2;
+	  dims.AVG_X = (dims.MAX_X - dims.MIN_X) / 2;
+	  dims.AVG_Y = (dims.MAX_Y - dims.MIN_Y) / 2;
+	  dims.AVG_Z = (dims.MAX_Z - dims.MIN_Z) / 2;
 
-	  renderer.setSize(container.WIDTH, container.HEIGHT); 
+	  renderer.setSize(container.WIDTH, container.HEIGHT);
 	  renderer.setClearColor(defaults.background_color, 1);
 
 	  var element = document.getElementById("containerGraph");
@@ -252,17 +241,17 @@
 	    var y = nodes_obj[node].getFeature('coords').y;
 	    var z = nodes_obj[node].getFeature('coords').z;
 
-	    vertices[i*3] = x - AVG_X;
-	    vertices[i*3 + 1] = y - AVG_Y;
-	    vertices[i*3 + 2] = z - AVG_Z;
+	    vertices[i*3] = x - dims.AVG_X;
+	    vertices[i*3 + 1] = y - dims.AVG_Y;
+	    vertices[i*3 + 2] = z - dims.AVG_Z;
 
 	    // Trying to set original color
 	    nodeColors[i*3] = nodes_obj[node].getFeature('color').r/256.0;
 	    nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
 	    nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
-	    
+
 	    nodeSize[i] = 12;
-	    
+
 	    nodes_obj_idx[node]= i*3;
 	    i++;
 	  }
@@ -283,7 +272,7 @@
 	  //EDGE
 	  var materialLine = new THREE.LineBasicMaterial({
 	    transparent : defaults.tranparent,
-	    opacity: defaults.opacity, 
+	    opacity: defaults.opacity,
 	    vertexColors: THREE.VertexColors,
 	    linewidth: defaults.linewidth
 	  });
@@ -297,12 +286,12 @@
 	      var node_a_id = edge._node_a.getID();
 	      var node_b_id = edge._node_b.getID();
 
-	      positionLine[i * 6] = nodes_obj[node_a_id].getFeature('coords').x - AVG_X;
-	      positionLine[i * 6 + 1] = nodes_obj[node_a_id].getFeature('coords').y - AVG_Y;
-	      positionLine[i * 6 + 2] = nodes_obj[node_a_id].getFeature('coords').z - AVG_Z;
-	      positionLine[i * 6 + 3] = nodes_obj[node_b_id].getFeature('coords').x - AVG_X;
-	      positionLine[i * 6 + 4] = nodes_obj[node_b_id].getFeature('coords').y - AVG_Y;
-	      positionLine[i * 6 + 5] = nodes_obj[node_b_id].getFeature('coords').z - AVG_Z;
+	      positionLine[i * 6] = nodes_obj[node_a_id].getFeature('coords').x - dims.AVG_X;
+	      positionLine[i * 6 + 1] = nodes_obj[node_a_id].getFeature('coords').y - dims.AVG_Y;
+	      positionLine[i * 6 + 2] = nodes_obj[node_a_id].getFeature('coords').z - dims.AVG_Z;
+	      positionLine[i * 6 + 3] = nodes_obj[node_b_id].getFeature('coords').x - dims.AVG_X;
+	      positionLine[i * 6 + 4] = nodes_obj[node_b_id].getFeature('coords').y - dims.AVG_Y;
+	      positionLine[i * 6 + 5] = nodes_obj[node_b_id].getFeature('coords').z - dims.AVG_Z;
 
 	      lineColors[i * 6] = nodes_obj[node_a_id].getFeature('color').r/256.0;
 	      lineColors[i * 6 + 1] = nodes_obj[node_a_id].getFeature('color').g/256.0;
@@ -323,7 +312,7 @@
 	  });
 
 	  scene.add(network);
-	  camera.position.z = Math.max(MAX_X, MAX_Y);
+	  camera.position.z = Math.max(dims.MAX_X, dims.MAX_Y);
 	  window.requestAnimationFrame(updateGraph);
 	};
 
@@ -340,18 +329,18 @@
 	  if(intersects.length > 0) {
 	    console.log("intersected objects");
 	    console.log(intersects);
-	    
+
 	    var color = new THREE.Color(0xf1ecfb);
 	    attributes.color.array[intersects[0].index*3] = color.r;
 	    attributes.color.array[intersects[0].index*3 + 1] = color.g;
 	    attributes.color.array[intersects[0].index*3 + 2] = color.b;
 	    attributes.color.needsUpdate = true;
-	    
+
 	    //attributes.size[intersects[0].index] = 20;
 	    //attributes.size.needsUpdate = true;
 	  }
-	  
-	  renderer.render(scene, camera); 
+
+	  renderer.render(scene, camera);
 	};
 
 	module.exports = {
@@ -555,16 +544,6 @@
 	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
 	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
 	var dims = __webpack_require__(1).globals.graph_dims;
-	//coordinates
-	var MIN_X = dims.MIN_X,
-	    MAX_X = dims.MAX_X,
-	    AVG_X = dims.AVG_X,
-	    MIN_Y = dims.MIN_Y,
-	    MAX_Y = dims.MAX_Y,
-	    AVG_Y = dims.AVG_Y,
-	    MIN_Z = dims.MIN_Z,
-	    MAX_Z = dims.MAX_Z,
-	    AVG_Z = dims.AVG_Z;
 
 	var TWO_D_MODE = 0;
 
@@ -603,9 +582,9 @@
 	}
 
 	function addRandomNodes() {
-	  var x_ = Math.floor((Math.random() * MAX_X) - AVG_X),
-	      y_ = Math.floor((Math.random() * MAX_Y) - AVG_Y),
-	      z_ = Math.floor((Math.random() * MAX_Z) - AVG_Z),
+	  var x_ = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X),
+	      y_ = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y),
+	      z_ = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z),
 	      idx = Object.keys(nodes_obj_idx).length;
 	  var new_node = graph.addNode(idx, {coords: {x: x_, y: y_, z:z_}});
 	  addNode(new_node);
@@ -674,9 +653,9 @@
 	  var old_edges = network.children[1].geometry.getAttribute('position').array;
 	  for(node in node_obj) {
 	    var index = nodes_obj_idx[node];
-	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - AVG_X;
-	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - AVG_Y;
-	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - AVG_Z;
+	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - dims.AVG_X;
+	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - dims.AVG_Y;
+	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - dims.AVG_Z;
 
 	    old_nodes[index] = node_obj[node].getFeature('coords').x;
 	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
@@ -719,9 +698,9 @@
 	      node_obj[node].getFeature('coords').z = window.old_coordinates[i + 2];
 	      i += 3;
 
-	      old_nodes[index] = node_obj[node].getFeature('coords').x - AVG_X;
-	      old_nodes[index + 1] = node_obj[node].getFeature('coords').y - AVG_Y;
-	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z - AVG_Z;
+	      old_nodes[index] = node_obj[node].getFeature('coords').x - dims.AVG_X;
+	      old_nodes[index + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
+	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
 	    }
 	    [und_edges, dir_edges].forEach(function(edges) {
 	      var i = 0;
@@ -730,12 +709,12 @@
 	        var node_a_id = edge._node_a.getID();
 	        var node_b_id = edge._node_b.getID();
 
-	        old_edges[i] = node_obj[node_a_id].getFeature('coords').x - AVG_X;
-	        old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y - AVG_Y;
-	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z - AVG_Z;
-	        old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - AVG_X;
-	        old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - AVG_Y;
-	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - AVG_Z;
+	        old_edges[i] = node_obj[node_a_id].getFeature('coords').x - dims.AVG_X;
+	        old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y - dims.AVG_Y;
+	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z - dims.AVG_Z;
+	        old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - dims.AVG_X;
+	        old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - dims.AVG_Y;
+	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - dims.AVG_Z;
 	        i += 6;
 	      }
 	    });
@@ -783,7 +762,7 @@
 	  var index = 1;
 	  if(edge._directed) {
 	    index = 2;
-	  } 
+	  }
 
 	  var old_edges = network.children[index].geometry.getAttribute('position').array;
 	  var old_colors = network.children[index].geometry.getAttribute('color').array;
@@ -794,7 +773,7 @@
 	    new_edges[i] = old_edges[i];
 	    new_colors[i] = old_colors[i];
 	  }
-	  
+
 	  new_edges[new_edges.length - 6] = edge._node_a.getFeature('coords').x;
 	  new_edges[new_edges.length - 5] = edge._node_a.getFeature('coords').y;
 	  new_edges[new_edges.length - 4] = edge._node_a.getFeature('coords').z;
@@ -808,7 +787,7 @@
 	  new_colors[new_colors.length - 3] = new_color.r;
 	  new_colors[new_colors.length - 2] = new_color.g;
 	  new_colors[new_colors.length - 1] = new_color.b;
-	  
+
 	  //network.children[index].geometry.removeAttribute ('position');
 	  network.children[index].geometry.addAttribute('position', new THREE.BufferAttribute(new_edges, 3));
 	  network.children[index].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
@@ -850,7 +829,7 @@
 	  window.requestAnimationFrame(update);
 	}
 
-	function colorSingleEdge(edge, hexColor) {  
+	function colorSingleEdge(edge, hexColor) {
 	  var new_color = new THREE.Color(hexColor);
 	  var index = 1;
 	  if(edge._directed) {
@@ -859,14 +838,14 @@
 	  var edge_olors = network.children[index].geometry.getAttribute('color').array;
 	  var edge_id = edge.getID();
 	  var idx = edges_obj_idx[edge_id];
-	  
+
 	  edge_olors[idx] = new_color.r;
 	  edge_olors[idx + 1] = new_color.g;
 	  edge_olors[idx + 2] = new_color.b;
 	  edge_olors[idx + 3] = new_color.r;
 	  edge_olors[idx + 4] = new_color.g;
 	  edge_olors[idx + 5] = new_color.b;
-	    
+
 	  network.children[index].geometry.attributes.color.needsUpdate = true;
 	  window.requestAnimationFrame(update);
 	}
