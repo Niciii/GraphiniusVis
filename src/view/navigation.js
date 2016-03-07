@@ -118,8 +118,13 @@ function mouseMove(event) {
   // calculate mouse position in normalized device coordinates
   // (-1 to +1) for both components
   event.preventDefault();
-  mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
-  mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
+  
+  var element = document.querySelector('#containerGraph');
+  var rect = element.getBoundingClientRect();  
+  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
+  mouse.y = - ((event.clientY -rect.top) / container.HEIGHT) * 2 + 1;
+  //mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
+  //mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
 
   window.requestAnimationFrame(update);
 }

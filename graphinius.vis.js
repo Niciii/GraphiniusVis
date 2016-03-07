@@ -46,17 +46,17 @@
 
 	/* WEBPACK VAR INJECTION */(function(global) {var init			= __webpack_require__(1),
 	    render          = __webpack_require__(2),
-	    mutate          = __webpack_require__(4),
-	    hist_reader     = __webpack_require__(5),
-	    main_loop       = __webpack_require__(6),
-	    readCSV         = __webpack_require__(7),
-	    readJSON        = __webpack_require__(8),
-	    const_layout    = __webpack_require__(9),
-	    force_layout    = __webpack_require__(10),
-	    generic_layout  = __webpack_require__(11),
-	    fullscreen      = __webpack_require__(12),
-	    interaction     = __webpack_require__(13),
-	    navigation      = __webpack_require__(3);
+	    mutate          = __webpack_require__(3),
+	    hist_reader     = __webpack_require__(4),
+	    main_loop       = __webpack_require__(5),
+	    readCSV         = __webpack_require__(6),
+	    readJSON        = __webpack_require__(7),
+	    const_layout    = __webpack_require__(8),
+	    force_layout    = __webpack_require__(9),
+	    generic_layout  = __webpack_require__(10),
+	    fullscreen      = __webpack_require__(11),
+	    interaction     = __webpack_require__(12),
+	    navigation      = __webpack_require__(13);
 
 
 	var out = typeof window !== 'undefined' ? window : global;
@@ -246,6 +246,7 @@
 	  var i = 0;
 	  var vertices = new Float32Array(graph.nrNodes() * 3);
 	  var nodeColors = new Float32Array(graph.nrNodes() * 3);
+	  var nodeSize = new Float32Array(graph.nrNodes() * 1);
 	  for(node in nodes_obj) {
 	    var x = nodes_obj[node].getFeature('coords').x;
 	    var y = nodes_obj[node].getFeature('coords').y;
@@ -259,14 +260,17 @@
 	    nodeColors[i*3] = nodes_obj[node].getFeature('color').r/256.0;
 	    nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
 	    nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
-
+	    
+	    nodeSize[i] = 12;
+	    
 	    nodes_obj_idx[node]= i*3;
 	    i++;
 	  }
 
 	  var geometry = new THREE.BufferGeometry();
 	  geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-	  geometry.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
+	  geometry.addAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
+	  geometry.addAttribute('size', new THREE.BufferAttribute(nodeSize, 1));
 
 	  var material = new THREE.PointsMaterial({
 	    vertexColors: THREE.VertexColors,
@@ -325,48 +329,27 @@
 
 
 	function updateGraph () {
-	  // update the picking ray with the camera and mouse position
-
+	  var attributes = network.children[0].geometry.attributes;
 	  raycaster.setFromCamera(mouse, camera);
-	  //raycaster.params.Points.threshold = 15;
-	  // calculate objects intersecting the picking ray
-	  //TODO 
-	  var test = [];
-	  test.push(network.children[0]);
-	  // var intersects = raycaster.intersectObjects(test); //network.children
+	  raycaster.params.Points.threshold = 5;
 
+	  var particlesToIntersect = [];
+	  particlesToIntersect.push(network.children[0]);
+	  var intersects = raycaster.intersectObjects(particlesToIntersect); //network.children
 
-	  ////console.log(particles);
-	  //if ( intersects.length > 0 ) {
-	    //console.log("intersected objects");
-	    //console.log(intersects);
-	    //intersects[0].object.material.color.set( 0xe0f600 );
-	    //intersects[0].object.material.needsUpdate = true;
-	  //}
-	  
-	  
-	  //for ( var i = 0; i < intersects.length; i++ ) {
-	    //intersects[ i ].object.material.color.set( 0xff0000 );
-	  //}
-	  
-	  
-	  //var intersects = raycaster.intersectObjects( scene.children );
-
-	  //if ( intersects.length > 0 ) {
-	    //if ( INTERSECTED != intersects[0].object ) {
-	      //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke;
-	         //console.log("> 0");
-	      //}
-	      //INTERSECTED = intersects[ 0 ].object;
-	      ////INTERSECTED.material.program = programFill;
-	    //}
-
-	  //} else {
-	    //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke; 
-	      //console.log("< 0");
-	    //}
-	    //INTERSECTED = null;
-	  //}
+	  if(intersects.length > 0) {
+	    console.log("intersected objects");
+	    console.log(intersects);
+	    
+	    var color = new THREE.Color(0xf1ecfb);
+	    attributes.color.array[intersects[0].index*3] = color.r;
+	    attributes.color.array[intersects[0].index*3 + 1] = color.g;
+	    attributes.color.array[intersects[0].index*3 + 2] = color.b;
+	    attributes.color.needsUpdate = true;
+	    
+	    //attributes.size[intersects[0].index] = 20;
+	    //attributes.size.needsUpdate = true;
+	  }
 	  
 	  renderer.render(scene, camera); 
 	};
@@ -380,140 +363,12 @@
 	    update: updateGraph
 	};
 
+
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	var keys = __webpack_require__(1).keys;
-	var camera = __webpack_require__(2).camera;
-	var defaults = __webpack_require__(1).defaults;
-	var update = __webpack_require__(2).update;
-	var network = __webpack_require__(2).network;
-	var container = __webpack_require__(1).container;
-	var mouse = __webpack_require__(1).globals.mouse;
-
-	//rotation
-	var axis_x = new THREE.Vector3( 1, 0, 0 ),
-	    axis_y = new THREE.Vector3( 0, 1, 0 ),
-	    axis_z = new THREE.Vector3( 0, 0, 1 );
-
-	window.addEventListener('keypress', key, false);
-	function key(event) {
-	  switch (event.charCode) {
-	    case keys.KEY_W: //zoom in
-	      camera.position.y = camera.position.y - defaults.delta_distance; break;
-	    case keys.KEY_S: //zoom out
-	      camera.position.y = camera.position.y + defaults.delta_distance; break;
-	    case keys.KEY_A: //move left
-	      camera.position.x = camera.position.x + defaults.delta_distance; break;
-	    case keys.KEY_D: //move right
-	      camera.position.x = camera.position.x - defaults.delta_distance; break;
-	    case keys.KEY_R:
-	      network.translateZ(defaults.delta_distance); break;
-	    case keys.KEY_F:
-	      network.translateZ(-defaults.delta_distance); break;
-
-	    case keys.KEY_X:
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SX:
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_Y:
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SY:
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_C:
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SC:
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      break;
-	    default:
-	      break;
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	//zoom in and out
-	window.addEventListener('mousewheel', mousewheel, false);
-	function mousewheel(event) {
-	  //wheel down: negative value
-	  //wheel up: positive value
-	  if(event.shiftKey) {
-	    if(event.wheelDelta < 0) {
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	    }
-	    else {
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
-	    }
-	  }
-	  else {
-	    camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
-	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	window.addEventListener( 'mousemove', mouseMove, false );
-	function mouseMove(event) {
-
-	  if(event.shiftKey && event.which == 1) {
-	    if(event.movementX > 0) {
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	    }
-	    else if(event.movementX < 0) {
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	    }
-	    else if(event.movementY > 0) {
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	    }
-	    else if(event.movementY < 0) {
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	    }
-	  }
-	  //left mouse button
-	  else if(event.which == 1) {
-	    var mouseX = event.clientX / container.WIDTH;
-	    var mouseY = event.clientY / container.HEIGHT;
-	    //movement in y: up is negative, down is positive
-	    camera.position.x = camera.position.x - (mouseX * event.movementX);
-	    camera.position.y = camera.position.y + (mouseY * event.movementY);
-	  }
-
-	  //raycaster
-	  // calculate mouse position in normalized device coordinates
-	  // (-1 to +1) for both components
-	  event.preventDefault();
-	  mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
-	  mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
-
-	  window.requestAnimationFrame(update);
-	}
-
-	module.exports = {
-	    mouse: mouse
-	};
-
+	
 
 /***/ },
 /* 4 */
@@ -523,12 +378,6 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 6 */
 /***/ function(module, exports) {
 
 	
@@ -550,13 +399,13 @@
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	// var $G = require('graphinius').$G;
@@ -612,6 +461,12 @@
 
 
 /***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
 /* 9 */
 /***/ function(module, exports) {
 
@@ -625,12 +480,6 @@
 
 /***/ },
 /* 11 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 12 */
 /***/ function(module, exports) {
 
 	var FSelem = {
@@ -697,7 +546,7 @@
 
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var network = __webpack_require__(2).network;
@@ -1129,6 +978,146 @@
 	    colorAllEdges: colorAllEdges,
 	    switchTo2D: switchTo2D,
 	    switchTo3D: switchTo3D
+	};
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var keys = __webpack_require__(1).keys;
+	var camera = __webpack_require__(2).camera;
+	var defaults = __webpack_require__(1).defaults;
+	var update = __webpack_require__(2).update;
+	var network = __webpack_require__(2).network;
+	var container = __webpack_require__(1).container;
+	var mouse = __webpack_require__(1).globals.mouse;
+
+	//rotation
+	var axis_x = new THREE.Vector3( 1, 0, 0 ),
+	    axis_y = new THREE.Vector3( 0, 1, 0 ),
+	    axis_z = new THREE.Vector3( 0, 0, 1 );
+
+	window.addEventListener('keypress', key, false);
+	function key(event) {
+	  switch (event.charCode) {
+	    case keys.KEY_W: //zoom in
+	      camera.position.y = camera.position.y - defaults.delta_distance; break;
+	    case keys.KEY_S: //zoom out
+	      camera.position.y = camera.position.y + defaults.delta_distance; break;
+	    case keys.KEY_A: //move left
+	      camera.position.x = camera.position.x + defaults.delta_distance; break;
+	    case keys.KEY_D: //move right
+	      camera.position.x = camera.position.x - defaults.delta_distance; break;
+	    case keys.KEY_R:
+	      network.translateZ(defaults.delta_distance); break;
+	    case keys.KEY_F:
+	      network.translateZ(-defaults.delta_distance); break;
+
+	    case keys.KEY_X:
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SX:
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_Y:
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SY:
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_C:
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SC:
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      break;
+	    default:
+	      break;
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	//zoom in and out
+	window.addEventListener('mousewheel', mousewheel, false);
+	function mousewheel(event) {
+	  //wheel down: negative value
+	  //wheel up: positive value
+	  if(event.shiftKey) {
+	    if(event.wheelDelta < 0) {
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	    }
+	    else {
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	    }
+	  }
+	  else {
+	    camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
+	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
+	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	window.addEventListener( 'mousemove', mouseMove, false );
+	function mouseMove(event) {
+
+	  if(event.shiftKey && event.which == 1) {
+	    if(event.movementX > 0) {
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	    }
+	    else if(event.movementX < 0) {
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	    }
+	    else if(event.movementY > 0) {
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	    }
+	    else if(event.movementY < 0) {
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	    }
+	  }
+	  //left mouse button
+	  else if(event.which == 1) {
+	    var mouseX = event.clientX / container.WIDTH;
+	    var mouseY = event.clientY / container.HEIGHT;
+	    //movement in y: up is negative, down is positive
+	    camera.position.x = camera.position.x - (mouseX * event.movementX);
+	    camera.position.y = camera.position.y + (mouseY * event.movementY);
+	  }
+
+	  //raycaster
+	  // calculate mouse position in normalized device coordinates
+	  // (-1 to +1) for both components
+	  event.preventDefault();
+	  
+	  var element = document.querySelector('#containerGraph');
+	  var rect = element.getBoundingClientRect();  
+	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
+	  mouse.y = - ((event.clientY -rect.top) / container.HEIGHT) * 2 + 1;
+	  //mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
+	  //mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
+
+	  window.requestAnimationFrame(update);
+	}
+
+	module.exports = {
+	    mouse: mouse
 	};
 
 

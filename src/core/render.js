@@ -75,6 +75,7 @@ function renderGraph(graph) {
   var i = 0;
   var vertices = new Float32Array(graph.nrNodes() * 3);
   var nodeColors = new Float32Array(graph.nrNodes() * 3);
+  var nodeSize = new Float32Array(graph.nrNodes() * 1);
   for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
     var y = nodes_obj[node].getFeature('coords').y;
@@ -88,14 +89,17 @@ function renderGraph(graph) {
     nodeColors[i*3] = nodes_obj[node].getFeature('color').r/256.0;
     nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
     nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
-
+    
+    nodeSize[i] = 12;
+    
     nodes_obj_idx[node]= i*3;
     i++;
   }
 
   var geometry = new THREE.BufferGeometry();
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-  geometry.addAttribute('color', new THREE.BufferAttribute( nodeColors, 3));
+  geometry.addAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
+  geometry.addAttribute('size', new THREE.BufferAttribute(nodeSize, 1));
 
   var material = new THREE.PointsMaterial({
     vertexColors: THREE.VertexColors,
@@ -154,48 +158,27 @@ function renderGraph(graph) {
 
 
 function updateGraph () {
-  // update the picking ray with the camera and mouse position
-
+  var attributes = network.children[0].geometry.attributes;
   raycaster.setFromCamera(mouse, camera);
-  //raycaster.params.Points.threshold = 15;
-  // calculate objects intersecting the picking ray
-  //TODO 
-  var test = [];
-  test.push(network.children[0]);
-  // var intersects = raycaster.intersectObjects(test); //network.children
+  raycaster.params.Points.threshold = 5;
 
+  var particlesToIntersect = [];
+  particlesToIntersect.push(network.children[0]);
+  var intersects = raycaster.intersectObjects(particlesToIntersect); //network.children
 
-  ////console.log(particles);
-  //if ( intersects.length > 0 ) {
-    //console.log("intersected objects");
-    //console.log(intersects);
-    //intersects[0].object.material.color.set( 0xe0f600 );
-    //intersects[0].object.material.needsUpdate = true;
-  //}
-  
-  
-  //for ( var i = 0; i < intersects.length; i++ ) {
-    //intersects[ i ].object.material.color.set( 0xff0000 );
-  //}
-  
-  
-  //var intersects = raycaster.intersectObjects( scene.children );
-
-  //if ( intersects.length > 0 ) {
-    //if ( INTERSECTED != intersects[0].object ) {
-      //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke;
-         //console.log("> 0");
-      //}
-      //INTERSECTED = intersects[ 0 ].object;
-      ////INTERSECTED.material.program = programFill;
-    //}
-
-  //} else {
-    //if ( INTERSECTED ) { //INTERSECTED.material.program = programStroke; 
-      //console.log("< 0");
-    //}
-    //INTERSECTED = null;
-  //}
+  if(intersects.length > 0) {
+    console.log("intersected objects");
+    console.log(intersects);
+    
+    var color = new THREE.Color(0xf1ecfb);
+    attributes.color.array[intersects[0].index*3] = color.r;
+    attributes.color.array[intersects[0].index*3 + 1] = color.g;
+    attributes.color.array[intersects[0].index*3 + 2] = color.b;
+    attributes.color.needsUpdate = true;
+    
+    //attributes.size[intersects[0].index] = 20;
+    //attributes.size.needsUpdate = true;
+  }
   
   renderer.render(scene, camera); 
 };
