@@ -1,6 +1,7 @@
 var container = require("./init.js").container;
 var defaults = require("./init.js").defaults;
-var mouse = require("../view/navigation.js").mouse;
+var mouse = require("./init.js").globals.mouse;
+var dims = require("./init.js").globals.graph_dims;
 
     //basics
 var network = new THREE.Group(),
@@ -11,18 +12,30 @@ var network = new THREE.Group(),
     scene = new THREE.Scene(),
     renderer = new THREE.WebGLRenderer({antialias: false}),
     raycaster = new THREE.Raycaster(),
-    
     //tmp object to find indices
-    nodes_obj_idx = new Object(),
-    edges_obj_idx = new Object(),
+    nodes_obj_idx = {},
+    edges_obj_idx = {};
     
-    //coordinates
-    MIN_X = MAX_X = MIN_Y = MAX_Y = MIN_Z = MAX_Z =
-    AVG_X = AVG_Y = AVG_Z = 0;
+//coordinates
+var MIN_X = dims.MIN_X,
+    MAX_X = dims.MAX_X,
+    AVG_X = dims.AVG_X,
+    MIN_Y = dims.MIN_Y,
+    MAX_Y = dims.MAX_Y,
+    AVG_Y = dims.AVG_Y,
+    MIN_Z = dims.MIN_Z,
+    MAX_Z = dims.MAX_Z,
+    AVG_Z = dims.AVG_Z;
 
 
-var renderGraph = function() {
+function renderGraph(graph) {
   console.log("render graph");
+
+  var graph = graph || window.graph;
+  if (!graph) {
+    throw new Error("No graph object present, unable to render anything.");
+  }
+  
   if ( !window.nodes_obj || !window.node_keys ) {
     window.nodes_obj = window.graph.getNodes();
     window.node_keys = Object.keys(window.nodes_obj);
@@ -89,7 +102,7 @@ var renderGraph = function() {
     size: defaults.node_size
   });
 
-  particles = new THREE.Points(geometry, material);
+  var particles = new THREE.Points(geometry, material);
   network.add(particles);
 
   //EDGE
@@ -137,18 +150,21 @@ var renderGraph = function() {
   scene.add(network);
   camera.position.z = Math.max(MAX_X, MAX_Y);
   window.requestAnimationFrame(updateGraph);
-}
+};
 
 
-var updateGraph = function () {
+function updateGraph () {
   // update the picking ray with the camera and mouse position
+
   raycaster.setFromCamera(mouse, camera);
   //raycaster.params.Points.threshold = 15;
   // calculate objects intersecting the picking ray
   //TODO 
-  var test = new Array();
+  var test = [];
   test.push(network.children[0]);
-  intersects = raycaster.intersectObjects(test); //network.children
+  // var intersects = raycaster.intersectObjects(test); //network.children
+
+
   ////console.log(particles);
   //if ( intersects.length > 0 ) {
     //console.log("intersected objects");
@@ -183,7 +199,6 @@ var updateGraph = function () {
   
   renderer.render(scene, camera); 
 };
-
 
 module.exports = {
     network: network,

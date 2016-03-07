@@ -1,5 +1,5 @@
 // var $G = require('graphinius').$G;
-var json = new $G.JsonInput(false, false);
+var json = new $G.input.JsonInput(false, false);
 
 input.onchange = function() {
 

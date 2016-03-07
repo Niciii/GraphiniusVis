@@ -4,12 +4,12 @@ var defaults = require("../core/init.js").defaults;
 var update = require("../core/render.js").update;
 var network = require("../core/render.js").network;
 var container = require("../core/init.js").container;
+var mouse = require("../core/init.js").globals.mouse;
 
 //rotation
 var axis_x = new THREE.Vector3( 1, 0, 0 ),
     axis_y = new THREE.Vector3( 0, 1, 0 ),
-    axis_z = new THREE.Vector3( 0, 0, 1 ),
-    mouse = new THREE.Vector2();
+    axis_z = new THREE.Vector3( 0, 0, 1 );
 
 window.addEventListener('keypress', key, false);
 function key(event) {
@@ -113,14 +113,14 @@ function mouseMove(event) {
     camera.position.x = camera.position.x - (mouseX * event.movementX);
     camera.position.y = camera.position.y + (mouseY * event.movementY);
   }
-  
+
   //raycaster
   // calculate mouse position in normalized device coordinates
   // (-1 to +1) for both components
   event.preventDefault();
   mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
   mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
-  
+
   window.requestAnimationFrame(update);
 }
 

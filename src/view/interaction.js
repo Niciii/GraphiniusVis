@@ -3,6 +3,17 @@ var update = require("../core/render.js").update;
 var defaults = require("../core/init.js").defaults;
 var nodes_obj_idx = require("../core/render.js").nodes_obj_idx;
 var edges_obj_idx = require("../core/render.js").edges_obj_idx;
+var dims = require("../core/init.js").globals.graph_dims;
+//coordinates
+var MIN_X = dims.MIN_X,
+    MAX_X = dims.MAX_X,
+    AVG_X = dims.AVG_X,
+    MIN_Y = dims.MIN_Y,
+    MAX_Y = dims.MAX_Y,
+    AVG_Y = dims.AVG_Y,
+    MIN_Z = dims.MIN_Z,
+    MAX_Z = dims.MAX_Z,
+    AVG_Z = dims.AVG_Z;
 
 var TWO_D_MODE = 0;
 
