@@ -11,10 +11,13 @@ var network = new THREE.Group(),
       0.1, 1000),
     scene = new THREE.Scene(),
     renderer = new THREE.WebGLRenderer({antialias: false}),
-    raycaster = new THREE.Raycaster(),
+    //raycaster = new THREE.Raycaster(),
     //tmp object to find indices
     nodes_obj_idx = {},
     edges_obj_idx = {};
+    //INTERSECTED = {
+      //index: 0, color: new THREE.Color()
+    //};
 
 
 function renderGraph(graph) {
@@ -64,7 +67,7 @@ function renderGraph(graph) {
   var i = 0;
   var vertices = new Float32Array(graph.nrNodes() * 3);
   var nodeColors = new Float32Array(graph.nrNodes() * 3);
-  var nodeSize = new Float32Array(graph.nrNodes() * 1);
+  var nodeSizes = new Float32Array(graph.nrNodes());
   for(node in nodes_obj) {
     var x = nodes_obj[node].getFeature('coords').x;
     var y = nodes_obj[node].getFeature('coords').y;
@@ -79,8 +82,7 @@ function renderGraph(graph) {
     nodeColors[i*3 + 1] = nodes_obj[node].getFeature('color').g/256.0;
     nodeColors[i*3 + 2] = nodes_obj[node].getFeature('color').b/256.0;
 
-    nodeSize[i] = 12;
-
+    nodeSizes[i] = 6;
     nodes_obj_idx[node]= i*3;
     i++;
   }
@@ -88,7 +90,7 @@ function renderGraph(graph) {
   var geometry = new THREE.BufferGeometry();
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
   geometry.addAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
-  geometry.addAttribute('size', new THREE.BufferAttribute(nodeSize, 1));
+  geometry.addAttribute('size', new THREE.BufferAttribute(nodeSizes, 1));
 
   var material = new THREE.PointsMaterial({
     vertexColors: THREE.VertexColors,
@@ -147,28 +149,44 @@ function renderGraph(graph) {
 
 
 function updateGraph () {
-  var attributes = network.children[0].geometry.attributes;
-  raycaster.setFromCamera(mouse, camera);
-  raycaster.params.Points.threshold = 5;
+  //var attributes = network.children[0].geometry.attributes;
+  //raycaster.setFromCamera(mouse, camera);
+  //raycaster.params.Points.threshold = 2;
 
-  var particlesToIntersect = [];
-  particlesToIntersect.push(network.children[0]);
-  var intersects = raycaster.intersectObjects(particlesToIntersect); //network.children
+  //var particlesToIntersect = [];
+  //particlesToIntersect.push(network.children[0]);
+  //var intersects = raycaster.intersectObjects(particlesToIntersect);
 
-  if(intersects.length > 0) {
-    console.log("intersected objects");
-    console.log(intersects);
+  //if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {    
+    ////console.log("intersected objects");
+    ////console.log(intersectsParticles);
 
-    var color = new THREE.Color(0xf1ecfb);
-    attributes.color.array[intersects[0].index*3] = color.r;
-    attributes.color.array[intersects[0].index*3 + 1] = color.g;
-    attributes.color.array[intersects[0].index*3 + 2] = color.b;
-    attributes.color.needsUpdate = true;
+    ////set previous node
+    //attributes.color.array[INTERSECTED.index*3] = INTERSECTED.color.r;
+    //attributes.color.array[INTERSECTED.index*3 + 1] = INTERSECTED.color.g;
+    //attributes.color.array[INTERSECTED.index*3 + 2] = INTERSECTED.color.b;
+    
+    //INTERSECTED.index = intersects[0].index;
+    //INTERSECTED.color.setRGB(
+      //attributes.color.array[intersects[0].index*3], 
+      //attributes.color.array[intersects[0].index*3 + 1],
+      //attributes.color.array[intersects[0].index*3 + 2]
+    //);
+    
+    ////set new node
+    //attributes.color.array[intersects[0].index*3] = defaults.highlight_node_color.r;
+    //attributes.color.array[intersects[0].index*3 + 1] = defaults.highlight_node_color.g;
+    //attributes.color.array[intersects[0].index*3 + 2] = defaults.highlight_node_color.b;
+    //attributes.color.needsUpdate = true;
 
-    //attributes.size[intersects[0].index] = 20;
-    //attributes.size.needsUpdate = true;
-  }
-
+    ////TODO resize node
+    ////attributes.size.array[intersects[0].index] = 20;
+    ////attributes.size.needsUpdate = true;
+    
+    ////get key by index
+    //var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
+    //console.log(window.graph.getNodeById(nodeID));
+  //}
   renderer.render(scene, camera);
 };
 

@@ -5,6 +5,7 @@ var update = require("../core/render.js").update;
 var network = require("../core/render.js").network;
 var container = require("../core/init.js").container;
 var mouse = require("../core/init.js").globals.mouse;
+var nodeIntersection = require("./interaction.js").nodeIntersection;
 
 //rotation
 var axis_x = new THREE.Vector3( 1, 0, 0 ),
@@ -117,14 +118,15 @@ function mouseMove(event) {
   //raycaster
   // calculate mouse position in normalized device coordinates
   // (-1 to +1) for both components
-  event.preventDefault();
-  
+  event.preventDefault();  
   var element = document.querySelector('#containerGraph');
   var rect = element.getBoundingClientRect();  
   mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
   mouse.y = - ((event.clientY -rect.top) / container.HEIGHT) * 2 + 1;
-  //mouse.x = (event.clientX / container.WIDTH) * 2 - 1;
-  //mouse.y = - (event.clientY / container.HEIGHT) * 2 + 1;
+  //intersect after init graph
+  if(network.children[0] != null) {
+    window.requestAnimationFrame(nodeIntersection);
+  }
 
   window.requestAnimationFrame(update);
 }

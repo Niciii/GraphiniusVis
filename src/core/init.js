@@ -26,6 +26,9 @@ var config = {
     tranparent: true,
     opacity: 0.5, //default is 1; range: 0.0 - 1.0
     linewidth: 1,
+    
+    //raycaster
+    highlight_node_color: new THREE.Color(0xf1ecfb),
 
     //zoom
     ZOOM_FACTOR: 0.05,
@@ -42,11 +45,7 @@ var config = {
       0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
       0xec2337, 0x008744, 0xffa700, 0x1df726,
       0x8fd621, 0x2d049b, 0x873bd3, 0x85835f
-    ],
-
-    //TODO
-    INDEX: 0,
-    NR_MUTILATE: 1
+    ]
   },
   globals: {
     mouse: new THREE.Vector2(),
