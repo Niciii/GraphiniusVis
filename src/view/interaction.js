@@ -9,7 +9,7 @@ var defaults = require("../core/init.js").defaults;
 
 var TWO_D_MODE = 0,
     INTERSECTED = {
-      index: 0, color: new THREE.Color()
+      index: 0, color: new THREE.Color(), node: null
     },
     raycaster = new THREE.Raycaster();
 
@@ -57,7 +57,7 @@ function updateNodePosition(update_node) {
 }
 
 function updateAll() {
-  window.old_coordinates = new Float32Array( graph.nrNodes() * 3 );
+  window.old_coordinates = new Float32Array(graph.nrNodes() * 3);
   var node_obj = graph.getNodes();
   var i = 0;
   for(node in nodes_obj) {
@@ -216,13 +216,13 @@ function switchTo3D() {
 function nodeIntersection() {
   var attributes = network.children[0].geometry.attributes;
   raycaster.setFromCamera(mouse, camera);
-  raycaster.params.Points.threshold = 2;
+  raycaster.params.Points.threshold = 1;
 
   var particlesToIntersect = [];
   particlesToIntersect.push(network.children[0]);
   var intersects = raycaster.intersectObjects(particlesToIntersect);
 
-  if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {    
+  if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {
     //console.log("intersected objects");
     //console.log(intersectsParticles);
 
@@ -250,18 +250,20 @@ function nodeIntersection() {
     
     //get key by index
     var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-    console.log(window.graph.getNodeById(nodeID));
+    INTERSECTED.node = window.graph.getNodeById(nodeID);
+    
     //Hint: update is called in navigation
     //window.requestAnimationFrame(update);
   }
 }
 
 module.exports = {
+    INTERSECTED: INTERSECTED,
     TWO_D_MODE: TWO_D_MODE,
     updateNodePosition: updateNodePosition,
     updateAll: updateAll,
     updateRandomPostions: updateRandomPostions,
     switchTo2D: switchTo2D,
     switchTo3D: switchTo3D,
-    nodeIntersection
+    nodeIntersection: nodeIntersection
 };

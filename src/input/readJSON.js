@@ -34,7 +34,6 @@ input.onchange = function() {
       //console.log(event.target.result);
       var parsedFile = JSON.parse(event.target.result);
       window.graph = json.readFromJSON(parsedFile);
-      console.log(parsedFile);
 
       document.querySelector("#nodes").innerHTML = parsedFile.nodes;
       document.querySelector("#edges").innerHTML = parsedFile.edges;

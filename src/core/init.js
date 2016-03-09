@@ -60,6 +60,9 @@ var config = {
       MAX_Z: 0,
       AVG_Z: 0
     }
+  },
+  callbacks: {
+    node_intersects: []
   }
 };
 module.exports = config;

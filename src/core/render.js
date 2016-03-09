@@ -149,44 +149,6 @@ function renderGraph(graph) {
 
 
 function updateGraph () {
-  //var attributes = network.children[0].geometry.attributes;
-  //raycaster.setFromCamera(mouse, camera);
-  //raycaster.params.Points.threshold = 2;
-
-  //var particlesToIntersect = [];
-  //particlesToIntersect.push(network.children[0]);
-  //var intersects = raycaster.intersectObjects(particlesToIntersect);
-
-  //if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {    
-    ////console.log("intersected objects");
-    ////console.log(intersectsParticles);
-
-    ////set previous node
-    //attributes.color.array[INTERSECTED.index*3] = INTERSECTED.color.r;
-    //attributes.color.array[INTERSECTED.index*3 + 1] = INTERSECTED.color.g;
-    //attributes.color.array[INTERSECTED.index*3 + 2] = INTERSECTED.color.b;
-    
-    //INTERSECTED.index = intersects[0].index;
-    //INTERSECTED.color.setRGB(
-      //attributes.color.array[intersects[0].index*3], 
-      //attributes.color.array[intersects[0].index*3 + 1],
-      //attributes.color.array[intersects[0].index*3 + 2]
-    //);
-    
-    ////set new node
-    //attributes.color.array[intersects[0].index*3] = defaults.highlight_node_color.r;
-    //attributes.color.array[intersects[0].index*3 + 1] = defaults.highlight_node_color.g;
-    //attributes.color.array[intersects[0].index*3 + 2] = defaults.highlight_node_color.b;
-    //attributes.color.needsUpdate = true;
-
-    ////TODO resize node
-    ////attributes.size.array[intersects[0].index] = 20;
-    ////attributes.size.needsUpdate = true;
-    
-    ////get key by index
-    //var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-    //console.log(window.graph.getNodeById(nodeID));
-  //}
   renderer.render(scene, camera);
 };
 

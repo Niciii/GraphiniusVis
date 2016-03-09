@@ -47,15 +47,15 @@
 	/* WEBPACK VAR INJECTION */(function(global) {var init			= __webpack_require__(1),
 	    render          = __webpack_require__(2),
 	    mutate          = __webpack_require__(3),
-	    hist_reader     = __webpack_require__(4),
-	    main_loop       = __webpack_require__(5),
-	    readCSV         = __webpack_require__(6),
-	    readJSON        = __webpack_require__(7),
-	    const_layout    = __webpack_require__(8),
-	    force_layout    = __webpack_require__(9),
-	    generic_layout  = __webpack_require__(10),
-	    fullscreen      = __webpack_require__(11),
-	    interaction     = __webpack_require__(12),
+	    hist_reader     = __webpack_require__(5),
+	    main_loop       = __webpack_require__(6),
+	    readCSV         = __webpack_require__(7),
+	    readJSON        = __webpack_require__(8),
+	    const_layout    = __webpack_require__(9),
+	    force_layout    = __webpack_require__(10),
+	    generic_layout  = __webpack_require__(11),
+	    fullscreen      = __webpack_require__(12),
+	    interaction     = __webpack_require__(4),
 	    navigation      = __webpack_require__(13);
 
 
@@ -159,6 +159,9 @@
 	      MAX_Z: 0,
 	      AVG_Z: 0
 	    }
+	  },
+	  callbacks: {
+	    node_intersects: []
 	  }
 	};
 	module.exports = config;
@@ -319,44 +322,6 @@
 
 
 	function updateGraph () {
-	  //var attributes = network.children[0].geometry.attributes;
-	  //raycaster.setFromCamera(mouse, camera);
-	  //raycaster.params.Points.threshold = 2;
-
-	  //var particlesToIntersect = [];
-	  //particlesToIntersect.push(network.children[0]);
-	  //var intersects = raycaster.intersectObjects(particlesToIntersect);
-
-	  //if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {    
-	    ////console.log("intersected objects");
-	    ////console.log(intersectsParticles);
-
-	    ////set previous node
-	    //attributes.color.array[INTERSECTED.index*3] = INTERSECTED.color.r;
-	    //attributes.color.array[INTERSECTED.index*3 + 1] = INTERSECTED.color.g;
-	    //attributes.color.array[INTERSECTED.index*3 + 2] = INTERSECTED.color.b;
-	    
-	    //INTERSECTED.index = intersects[0].index;
-	    //INTERSECTED.color.setRGB(
-	      //attributes.color.array[intersects[0].index*3], 
-	      //attributes.color.array[intersects[0].index*3 + 1],
-	      //attributes.color.array[intersects[0].index*3 + 2]
-	    //);
-	    
-	    ////set new node
-	    //attributes.color.array[intersects[0].index*3] = defaults.highlight_node_color.r;
-	    //attributes.color.array[intersects[0].index*3 + 1] = defaults.highlight_node_color.g;
-	    //attributes.color.array[intersects[0].index*3 + 2] = defaults.highlight_node_color.b;
-	    //attributes.color.needsUpdate = true;
-
-	    ////TODO resize node
-	    ////attributes.size.array[intersects[0].index] = 20;
-	    ////attributes.size.needsUpdate = true;
-	    
-	    ////get key by index
-	    //var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-	    //console.log(window.graph.getNodeById(nodeID));
-	  //}
 	  renderer.render(scene, camera);
 	};
 
@@ -380,7 +345,7 @@
 	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
 	var dims = __webpack_require__(1).globals.graph_dims;
 	var defaults = __webpack_require__(1).defaults;
-	var TWO_D_MODE = __webpack_require__(12).TWO_D_MODE;
+	var TWO_D_MODE = __webpack_require__(4).TWO_D_MODE;
 
 	//add node to graph but without edges
 	function addNode(new_node) {
@@ -426,9 +391,9 @@
 	}
 
 	//remove node and their edges
-	function removeNode(remove_node) {
+	function hideNode(hide_node) {
 	  //remove node
-	  var node_id = remove_node.getID();
+	  var node_id = hide_node.getID();
 	  var index = nodes_obj_idx[node_id];
 
 	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
@@ -438,9 +403,9 @@
 
 	  //remove edge
 	  var old_edges = network.children[1].geometry.getAttribute('position').array;
-	  var und_edges = remove_node.undEdges();
+	  var und_edges = hide_node.undEdges();
 	  for(var i = 0; i < Object.keys(und_edges).length; i++) {
-	    var edge = und_edges[Object.keys(remove_node.undEdges())[i]];
+	    var edge = und_edges[Object.keys(hide_node.undEdges())[i]];
 
 	    //update from-node
 	    var edge_index = edges_obj_idx[edge.getID()];
@@ -500,7 +465,7 @@
 	  var newColor = new THREE.Color(hexColor);
 	  var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
-	  var node_id = remove_node.getID();
+	  var node_id = node.getID();
 	  var index = nodes_obj_idx[node_id];
 	  nodeColors[index] = newColor.r;
 	  nodeColors[index + 1] = newColor.g;
@@ -581,7 +546,7 @@
 	module.exports = {
 	  addNode: addNode,
 	  addRandomNodes: addRandomNodes,
-	  removeNode: removeNode,
+	  hideNode: hideNode,
 	  addEdge: addEdge,
 	  colorSingleNode: colorSingleNode,
 	  colorAllNodes: colorAllNodes,
@@ -592,181 +557,6 @@
 
 /***/ },
 /* 4 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 5 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * delta t stuff
-	 */
-
-	function main_loop() {
-	  /**
-	   * Check for changes,
-	   * - if none, do nothing
-	   * - if changes, invoke reader and GO!
-	   */
-
-	  window.requestAnimationFrame(main_loop);
-	}
-
-	window.requestAnimationFrame(main_loop);
-
-
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	// var $G = require('graphinius').$G;
-	var json = new $G.input.JsonInput(false, false);
-
-	input.onchange = function() {
-
-	  //checks if the browser supports the file API
-	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
-	    alert("Browser does not support the File API.");
-	  }
-
-	  var files = document.getElementById('input').files;
-	  if (!files.length) {
-	    alert("No file selected.");
-	    return;
-	  }
-
-	  //only json files
-	  splitFileName = files[0].name.split(".");
-	  if(!splitFileName.pop().match('json')) {
-	    alert("Invalid file type - it must be a json file.");
-	    return;
-	  }
-	  // -> only works in firefox - chrome has no file.type
-	  /*if (!files[0].type.match('json')){
-	    alert('Wrong file type.');
-	    return;
-	  }*/
-
-	  var reader = new FileReader();
-	  var result = null;
-
-	  reader.onloadend = function(event){
-	    if (event.target.readyState == FileReader.DONE) {
-	      //console.log(event.target.result);
-	      var parsedFile = JSON.parse(event.target.result);
-	      window.graph = json.readFromJSON(parsedFile);
-	      console.log(parsedFile);
-
-	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
-	      document.querySelector("#edges").innerHTML = parsedFile.edges;
-	      //document.querySelector("#time").innerHTML = parsedFile.edges;
-
-	      //console.log(parsedFile.data);
-	      result = parsedFile.data;
-	    }
-	  }
-	  reader.readAsText(files[0]);
-
-	  return result;
-	};
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	var FSelem = {
-	      el: null,
-	      width: null,
-	      height: null
-	    };
-
-	function switchToFullScreen(elem_string) {
-	  var elem = document.querySelector(elem_string);
-	  var canvas = document.querySelector(elem_string + " canvas");
-	  console.log(canvas);
-	  if (elem) {
-	    FSelem = {
-	      el: elem,
-	      width: elem.clientWidth,
-	      height: elem.clientHeight
-	    }
-	    // console.log(elem);
-	    if (elem.requestFullscreen) {
-	      elem.requestFullscreen();
-	    } else if (elem.msRequestFullscreen) {
-	      elem.msRequestFullscreen();
-	    } else if (elem.mozRequestFullScreen) {
-	      elem.mozRequestFullScreen();
-	    } else if (elem.webkitRequestFullscreen) {
-	      elem.webkitRequestFullscreen();
-	    }
-	    canvas.focus();
-	  }
-	  else {
-	    alert("Element to full-screen does not exist...");
-	  }
-	}
-
-	function FShandler( event ) {
-	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
-	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
-	  if ( fullscreenElement ) {
-	      // console.log("fullscreen enabled!");
-	      fullscreenElement.style.width = "100%";
-	      fullscreenElement.style.height = "100%";
-	  }
-	  else {
-	      // console.log("fullscreen disabled!");
-	      // we can't get the element that WAS in fullscreen,
-	      // so we fall back to a manual entry...
-	      // console.log(FSelem);
-	      FSelem.el.style.width = FSelem.width+"px";
-	      FSelem.el.style.height = FSelem.height+"px";
-	  }
-	}
-
-	function setAndUpdateNrMutilate() {
-	  var val = document.querySelector("#nr_mutilate_per_frame").value;
-	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
-	  window.$GV.setNrMutilate(val);
-	}
-
-	document.addEventListener("fullscreenchange", FShandler);
-	document.addEventListener("webkitfullscreenchange", FShandler);
-	document.addEventListener("mozfullscreenchange", FShandler);
-	document.addEventListener("MSFullscreenChange", FShandler);
-
-
-/***/ },
-/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var network = __webpack_require__(2).network;
@@ -780,7 +570,7 @@
 
 	var TWO_D_MODE = 0,
 	    INTERSECTED = {
-	      index: 0, color: new THREE.Color()
+	      index: 0, color: new THREE.Color(), node: null
 	    },
 	    raycaster = new THREE.Raycaster();
 
@@ -828,7 +618,7 @@
 	}
 
 	function updateAll() {
-	  window.old_coordinates = new Float32Array( graph.nrNodes() * 3 );
+	  window.old_coordinates = new Float32Array(graph.nrNodes() * 3);
 	  var node_obj = graph.getNodes();
 	  var i = 0;
 	  for(node in nodes_obj) {
@@ -987,13 +777,13 @@
 	function nodeIntersection() {
 	  var attributes = network.children[0].geometry.attributes;
 	  raycaster.setFromCamera(mouse, camera);
-	  raycaster.params.Points.threshold = 2;
+	  raycaster.params.Points.threshold = 1;
 
 	  var particlesToIntersect = [];
 	  particlesToIntersect.push(network.children[0]);
 	  var intersects = raycaster.intersectObjects(particlesToIntersect);
 
-	  if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {    
+	  if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {
 	    //console.log("intersected objects");
 	    //console.log(intersectsParticles);
 
@@ -1021,21 +811,197 @@
 	    
 	    //get key by index
 	    var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-	    console.log(window.graph.getNodeById(nodeID));
+	    INTERSECTED.node = window.graph.getNodeById(nodeID);
+	    
 	    //Hint: update is called in navigation
 	    //window.requestAnimationFrame(update);
 	  }
 	}
 
 	module.exports = {
+	    INTERSECTED: INTERSECTED,
 	    TWO_D_MODE: TWO_D_MODE,
 	    updateNodePosition: updateNodePosition,
 	    updateAll: updateAll,
 	    updateRandomPostions: updateRandomPostions,
 	    switchTo2D: switchTo2D,
 	    switchTo3D: switchTo3D,
-	    nodeIntersection
+	    nodeIntersection: nodeIntersection
 	};
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	
+	/**
+	 * delta t stuff
+	 */
+
+	function main_loop() {
+	  /**
+	   * Check for changes,
+	   * - if none, do nothing
+	   * - if changes, invoke reader and GO!
+	   */
+
+	  window.requestAnimationFrame(main_loop);
+	}
+
+	window.requestAnimationFrame(main_loop);
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	// var $G = require('graphinius').$G;
+	var json = new $G.input.JsonInput(false, false);
+
+	input.onchange = function() {
+
+	  //checks if the browser supports the file API
+	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
+	    alert("Browser does not support the File API.");
+	  }
+
+	  var files = document.getElementById('input').files;
+	  if (!files.length) {
+	    alert("No file selected.");
+	    return;
+	  }
+
+	  //only json files
+	  splitFileName = files[0].name.split(".");
+	  if(!splitFileName.pop().match('json')) {
+	    alert("Invalid file type - it must be a json file.");
+	    return;
+	  }
+	  // -> only works in firefox - chrome has no file.type
+	  /*if (!files[0].type.match('json')){
+	    alert('Wrong file type.');
+	    return;
+	  }*/
+
+	  var reader = new FileReader();
+	  var result = null;
+
+	  reader.onloadend = function(event){
+	    if (event.target.readyState == FileReader.DONE) {
+	      //console.log(event.target.result);
+	      var parsedFile = JSON.parse(event.target.result);
+	      window.graph = json.readFromJSON(parsedFile);
+
+	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
+	      document.querySelector("#edges").innerHTML = parsedFile.edges;
+	      //document.querySelector("#time").innerHTML = parsedFile.edges;
+
+	      //console.log(parsedFile.data);
+	      result = parsedFile.data;
+	    }
+	  }
+	  reader.readAsText(files[0]);
+
+	  return result;
+	};
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	var FSelem = {
+	      el: null,
+	      width: null,
+	      height: null
+	    };
+
+	function switchToFullScreen(elem_string) {
+	  var elem = document.querySelector(elem_string);
+	  var canvas = document.querySelector(elem_string + " canvas");
+	  console.log(canvas);
+	  if (elem) {
+	    FSelem = {
+	      el: elem,
+	      width: elem.clientWidth,
+	      height: elem.clientHeight
+	    }
+	    // console.log(elem);
+	    if (elem.requestFullscreen) {
+	      elem.requestFullscreen();
+	    } else if (elem.msRequestFullscreen) {
+	      elem.msRequestFullscreen();
+	    } else if (elem.mozRequestFullScreen) {
+	      elem.mozRequestFullScreen();
+	    } else if (elem.webkitRequestFullscreen) {
+	      elem.webkitRequestFullscreen();
+	    }
+	    canvas.focus();
+	  }
+	  else {
+	    alert("Element to full-screen does not exist...");
+	  }
+	}
+
+	function FShandler( event ) {
+	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
+	  if ( fullscreenElement ) {
+	      // console.log("fullscreen enabled!");
+	      fullscreenElement.style.width = "100%";
+	      fullscreenElement.style.height = "100%";
+	  }
+	  else {
+	      // console.log("fullscreen disabled!");
+	      // we can't get the element that WAS in fullscreen,
+	      // so we fall back to a manual entry...
+	      // console.log(FSelem);
+	      FSelem.el.style.width = FSelem.width+"px";
+	      FSelem.el.style.height = FSelem.height+"px";
+	  }
+	}
+
+	function setAndUpdateNrMutilate() {
+	  var val = document.querySelector("#nr_mutilate_per_frame").value;
+	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
+	  window.$GV.setNrMutilate(val);
+	}
+
+	document.addEventListener("fullscreenchange", FShandler);
+	document.addEventListener("webkitfullscreenchange", FShandler);
+	document.addEventListener("mozfullscreenchange", FShandler);
+	document.addEventListener("MSFullscreenChange", FShandler);
 
 
 /***/ },
@@ -1043,13 +1009,23 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var keys = __webpack_require__(1).keys;
+	var globals = __webpack_require__(1).globals;
 	var camera = __webpack_require__(2).camera;
 	var defaults = __webpack_require__(1).defaults;
 	var update = __webpack_require__(2).update;
 	var network = __webpack_require__(2).network;
 	var container = __webpack_require__(1).container;
 	var mouse = __webpack_require__(1).globals.mouse;
-	var nodeIntersection = __webpack_require__(12).nodeIntersection;
+	var nodeIntersection = __webpack_require__(4).nodeIntersection;
+	var INTERSECTED = __webpack_require__(4).INTERSECTED;
+	var callbacks = __webpack_require__(1).callbacks;
+
+	// for testing purposes
+	var intersect_cb1 = function(node) {  
+	  document.querySelector("#nodeID").innerHTML = node._id;  
+	}
+	callbacks.node_intersects.push(intersect_cb1);
+
 
 	//rotation
 	var axis_x = new THREE.Vector3( 1, 0, 0 ),
@@ -1110,6 +1086,7 @@
 	  //wheel down: negative value
 	  //wheel up: positive value
 	  if(event.shiftKey) {
+	    console.log("wheel");
 	    if(event.wheelDelta < 0) {
 	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
 	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
@@ -1129,8 +1106,8 @@
 
 	window.addEventListener( 'mousemove', mouseMove, false );
 	function mouseMove(event) {
-
-	  if(event.shiftKey && event.which == 1) {
+	  
+	  if(event.shiftKey && event.buttons == 1) {
 	    if(event.movementX > 0) {
 	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
 	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
@@ -1151,9 +1128,27 @@
 	    }
 	  }
 	  //left mouse button
-	  else if(event.which == 1) {
+	  else if(event.buttons == 1) {
 	    var mouseX = event.clientX / container.WIDTH;
 	    var mouseY = event.clientY / container.HEIGHT;
+
+	    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
+	    var max_x = globals.graph_dims.MAX_X/2;
+	    var max_y = globals.graph_dims.MAX_Y/2;    
+	    
+	    if(camera.position.x > max_x) {
+	      camera.position.x = max_x;
+	    }
+	    else if(camera.position.x < -max_x) {
+	      camera.position.x = -max_x;
+	    }
+	    else if(camera.position.y > max_y) {
+	      camera.position.y = max_y;
+	    }
+	    else if(camera.position.y < -max_y) {
+	      camera.position.y = -max_y;
+	    }
+	    
 	    //movement in y: up is negative, down is positive
 	    camera.position.x = camera.position.x - (mouseX * event.movementX);
 	    camera.position.y = camera.position.y + (mouseY * event.movementY);
@@ -1166,17 +1161,29 @@
 	  var element = document.querySelector('#containerGraph');
 	  var rect = element.getBoundingClientRect();  
 	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
-	  mouse.y = - ((event.clientY -rect.top) / container.HEIGHT) * 2 + 1;
-	  //intersect after init graph
+	  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
+	  //intersect after init grap
 	  if(network.children[0] != null) {
 	    window.requestAnimationFrame(nodeIntersection);
 	  }
-
 	  window.requestAnimationFrame(update);
 	}
 
+	window.addEventListener('click', click, false);
+	function click(event) {
+	  if(INTERSECTED.node != null) {
+	    document.querySelector("#nodeInfo").style.visibility = 'visible';
+	    var ni = callbacks.node_intersects;
+	    for (var cb in ni) {
+	      if (typeof ni[cb] === 'function') {
+	        ni[cb](INTERSECTED.node);
+	      }
+	    }
+	  }
+	}
+
 	module.exports = {
-	    mouse: mouse
+	  mouse: mouse
 	};
 
 

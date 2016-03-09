@@ -1,4 +1,5 @@
 var keys = require("../core/init.js").keys;
+var globals = require("../core/init.js").globals;
 var camera = require("../core/render.js").camera;
 var defaults = require("../core/init.js").defaults;
 var update = require("../core/render.js").update;
@@ -6,6 +7,15 @@ var network = require("../core/render.js").network;
 var container = require("../core/init.js").container;
 var mouse = require("../core/init.js").globals.mouse;
 var nodeIntersection = require("./interaction.js").nodeIntersection;
+var INTERSECTED = require("./interaction.js").INTERSECTED;
+var callbacks = require("../core/init.js").callbacks;
+
+// for testing purposes
+var intersect_cb1 = function(node) {  
+  document.querySelector("#nodeID").innerHTML = node._id;  
+}
+callbacks.node_intersects.push(intersect_cb1);
+
 
 //rotation
 var axis_x = new THREE.Vector3( 1, 0, 0 ),
@@ -66,6 +76,7 @@ function mousewheel(event) {
   //wheel down: negative value
   //wheel up: positive value
   if(event.shiftKey) {
+    console.log("wheel");
     if(event.wheelDelta < 0) {
       network.rotateOnAxis(axis_y, -defaults.delta_rotation);
       axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
@@ -85,8 +96,8 @@ function mousewheel(event) {
 
 window.addEventListener( 'mousemove', mouseMove, false );
 function mouseMove(event) {
-
-  if(event.shiftKey && event.which == 1) {
+  
+  if(event.shiftKey && event.buttons == 1) {
     if(event.movementX > 0) {
       network.rotateOnAxis(axis_z, defaults.delta_rotation);
       axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
@@ -107,9 +118,27 @@ function mouseMove(event) {
     }
   }
   //left mouse button
-  else if(event.which == 1) {
+  else if(event.buttons == 1) {
     var mouseX = event.clientX / container.WIDTH;
     var mouseY = event.clientY / container.HEIGHT;
+
+    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
+    var max_x = globals.graph_dims.MAX_X/2;
+    var max_y = globals.graph_dims.MAX_Y/2;    
+    
+    if(camera.position.x > max_x) {
+      camera.position.x = max_x;
+    }
+    else if(camera.position.x < -max_x) {
+      camera.position.x = -max_x;
+    }
+    else if(camera.position.y > max_y) {
+      camera.position.y = max_y;
+    }
+    else if(camera.position.y < -max_y) {
+      camera.position.y = -max_y;
+    }
+    
     //movement in y: up is negative, down is positive
     camera.position.x = camera.position.x - (mouseX * event.movementX);
     camera.position.y = camera.position.y + (mouseY * event.movementY);
@@ -122,15 +151,27 @@ function mouseMove(event) {
   var element = document.querySelector('#containerGraph');
   var rect = element.getBoundingClientRect();  
   mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
-  mouse.y = - ((event.clientY -rect.top) / container.HEIGHT) * 2 + 1;
-  //intersect after init graph
+  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
+  //intersect after init grap
   if(network.children[0] != null) {
     window.requestAnimationFrame(nodeIntersection);
   }
-
   window.requestAnimationFrame(update);
 }
 
+window.addEventListener('click', click, false);
+function click(event) {
+  if(INTERSECTED.node != null) {
+    document.querySelector("#nodeInfo").style.visibility = 'visible';
+    var ni = callbacks.node_intersects;
+    for (var cb in ni) {
+      if (typeof ni[cb] === 'function') {
+        ni[cb](INTERSECTED.node);
+      }
+    }
+  }
+}
+
 module.exports = {
-    mouse: mouse
+  mouse: mouse
 };

@@ -42,11 +42,24 @@ h1 {
 }
 
 #containerGraph {
-  position: relative;
+  position: absolute;
   //background-color: grey;
-  width: 800px;
-  height: 600px;
+  width: 1500px;
+  height: 900px;
   //display: none;
+}
+
+#nodeInfo {
+  color: white;
+  position: absolute;
+  right: 0;
+  top: 5px;
+  width: 200px;
+  height: 800px;
+  z-index: 20;
+  font-size: 18px;
+  background-color: rgba(0, 0, 0, 0.7);
+  visibility: hidden;
 }
 
 /* DOES NOT WORK AS SPECIFIED

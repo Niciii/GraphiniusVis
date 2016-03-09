@@ -50,9 +50,9 @@ function addRandomNodes() {
 }
 
 //remove node and their edges
-function removeNode(remove_node) {
+function hideNode(hide_node) {
   //remove node
-  var node_id = remove_node.getID();
+  var node_id = hide_node.getID();
   var index = nodes_obj_idx[node_id];
 
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
@@ -62,9 +62,9 @@ function removeNode(remove_node) {
 
   //remove edge
   var old_edges = network.children[1].geometry.getAttribute('position').array;
-  var und_edges = remove_node.undEdges();
+  var und_edges = hide_node.undEdges();
   for(var i = 0; i < Object.keys(und_edges).length; i++) {
-    var edge = und_edges[Object.keys(remove_node.undEdges())[i]];
+    var edge = und_edges[Object.keys(hide_node.undEdges())[i]];
 
     //update from-node
     var edge_index = edges_obj_idx[edge.getID()];
@@ -124,7 +124,7 @@ function colorSingleNode(node, hexColor) {
   var newColor = new THREE.Color(hexColor);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
-  var node_id = remove_node.getID();
+  var node_id = node.getID();
   var index = nodes_obj_idx[node_id];
   nodeColors[index] = newColor.r;
   nodeColors[index + 1] = newColor.g;
@@ -205,7 +205,7 @@ function colorAllEdges(hexColor) {
 module.exports = {
   addNode: addNode,
   addRandomNodes: addRandomNodes,
-  removeNode: removeNode,
+  hideNode: hideNode,
   addEdge: addEdge,
   colorSingleNode: colorSingleNode,
   colorAllNodes: colorAllNodes,
