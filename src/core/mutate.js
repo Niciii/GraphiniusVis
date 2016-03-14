@@ -131,7 +131,7 @@ function colorSingleNode(node, hexColor) {
   nodeColors[index + 2] = newColor.b;
   network.children[0].geometry.attributes.color.needsUpdate = true;
 
-  window.requestAnimationFrame(update);
+  //window.requestAnimationFrame(update);
 }
 
 function colorAllNodes(hexColor) {
@@ -202,6 +202,29 @@ function colorAllEdges(hexColor) {
   window.requestAnimationFrame(update);
 }
 
+function colorBFS() {  
+  var max_distance = 0;
+  var start_node = graph.getRandomNode();
+  var bfs = $G.search.BFS(graph, start_node);
+  for(index in bfs) {
+    max_distance = Math.max(max_distance, bfs[index].distance);
+  }
+  
+  var Gradient = require('gradient');  
+  var grad = Gradient('#ff0000', '#00abff', max_distance);
+  var colors = grad.toArray('hexString');
+  //console.log(colors);
+  
+  for(index in bfs) {
+    var node = bfs[index];
+    colorSingleNode(node.parent, colors[bfs[index].distance-1]);
+  }
+  window.requestAnimationFrame(update);
+}
+
+function colorDFS() {
+}
+
 module.exports = {
   addNode: addNode,
   addRandomNodes: addRandomNodes,
@@ -210,5 +233,7 @@ module.exports = {
   colorSingleNode: colorSingleNode,
   colorAllNodes: colorAllNodes,
   colorSingleEdge: colorSingleEdge,
-  colorAllEdges: colorAllEdges
+  colorAllEdges: colorAllEdges,
+  colorBFS: colorBFS,
+  colorDFS: colorDFS
 }
