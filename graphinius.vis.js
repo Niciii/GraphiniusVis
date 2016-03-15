@@ -47,16 +47,16 @@
 	/* WEBPACK VAR INJECTION */(function(global) {var init			= __webpack_require__(1),
 	    render          = __webpack_require__(2),
 	    mutate          = __webpack_require__(3),
-	    hist_reader     = __webpack_require__(5),
-	    main_loop       = __webpack_require__(6),
-	    readCSV         = __webpack_require__(7),
-	    readJSON        = __webpack_require__(8),
-	    const_layout    = __webpack_require__(9),
-	    force_layout    = __webpack_require__(10),
-	    generic_layout  = __webpack_require__(11),
-	    fullscreen      = __webpack_require__(12),
+	    hist_reader     = __webpack_require__(7),
+	    main_loop       = __webpack_require__(8),
+	    readCSV         = __webpack_require__(9),
+	    readJSON        = __webpack_require__(10),
+	    const_layout    = __webpack_require__(11),
+	    force_layout    = __webpack_require__(12),
+	    generic_layout  = __webpack_require__(13),
+	    fullscreen      = __webpack_require__(14),
 	    interaction     = __webpack_require__(4),
-	    navigation      = __webpack_require__(13);
+	    navigation      = __webpack_require__(15);
 
 
 	var out = typeof window !== 'undefined' ? window : global;
@@ -144,7 +144,13 @@
 	      0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
 	      0xec2337, 0x008744, 0xffa700, 0x1df726,
 	      0x8fd621, 0x2d049b, 0x873bd3, 0x85835f
-	    ]
+	    ],
+	    
+	    //for bfs and dfs coloring
+	    bfs_gradient_start_color: '#ff0000',
+	    bfs_gradient_end_color: '#00abff',
+	    dfs_gradient_start_color: '#ff0000',
+	    dfs_gradient_end_color: '#00abff'
 	  },
 	  globals: {
 	    mouse: new THREE.Vector2(),
@@ -346,6 +352,9 @@
 	var dims = __webpack_require__(1).globals.graph_dims;
 	var defaults = __webpack_require__(1).defaults;
 	var TWO_D_MODE = __webpack_require__(4).TWO_D_MODE;
+	var INTERSECTED = __webpack_require__(4).INTERSECTED;
+
+	var segment_color_obj = {};
 
 	//add node to graph but without edges
 	function addNode(new_node) {
@@ -494,25 +503,26 @@
 	  window.requestAnimationFrame(update);
 	}
 
-	function colorSingleEdge(edge, hexColor) {
-	  var new_color = new THREE.Color(hexColor);
+	function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {
+	  var new_color_a = new THREE.Color(hex_color_node_a);
+	  var new_color_b = new THREE.Color(hex_color_node_b);
 	  var index = 1;
 	  if(edge._directed) {
 	    index = 2;
 	  }
-	  var edge_olors = network.children[index].geometry.getAttribute('color').array;
+	  var edge_colors = network.children[index].geometry.getAttribute('color').array;
 	  var edge_id = edge.getID();
 	  var idx = edges_obj_idx[edge_id];
 
-	  edge_olors[idx] = new_color.r;
-	  edge_olors[idx + 1] = new_color.g;
-	  edge_olors[idx + 2] = new_color.b;
-	  edge_olors[idx + 3] = new_color.r;
-	  edge_olors[idx + 4] = new_color.g;
-	  edge_olors[idx + 5] = new_color.b;
+	  edge_colors[idx] = new_color_a.r;
+	  edge_colors[idx + 1] = new_color_a.g;
+	  edge_colors[idx + 2] = new_color_a.b;
+	  edge_colors[idx + 3] = new_color_b.r;
+	  edge_colors[idx + 4] = new_color_b.g;
+	  edge_colors[idx + 5] = new_color_b.b;
 
 	  network.children[index].geometry.attributes.color.needsUpdate = true;
-	  window.requestAnimationFrame(update);
+	  //window.requestAnimationFrame(update);
 	}
 
 	function colorAllEdges(hexColor) {
@@ -543,10 +553,15 @@
 	  window.requestAnimationFrame(update);
 	}
 
-	function colorBFS() {  
+	//Hint: index = node id
+	function colorBFS(node) {
+	  segment_color_obj = {};
 	  var max_distance = 0,
 	      additional_node = false;
-	  var start_node = graph.getRandomNode();
+	  var start_node = graph.getRandomNode();;
+	  if(node != null) {
+	    start_node = node;
+	  }
 	  var bfs = $G.search.BFS(graph, start_node);
 	  for(index in bfs) {
 	    max_distance = Math.max(max_distance, bfs[index].distance);
@@ -558,31 +573,80 @@
 	  if(additional_node) {
 	    max_distance += 1;
 	  }
-	  var Gradient = __webpack_require__(14);  
-	  var grad = Gradient('#ff0000', '#00abff', max_distance);
+	  
+	  var Gradient = __webpack_require__(5);  
+	  var grad = Gradient(defaults.bfs_gradient_start_color,
+	                      defaults.bfs_gradient_end_color, 
+	                      max_distance);
 	  var colors = grad.toArray('hexString');
 	  
 	  for(index in bfs) {
-	    colorSingleNode(bfs[index].parent, colors[bfs[index].distance]);
+	    colorSingleNode(graph.getNodeById(index), colors[bfs[index].distance]);
+	    segment_color_obj[index] = colors[bfs[index].distance];
 	  }
-	  console.log(bfs);
+	  
+	  //TODO directed
+	  //[und_edges, dir_edges].forEach(function(edges) {
+	  //});
+	  for(edge_index in und_edges) {
+	    var edge = und_edges[edge_index];
+	    var node_a_id = edge._node_a.getID();
+	    var node_b_id = edge._node_b.getID();
+	    
+	    if(segment_color_obj[node_a_id] !== 'undefined' && 
+	       segment_color_obj[node_b_id] !== 'undefined') {
+	      colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+	    }
+	  }
+	  //console.log(bfs);
 	  window.requestAnimationFrame(update);
 	}
 
-	function colorDFS() {
-	  var start_node = graph.getRandomNode();
+	//Hint: index = node id
+	function colorDFS(node) {
+	  segment_color_obj = {};
+	  var start_node = graph.getRandomNode();;
+	  if(node != null) {
+	    start_node = node;
+	  }
 	  var dfs = $G.search.DFS(graph, start_node);
-	  console.log(dfs);
-	  
-	  //TODO for directed graphs -> more than one array
-	  var Gradient = __webpack_require__(14);  
-	  var grad = Gradient('#ff0000', '#00abff', 1);
+	  //console.log(dfs);
+
+	  var Gradient = __webpack_require__(5);  
+	  var grad = Gradient(defaults.dfs_gradient_start_color, 
+	                      defaults.dfs_gradient_end_color, 
+	                      dfs.length);
 	  var colors = grad.toArray('hexString');
 	  
-	  for(index in dfs[0]) {
-	    colorSingleNode(dfs[0][index].parent, colors[0]);
+	  for(var i = 0; i < dfs.length; i++) {
+	    for(index in dfs[i]) {
+	      colorSingleNode(graph.getNodeById(index), colors[i]);
+	      segment_color_obj[index] = colors[i];
+	    }
 	  }
+	  
+	  [und_edges, dir_edges].forEach(function(edges) {
+	    for(edge_index in edges) {
+	    var edge = edges[edge_index];
+	    var node_a_id = edge._node_a.getID();
+	    var node_b_id = edge._node_b.getID();
+	    
+	      if(segment_color_obj[node_a_id] !== 'undefined' && 
+	         segment_color_obj[node_b_id] !== 'undefined') {
+	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+	      }
+	    }
+	  });
+	  
 	  window.requestAnimationFrame(update);
+	}
+
+	function colorBFSclick() {
+	  colorBFS(INTERSECTED.node);
+	}
+
+	function colorDFSclick() {
+	  colorDFS(INTERSECTED.node);
 	}
 
 	module.exports = {
@@ -595,7 +659,9 @@
 	  colorSingleEdge: colorSingleEdge,
 	  colorAllEdges: colorAllEdges,
 	  colorBFS: colorBFS,
-	  colorDFS: colorDFS
+	  colorDFS: colorDFS,
+	  colorBFSclick: colorBFSclick,
+	  colorDFSclick: colorDFSclick
 	}
 
 
@@ -876,374 +942,324 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	
-
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * delta t stuff
-	 */
-
-	function main_loop() {
-	  /**
-	   * Check for changes,
-	   * - if none, do nothing
-	   * - if changes, invoke reader and GO!
-	   */
-
-	  window.requestAnimationFrame(main_loop);
+	/* WEBPACK VAR INJECTION */(function(process) {/* MIT license */
+	var Color = (function() {var require = function (file, cwd) {
+	    var resolved = require.resolve(file, cwd || '/');
+	    var mod = require.modules[resolved];
+	    if (!mod) throw new Error(
+	        'Failed to resolve module ' + file + ', tried ' + resolved
+	    );
+	    var res = mod._cached ? mod._cached : mod();
+	    return res;
 	}
+	var __require = require;
 
-	window.requestAnimationFrame(main_loop);
+	require.paths = [];
+	require.modules = {};
+	require.extensions = [".js",".coffee"];
 
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	// var $G = require('graphinius').$G;
-	var json = new $G.input.JsonInput(false, false);
-
-	input.onchange = function() {
-
-	  //checks if the browser supports the file API
-	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
-	    alert("Browser does not support the File API.");
-	  }
-
-	  var files = document.getElementById('input').files;
-	  if (!files.length) {
-	    alert("No file selected.");
-	    return;
-	  }
-
-	  //only json files
-	  splitFileName = files[0].name.split(".");
-	  if(!splitFileName.pop().match('json')) {
-	    alert("Invalid file type - it must be a json file.");
-	    return;
-	  }
-	  // -> only works in firefox - chrome has no file.type
-	  /*if (!files[0].type.match('json')){
-	    alert('Wrong file type.');
-	    return;
-	  }*/
-
-	  var reader = new FileReader();
-	  var result = null;
-
-	  reader.onloadend = function(event){
-	    if (event.target.readyState == FileReader.DONE) {
-	      //console.log(event.target.result);
-	      var parsedFile = JSON.parse(event.target.result);
-	      window.graph = json.readFromJSON(parsedFile);
-
-	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
-	      document.querySelector("#edges").innerHTML = parsedFile.edges;
-	      //document.querySelector("#time").innerHTML = parsedFile.edges;
-
-	      //console.log(parsedFile.data);
-	      result = parsedFile.data;
-	    }
-	  }
-	  reader.readAsText(files[0]);
-
-	  return result;
-	};
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 12 */
-/***/ function(module, exports) {
-
-	var FSelem = {
-	      el: null,
-	      width: null,
-	      height: null
+	require.resolve = (function () {
+	    var core = [ 'assert', 'events', 'fs', 'path', 'vm' ]
+	        .reduce(function (acc, x) {
+	            acc[x] = true;
+	            return acc;
+	        }, {})
+	    ;
+	    
+	    return function (x, cwd) {
+	        if (!cwd) cwd = '/';
+	        
+	        if (core[x]) return x;
+	        var path = require.modules.path();
+	        var y = cwd || '.';
+	        
+	        if (x.match(/^(?:\.\.?\/|\/)/)) {
+	            var m = loadAsFileSync(path.resolve(y, x))
+	                || loadAsDirectorySync(path.resolve(y, x));
+	            if (m) return m;
+	        }
+	        
+	        var n = loadNodeModulesSync(x, y);
+	        if (n) return n;
+	        
+	        throw new Error("Cannot find module '" + x + "'");
+	        
+	        function loadAsFileSync (x) {
+	            if (require.modules[x]) {
+	                return x;
+	            }
+	            
+	            for (var i = 0; i < require.extensions.length; i++) {
+	                var ext = require.extensions[i];
+	                if (require.modules[x + ext]) return x + ext;
+	            }
+	        }
+	        
+	        function loadAsDirectorySync (x) {
+	            x = x.replace(/\/+$/, '');
+	            var pkgfile = x + '/package.json';
+	            if (require.modules[pkgfile]) {
+	                var pkg = require.modules[pkgfile]();
+	                var b = pkg.browserify;
+	                if (typeof b === 'object' && b.main) {
+	                    var m = loadAsFileSync(path.resolve(x, b.main));
+	                    if (m) return m;
+	                }
+	                else if (typeof b === 'string') {
+	                    var m = loadAsFileSync(path.resolve(x, b));
+	                    if (m) return m;
+	                }
+	                else if (pkg.main) {
+	                    var m = loadAsFileSync(path.resolve(x, pkg.main));
+	                    if (m) return m;
+	                }
+	            }
+	            
+	            return loadAsFileSync(x + '/index');
+	        }
+	        
+	        function loadNodeModulesSync (x, start) {
+	            var dirs = nodeModulesPathsSync(start);
+	            for (var i = 0; i < dirs.length; i++) {
+	                var dir = dirs[i];
+	                var m = loadAsFileSync(dir + '/' + x);
+	                if (m) return m;
+	                var n = loadAsDirectorySync(dir + '/' + x);
+	                if (n) return n;
+	            }
+	            
+	            var m = loadAsFileSync(x);
+	            if (m) return m;
+	        }
+	        
+	        function nodeModulesPathsSync (start) {
+	            var parts;
+	            if (start === '/') parts = [ '' ];
+	            else parts = path.normalize(start).split(/\/+/);
+	            
+	            var dirs = [];
+	            for (var i = parts.length - 1; i >= 0; i--) {
+	                if (parts[i] === 'node_modules') continue;
+	                var dir = parts.slice(0, i + 1).join('/') + '/node_modules';
+	                dirs.push(dir);
+	            }
+	            
+	            return dirs;
+	        }
 	    };
+	})();
 
-	function switchToFullScreen(elem_string) {
-	  var elem = document.querySelector(elem_string);
-	  var canvas = document.querySelector(elem_string + " canvas");
-	  console.log(canvas);
-	  if (elem) {
-	    FSelem = {
-	      el: elem,
-	      width: elem.clientWidth,
-	      height: elem.clientHeight
+	require.alias = function (from, to) {
+	    var path = require.modules.path();
+	    var res = null;
+	    try {
+	        res = require.resolve(from + '/package.json', '/');
 	    }
-	    // console.log(elem);
-	    if (elem.requestFullscreen) {
-	      elem.requestFullscreen();
-	    } else if (elem.msRequestFullscreen) {
-	      elem.msRequestFullscreen();
-	    } else if (elem.mozRequestFullScreen) {
-	      elem.mozRequestFullScreen();
-	    } else if (elem.webkitRequestFullscreen) {
-	      elem.webkitRequestFullscreen();
+	    catch (err) {
+	        res = require.resolve(from, '/');
 	    }
-	    canvas.focus();
-	  }
-	  else {
-	    alert("Element to full-screen does not exist...");
-	  }
-	}
+	    var basedir = path.dirname(res);
+	    
+	    Object.keys(require.modules)
+	        .forEach(function (x) {
+	            if (x.slice(0, basedir.length + 1) === basedir + '/') {
+	                var f = x.slice(basedir.length);
+	                require.modules[to + f] = require.modules[basedir + f];
+	            }
+	            else if (x === basedir) {
+	                require.modules[to] = require.modules[basedir];
+	            }
+	        })
+	    ;
+	};
 
-	function FShandler( event ) {
-	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
-	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
-	  if ( fullscreenElement ) {
-	      // console.log("fullscreen enabled!");
-	      fullscreenElement.style.width = "100%";
-	      fullscreenElement.style.height = "100%";
-	  }
-	  else {
-	      // console.log("fullscreen disabled!");
-	      // we can't get the element that WAS in fullscreen,
-	      // so we fall back to a manual entry...
-	      // console.log(FSelem);
-	      FSelem.el.style.width = FSelem.width+"px";
-	      FSelem.el.style.height = FSelem.height+"px";
-	  }
-	}
+	if (typeof process === 'undefined') process = {};
 
-	function setAndUpdateNrMutilate() {
-	  var val = document.querySelector("#nr_mutilate_per_frame").value;
-	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
-	  window.$GV.setNrMutilate(val);
-	}
+	if (!process.nextTick) process.nextTick = function (fn) {
+	    setTimeout(fn, 0);
+	};
 
-	document.addEventListener("fullscreenchange", FShandler);
-	document.addEventListener("webkitfullscreenchange", FShandler);
-	document.addEventListener("mozfullscreenchange", FShandler);
-	document.addEventListener("MSFullscreenChange", FShandler);
+	if (!process.title) process.title = 'browser';
 
+	if (!process.binding) process.binding = function (name) {
+	    if (name === 'evals') return require('vm')
+	    else throw new Error('No such module')
+	};
 
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
+	if (!process.cwd) process.cwd = function () { return '.' };
 
-	var keys = __webpack_require__(1).keys;
-	var globals = __webpack_require__(1).globals;
-	var camera = __webpack_require__(2).camera;
-	var defaults = __webpack_require__(1).defaults;
-	var update = __webpack_require__(2).update;
-	var network = __webpack_require__(2).network;
-	var container = __webpack_require__(1).container;
-	var mouse = __webpack_require__(1).globals.mouse;
-	var nodeIntersection = __webpack_require__(4).nodeIntersection;
-	var INTERSECTED = __webpack_require__(4).INTERSECTED;
-	var callbacks = __webpack_require__(1).callbacks;
-
-	// for testing purposes
-	var intersect_cb1 = function(node) {  
-	  document.querySelector("#nodeID").innerHTML = node._id;  
-	}
-	callbacks.node_intersects.push(intersect_cb1);
-
-
-	//rotation
-	var axis_x = new THREE.Vector3( 1, 0, 0 ),
-	    axis_y = new THREE.Vector3( 0, 1, 0 ),
-	    axis_z = new THREE.Vector3( 0, 0, 1 );
-
-	window.addEventListener('keypress', key, false);
-	function key(event) {
-	  switch (event.charCode) {
-	    case keys.KEY_W: //zoom in
-	      camera.position.y = camera.position.y - defaults.delta_distance; break;
-	    case keys.KEY_S: //zoom out
-	      camera.position.y = camera.position.y + defaults.delta_distance; break;
-	    case keys.KEY_A: //move left
-	      camera.position.x = camera.position.x + defaults.delta_distance; break;
-	    case keys.KEY_D: //move right
-	      camera.position.x = camera.position.x - defaults.delta_distance; break;
-	    case keys.KEY_R:
-	      network.translateZ(defaults.delta_distance); break;
-	    case keys.KEY_F:
-	      network.translateZ(-defaults.delta_distance); break;
-
-	    case keys.KEY_X:
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SX:
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_Y:
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SY:
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_C:
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SC:
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      break;
-	    default:
-	      break;
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	//zoom in and out
-	window.addEventListener('mousewheel', mousewheel, false);
-	function mousewheel(event) {
-	  //wheel down: negative value
-	  //wheel up: positive value
-	  if(event.shiftKey) {
-	    console.log("wheel");
-	    if(event.wheelDelta < 0) {
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	    }
-	    else {
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	require.modules["path"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = ".";
+	    var __filename = "path";
+	    
+	    var require = function (file) {
+	        return __require(file, ".");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, ".");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["path"]._cached = module.exports;
+	    
+	    (function () {
+	        // resolves . and .. elements in a path array with directory names there
+	// must be no slashes, empty elements, or device names (c:\) in the array
+	// (so also no leading and trailing slashes - it does not distinguish
+	// relative and absolute paths)
+	function normalizeArray(parts, allowAboveRoot) {
+	  // if the path tries to go above the root, `up` ends up > 0
+	  var up = 0;
+	  for (var i = parts.length; i >= 0; i--) {
+	    var last = parts[i];
+	    if (last == '.') {
+	      parts.splice(i, 1);
+	    } else if (last === '..') {
+	      parts.splice(i, 1);
+	      up++;
+	    } else if (up) {
+	      parts.splice(i, 1);
+	      up--;
 	    }
 	  }
-	  else {
-	    camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
-	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
+
+	  // if the path is allowed to go above the root, restore leading ..s
+	  if (allowAboveRoot) {
+	    for (; up--; up) {
+	      parts.unshift('..');
+	    }
 	  }
-	  window.requestAnimationFrame(update);
+
+	  return parts;
 	}
 
-	window.addEventListener( 'mousemove', mouseMove, false );
-	function mouseMove(event) {
+	// Regex to split a filename into [*, dir, basename, ext]
+	// posix version
+	var splitPathRe = /^(.+\/(?!$)|\/)?((?:.+?)?(\.[^.]*)?)$/;
+
+	// path.resolve([from ...], to)
+	// posix version
+	exports.resolve = function() {
+	var resolvedPath = '',
+	    resolvedAbsolute = false;
+
+	for (var i = arguments.length; i >= -1 && !resolvedAbsolute; i--) {
+	  var path = (i >= 0)
+	      ? arguments[i]
+	      : process.cwd();
+
+	  // Skip empty and invalid entries
+	  if (typeof path !== 'string' || !path) {
+	    continue;
+	  }
+
+	  resolvedPath = path + '/' + resolvedPath;
+	  resolvedAbsolute = path.charAt(0) === '/';
+	}
+
+	// At this point the path should be resolved to a full absolute path, but
+	// handle relative paths to be safe (might happen when process.cwd() fails)
+
+	// Normalize the path
+	resolvedPath = normalizeArray(resolvedPath.split('/').filter(function(p) {
+	    return !!p;
+	  }), !resolvedAbsolute).join('/');
+
+	  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+	};
+
+	// path.normalize(path)
+	// posix version
+	exports.normalize = function(path) {
+	var isAbsolute = path.charAt(0) === '/',
+	    trailingSlash = path.slice(-1) === '/';
+
+	// Normalize the path
+	path = normalizeArray(path.split('/').filter(function(p) {
+	    return !!p;
+	  }), !isAbsolute).join('/');
+
+	  if (!path && !isAbsolute) {
+	    path = '.';
+	  }
+	  if (path && trailingSlash) {
+	    path += '/';
+	  }
 	  
-	  if(event.shiftKey && event.buttons == 1) {
-	    if(event.movementX > 0) {
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	    }
-	    else if(event.movementX < 0) {
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	    }
-	    else if(event.movementY > 0) {
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	    }
-	    else if(event.movementY < 0) {
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	    }
-	  }
-	  //left mouse button
-	  else if(event.buttons == 1) {
-	    var mouseX = event.clientX / container.WIDTH;
-	    var mouseY = event.clientY / container.HEIGHT;
-
-	    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
-	    var max_x = globals.graph_dims.MAX_X/2;
-	    var max_y = globals.graph_dims.MAX_Y/2;    
-	    
-	    if(camera.position.x > max_x) {
-	      camera.position.x = max_x;
-	    }
-	    else if(camera.position.x < -max_x) {
-	      camera.position.x = -max_x;
-	    }
-	    else if(camera.position.y > max_y) {
-	      camera.position.y = max_y;
-	    }
-	    else if(camera.position.y < -max_y) {
-	      camera.position.y = -max_y;
-	    }
-	    
-	    //movement in y: up is negative, down is positive
-	    camera.position.x = camera.position.x - (mouseX * event.movementX);
-	    camera.position.y = camera.position.y + (mouseY * event.movementY);
-	  }
-
-	  //raycaster
-	  // calculate mouse position in normalized device coordinates
-	  // (-1 to +1) for both components
-	  event.preventDefault();  
-	  var element = document.querySelector('#containerGraph');
-	  var rect = element.getBoundingClientRect();  
-	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
-	  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
-	  //intersect after init grap
-	  if(network.children[0] != null) {
-	    window.requestAnimationFrame(nodeIntersection);
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	window.addEventListener('click', click, false);
-	function click(event) {
-	  if(INTERSECTED.node != null) {
-	    document.querySelector("#nodeInfo").style.visibility = 'visible';
-	    var ni = callbacks.node_intersects;
-	    for (var cb in ni) {
-	      if (typeof ni[cb] === 'function') {
-	        ni[cb](INTERSECTED.node);
-	      }
-	    }
-	  }
-	}
-
-	module.exports = {
-	  mouse: mouse
+	  return (isAbsolute ? '/' : '') + path;
 	};
 
 
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
+	// posix version
+	exports.join = function() {
+	  var paths = Array.prototype.slice.call(arguments, 0);
+	  return exports.normalize(paths.filter(function(p, index) {
+	    return p && typeof p === 'string';
+	  }).join('/'));
+	};
 
-	
-	module.exports = __webpack_require__(15);
+
+	exports.dirname = function(path) {
+	  var dir = splitPathRe.exec(path)[1] || '';
+	  var isWindows = false;
+	  if (!dir) {
+	    // No dirname
+	    return '.';
+	  } else if (dir.length === 1 ||
+	      (isWindows && dir.length <= 3 && dir.charAt(1) === ':')) {
+	    // It is just a slash or a drive letter with a slash
+	    return dir;
+	  } else {
+	    // It is a full dirname, strip trailing slash
+	    return dir.substring(0, dir.length - 1);
+	  }
+	};
 
 
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
+	exports.basename = function(path, ext) {
+	  var f = splitPathRe.exec(path)[2] || '';
+	  // TODO: make this comparison case-insensitive on windows?
+	  if (ext && f.substr(-1 * ext.length) === ext) {
+	    f = f.substr(0, f.length - ext.length);
+	  }
+	  return f;
+	};
 
-	var sets = function(xs) {
+
+	exports.extname = function(path) {
+	  return splitPathRe.exec(path)[3] || '';
+	};
+	;
+	    }).call(module.exports);
+	    
+	    __require.modules["path"]._cached = module.exports;
+	    return module.exports;
+	};
+
+	require.modules["/gradient.js"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = "/";
+	    var __filename = "/gradient.js";
+	    
+	    var require = function (file) {
+	        return __require(file, "/");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, "/");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["/gradient.js"]._cached = module.exports;
+	    
+	    (function () {
+	        var sets = function(xs) {
 	  var loop = function(acc, i) {
 	      if (i == xs.length || !xs[i+1]) { return acc; }
 	      acc.push([xs[i], xs[i+1]]);
@@ -1254,7 +1270,7 @@
 
 	// ------------------------------------------------------------------------ //
 
-	var Color = __webpack_require__(16)
+	var Color = require('color')
 	  , Gradient = function(/* [color1, color2, steps] -or- [[array], steps] */) {
 	        var args = arguments[0];
 	        this.stops = [];
@@ -1352,466 +1368,535 @@
 	module.exports = function() {
 	   return new Gradient(Array.prototype.slice.call(arguments,0));
 	};
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* MIT license */
-	var convert = __webpack_require__(17);
-	var string = __webpack_require__(19);
-
-	var Color = function (obj) {
-		if (obj instanceof Color) {
-			return obj;
-		}
-		if (!(this instanceof Color)) {
-			return new Color(obj);
-		}
-
-		this.values = {
-			rgb: [0, 0, 0],
-			hsl: [0, 0, 0],
-			hsv: [0, 0, 0],
-			hwb: [0, 0, 0],
-			cmyk: [0, 0, 0, 0],
-			alpha: 1
-		};
-
-		// parse Color() argument
-		var vals;
-		if (typeof obj === 'string') {
-			vals = string.getRgba(obj);
-			if (vals) {
-				this.setValues('rgb', vals);
-			} else if (vals = string.getHsla(obj)) {
-				this.setValues('hsl', vals);
-			} else if (vals = string.getHwb(obj)) {
-				this.setValues('hwb', vals);
-			} else {
-				throw new Error('Unable to parse color from string "' + obj + '"');
-			}
-		} else if (typeof obj === 'object') {
-			vals = obj;
-			if (vals.r !== undefined || vals.red !== undefined) {
-				this.setValues('rgb', vals);
-			} else if (vals.l !== undefined || vals.lightness !== undefined) {
-				this.setValues('hsl', vals);
-			} else if (vals.v !== undefined || vals.value !== undefined) {
-				this.setValues('hsv', vals);
-			} else if (vals.w !== undefined || vals.whiteness !== undefined) {
-				this.setValues('hwb', vals);
-			} else if (vals.c !== undefined || vals.cyan !== undefined) {
-				this.setValues('cmyk', vals);
-			} else {
-				throw new Error('Unable to parse color from object ' + JSON.stringify(obj));
-			}
-		}
+	;
+	    }).call(module.exports);
+	    
+	    __require.modules["/gradient.js"]._cached = module.exports;
+	    return module.exports;
 	};
+
+	require.modules["color/package.json"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = "color";
+	    var __filename = "color/package.json";
+	    
+	    var require = function (file) {
+	        return __require(file, "color");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, "color");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color/package.json"]._cached = module.exports;
+	    
+	    (function () {
+	        module.exports = {"name":"color","description":"Color conversion and manipulation with CSS string support","version":"0.7.1","author":{"name":"Heather Arthur","email":"fayearthur@gmail.com"},"repository":{"type":"git","url":"http://github.com/harthur/color.git"},"main":"./color","dependencies":{"color-convert":"0.5.x","color-string":"0.2.x"},"devDependencies":{"nomnom":"~1.5.2","browserify":"~2.18.1","grunt":"~0.4.1","grunt-contrib-uglify":"~0.2.0"},"keywords":["color","colour","css"],"bugs":{"url":"https://github.com/harthur/color/issues"},"homepage":"https://github.com/harthur/color","_id":"color@0.7.1","dist":{"shasum":"a2676f19c6ccb708b7586dc98b5c6e37dc9a199c","tarball":"http://registry.npmjs.org/color/-/color-0.7.1.tgz"},"_from":"color@>=0.4.0","_npmVersion":"1.3.25","_npmUser":{"name":"harth","email":"fayearthur@gmail.com"},"maintainers":[{"name":"harth","email":"fayearthur@gmail.com"}],"directories":{},"_shasum":"a2676f19c6ccb708b7586dc98b5c6e37dc9a199c","_resolved":"https://registry.npmjs.org/color/-/color-0.7.1.tgz"};
+	    }).call(module.exports);
+	    
+	    __require.modules["color/package.json"]._cached = module.exports;
+	    return module.exports;
+	};
+
+	require.modules["color"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = ".";
+	    var __filename = "color";
+	    
+	    var require = function (file) {
+	        return __require(file, ".");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, ".");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color"]._cached = module.exports;
+	    
+	    (function () {
+	        /* MIT license */
+	var convert = require("color-convert"),
+	    string = require("color-string");
+
+	module.exports = function(cssString) {
+	   return new Color(cssString);
+	};
+
+	var Color = function(cssString) {
+	   this.values = {
+	      rgb: [0, 0, 0],
+	      hsl: [0, 0, 0],
+	      hsv: [0, 0, 0],
+	      hwb: [0, 0, 0],
+	      cmyk: [0, 0, 0, 0],
+	      alpha: 1
+	   }
+
+	   // parse Color() argument
+	   if (typeof cssString == "string") {
+	      var vals = string.getRgba(cssString);
+	      if (vals) {
+	         this.setValues("rgb", vals);
+	      }
+	      else if(vals = string.getHsla(cssString)) {
+	         this.setValues("hsl", vals);
+	      }
+	      else if(vals = string.getHwb(cssString)) {
+	         this.setValues("hwb", vals);
+	      }
+	      else {
+	        throw new Error("Unable to parse color from string " + cssString);
+	      }
+	   }
+	   else if (typeof cssString == "object") {
+	      var vals = cssString;
+	      if(vals["r"] !== undefined || vals["red"] !== undefined) {
+	         this.setValues("rgb", vals)
+	      }
+	      else if(vals["l"] !== undefined || vals["lightness"] !== undefined) {
+	         this.setValues("hsl", vals)
+	      }
+	      else if(vals["v"] !== undefined || vals["value"] !== undefined) {
+	         this.setValues("hsv", vals)
+	      }
+	      else if(vals["w"] !== undefined || vals["whiteness"] !== undefined) {
+	         this.setValues("hwb", vals)
+	      }
+	      else if(vals["c"] !== undefined || vals["cyan"] !== undefined) {
+	         this.setValues("cmyk", vals)
+	      }
+	      else {
+	        throw new Error("Unable to parse color from object " + JSON.stringify(cssString));
+	      }
+	   }
+	}
 
 	Color.prototype = {
-		rgb: function () {
-			return this.setSpace('rgb', arguments);
-		},
-		hsl: function () {
-			return this.setSpace('hsl', arguments);
-		},
-		hsv: function () {
-			return this.setSpace('hsv', arguments);
-		},
-		hwb: function () {
-			return this.setSpace('hwb', arguments);
-		},
-		cmyk: function () {
-			return this.setSpace('cmyk', arguments);
-		},
+	   rgb: function (vals) {
+	      return this.setSpace("rgb", arguments);
+	   },
+	   hsl: function(vals) {
+	      return this.setSpace("hsl", arguments);
+	   },
+	   hsv: function(vals) {
+	      return this.setSpace("hsv", arguments);
+	   },
+	   hwb: function(vals) {
+	      return this.setSpace("hwb", arguments);
+	   },
+	   cmyk: function(vals) {
+	      return this.setSpace("cmyk", arguments);
+	   },
 
-		rgbArray: function () {
-			return this.values.rgb;
-		},
-		hslArray: function () {
-			return this.values.hsl;
-		},
-		hsvArray: function () {
-			return this.values.hsv;
-		},
-		hwbArray: function () {
-			if (this.values.alpha !== 1) {
-				return this.values.hwb.concat([this.values.alpha]);
-			}
-			return this.values.hwb;
-		},
-		cmykArray: function () {
-			return this.values.cmyk;
-		},
-		rgbaArray: function () {
-			var rgb = this.values.rgb;
-			return rgb.concat([this.values.alpha]);
-		},
-		hslaArray: function () {
-			var hsl = this.values.hsl;
-			return hsl.concat([this.values.alpha]);
-		},
-		alpha: function (val) {
-			if (val === undefined) {
-				return this.values.alpha;
-			}
-			this.setValues('alpha', val);
-			return this;
-		},
+	   rgbArray: function() {
+	      return this.values.rgb;
+	   },
+	   hslArray: function() {
+	      return this.values.hsl;
+	   },
+	   hsvArray: function() {
+	      return this.values.hsv;
+	   },
+	   hwbArray: function() {
+	      if (this.values.alpha !== 1) {
+	        return this.values.hwb.concat([this.values.alpha])
+	      }
+	      return this.values.hwb;
+	   },
+	   cmykArray: function() {
+	      return this.values.cmyk;
+	   },
+	   rgbaArray: function() {
+	      var rgb = this.values.rgb;
+	      return rgb.concat([this.values.alpha]);
+	   },
+	   hslaArray: function() {
+	      var hsl = this.values.hsl;
+	      return hsl.concat([this.values.alpha]);
+	   },
+	   alpha: function(val) {
+	      if (val === undefined) {
+	         return this.values.alpha;
+	      }
+	      this.setValues("alpha", val);
+	      return this;
+	   },
 
-		red: function (val) {
-			return this.setChannel('rgb', 0, val);
-		},
-		green: function (val) {
-			return this.setChannel('rgb', 1, val);
-		},
-		blue: function (val) {
-			return this.setChannel('rgb', 2, val);
-		},
-		hue: function (val) {
-			if (val) {
-				val %= 360;
-				val = val < 0 ? 360 + val : val;
-			}
-			return this.setChannel('hsl', 0, val);
-		},
-		saturation: function (val) {
-			return this.setChannel('hsl', 1, val);
-		},
-		lightness: function (val) {
-			return this.setChannel('hsl', 2, val);
-		},
-		saturationv: function (val) {
-			return this.setChannel('hsv', 1, val);
-		},
-		whiteness: function (val) {
-			return this.setChannel('hwb', 1, val);
-		},
-		blackness: function (val) {
-			return this.setChannel('hwb', 2, val);
-		},
-		value: function (val) {
-			return this.setChannel('hsv', 2, val);
-		},
-		cyan: function (val) {
-			return this.setChannel('cmyk', 0, val);
-		},
-		magenta: function (val) {
-			return this.setChannel('cmyk', 1, val);
-		},
-		yellow: function (val) {
-			return this.setChannel('cmyk', 2, val);
-		},
-		black: function (val) {
-			return this.setChannel('cmyk', 3, val);
-		},
+	   red: function(val) {
+	      return this.setChannel("rgb", 0, val);
+	   },
+	   green: function(val) {
+	      return this.setChannel("rgb", 1, val);
+	   },
+	   blue: function(val) {
+	      return this.setChannel("rgb", 2, val);
+	   },
+	   hue: function(val) {
+	      return this.setChannel("hsl", 0, val);
+	   },
+	   saturation: function(val) {
+	      return this.setChannel("hsl", 1, val);
+	   },
+	   lightness: function(val) {
+	      return this.setChannel("hsl", 2, val);
+	   },
+	   saturationv: function(val) {
+	      return this.setChannel("hsv", 1, val);
+	   },
+	   whiteness: function(val) {
+	      return this.setChannel("hwb", 1, val);
+	   },
+	   blackness: function(val) {
+	      return this.setChannel("hwb", 2, val);
+	   },
+	   value: function(val) {
+	      return this.setChannel("hsv", 2, val);
+	   },
+	   cyan: function(val) {
+	      return this.setChannel("cmyk", 0, val);
+	   },
+	   magenta: function(val) {
+	      return this.setChannel("cmyk", 1, val);
+	   },
+	   yellow: function(val) {
+	      return this.setChannel("cmyk", 2, val);
+	   },
+	   black: function(val) {
+	      return this.setChannel("cmyk", 3, val);
+	   },
 
-		hexString: function () {
-			return string.hexString(this.values.rgb);
-		},
-		rgbString: function () {
-			return string.rgbString(this.values.rgb, this.values.alpha);
-		},
-		rgbaString: function () {
-			return string.rgbaString(this.values.rgb, this.values.alpha);
-		},
-		percentString: function () {
-			return string.percentString(this.values.rgb, this.values.alpha);
-		},
-		hslString: function () {
-			return string.hslString(this.values.hsl, this.values.alpha);
-		},
-		hslaString: function () {
-			return string.hslaString(this.values.hsl, this.values.alpha);
-		},
-		hwbString: function () {
-			return string.hwbString(this.values.hwb, this.values.alpha);
-		},
-		keyword: function () {
-			return string.keyword(this.values.rgb, this.values.alpha);
-		},
+	   hexString: function() {
+	      return string.hexString(this.values.rgb);
+	   },
+	   rgbString: function() {
+	      return string.rgbString(this.values.rgb, this.values.alpha);
+	   },
+	   rgbaString: function() {
+	      return string.rgbaString(this.values.rgb, this.values.alpha);
+	   },
+	   percentString: function() {
+	      return string.percentString(this.values.rgb, this.values.alpha);
+	   },
+	   hslString: function() {
+	      return string.hslString(this.values.hsl, this.values.alpha);
+	   },
+	   hslaString: function() {
+	      return string.hslaString(this.values.hsl, this.values.alpha);
+	   },
+	   hwbString: function() {
+	      return string.hwbString(this.values.hwb, this.values.alpha);
+	   },
+	   keyword: function() {
+	      return string.keyword(this.values.rgb, this.values.alpha);
+	   },
 
-		rgbNumber: function () {
-			return (this.values.rgb[0] << 16) | (this.values.rgb[1] << 8) | this.values.rgb[2];
-		},
+	   luminosity: function() {
+	      // http://www.w3.org/TR/WCAG20/#relativeluminancedef
+	      var rgb = this.values.rgb;
+	      var lum = [];
+	      for (var i = 0; i < rgb.length; i++) {
+	         var chan = rgb[i] / 255;
+	         lum[i] = (chan <= 0.03928) ? chan / 12.92
+	                  : Math.pow(((chan + 0.055) / 1.055), 2.4)
+	      }
+	      return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+	   },
 
-		luminosity: function () {
-			// http://www.w3.org/TR/WCAG20/#relativeluminancedef
-			var rgb = this.values.rgb;
-			var lum = [];
-			for (var i = 0; i < rgb.length; i++) {
-				var chan = rgb[i] / 255;
-				lum[i] = (chan <= 0.03928) ? chan / 12.92 : Math.pow(((chan + 0.055) / 1.055), 2.4);
-			}
-			return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-		},
+	   contrast: function(color2) {
+	      // http://www.w3.org/TR/WCAG20/#contrast-ratiodef
+	      var lum1 = this.luminosity();
+	      var lum2 = color2.luminosity();
+	      if (lum1 > lum2) {
+	         return (lum1 + 0.05) / (lum2 + 0.05)
+	      };
+	      return (lum2 + 0.05) / (lum1 + 0.05);
+	   },
 
-		contrast: function (color2) {
-			// http://www.w3.org/TR/WCAG20/#contrast-ratiodef
-			var lum1 = this.luminosity();
-			var lum2 = color2.luminosity();
-			if (lum1 > lum2) {
-				return (lum1 + 0.05) / (lum2 + 0.05);
-			}
-			return (lum2 + 0.05) / (lum1 + 0.05);
-		},
+	   level: function(color2) {
+	     var contrastRatio = this.contrast(color2);
+	     return (contrastRatio >= 7.1)
+	       ? 'AAA'
+	       : (contrastRatio >= 4.5)
+	        ? 'AA'
+	        : '';
+	   },
 
-		level: function (color2) {
-			var contrastRatio = this.contrast(color2);
-			if (contrastRatio >= 7.1) {
-				return 'AAA';
-			}
+	   dark: function() {
+	      // YIQ equation from http://24ways.org/2010/calculating-color-contrast
+	      var rgb = this.values.rgb,
+	          yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+	   	return yiq < 128;
+	   },
 
-			return (contrastRatio >= 4.5) ? 'AA' : '';
-		},
+	   light: function() {
+	      return !this.dark();
+	   },
 
-		dark: function () {
-			// YIQ equation from http://24ways.org/2010/calculating-color-contrast
-			var rgb = this.values.rgb;
-			var yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-			return yiq < 128;
-		},
+	   negate: function() {
+	      var rgb = []
+	      for (var i = 0; i < 3; i++) {
+	         rgb[i] = 255 - this.values.rgb[i];
+	      }
+	      this.setValues("rgb", rgb);
+	      return this;
+	   },
 
-		light: function () {
-			return !this.dark();
-		},
+	   lighten: function(ratio) {
+	      this.values.hsl[2] += this.values.hsl[2] * ratio;
+	      this.setValues("hsl", this.values.hsl);
+	      return this;
+	   },
 
-		negate: function () {
-			var rgb = [];
-			for (var i = 0; i < 3; i++) {
-				rgb[i] = 255 - this.values.rgb[i];
-			}
-			this.setValues('rgb', rgb);
-			return this;
-		},
+	   darken: function(ratio) {
+	      this.values.hsl[2] -= this.values.hsl[2] * ratio;
+	      this.setValues("hsl", this.values.hsl);
+	      return this;
+	   },
 
-		lighten: function (ratio) {
-			this.values.hsl[2] += this.values.hsl[2] * ratio;
-			this.setValues('hsl', this.values.hsl);
-			return this;
-		},
+	   saturate: function(ratio) {
+	      this.values.hsl[1] += this.values.hsl[1] * ratio;
+	      this.setValues("hsl", this.values.hsl);
+	      return this;
+	   },
 
-		darken: function (ratio) {
-			this.values.hsl[2] -= this.values.hsl[2] * ratio;
-			this.setValues('hsl', this.values.hsl);
-			return this;
-		},
+	   desaturate: function(ratio) {
+	      this.values.hsl[1] -= this.values.hsl[1] * ratio;
+	      this.setValues("hsl", this.values.hsl);
+	      return this;
+	   },
 
-		saturate: function (ratio) {
-			this.values.hsl[1] += this.values.hsl[1] * ratio;
-			this.setValues('hsl', this.values.hsl);
-			return this;
-		},
+	   whiten: function(ratio) {
+	      this.values.hwb[1] += this.values.hwb[1] * ratio;
+	      this.setValues("hwb", this.values.hwb);
+	      return this;
+	   },
 
-		desaturate: function (ratio) {
-			this.values.hsl[1] -= this.values.hsl[1] * ratio;
-			this.setValues('hsl', this.values.hsl);
-			return this;
-		},
+	   blacken: function(ratio) {
+	      this.values.hwb[2] += this.values.hwb[2] * ratio;
+	      this.setValues("hwb", this.values.hwb);
+	      return this;
+	   },
 
-		whiten: function (ratio) {
-			this.values.hwb[1] += this.values.hwb[1] * ratio;
-			this.setValues('hwb', this.values.hwb);
-			return this;
-		},
+	   greyscale: function() {
+	      var rgb = this.values.rgb;
+	      // http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+	      var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
+	      this.setValues("rgb", [val, val, val]);
+	      return this;
+	   },
 
-		blacken: function (ratio) {
-			this.values.hwb[2] += this.values.hwb[2] * ratio;
-			this.setValues('hwb', this.values.hwb);
-			return this;
-		},
+	   clearer: function(ratio) {
+	      this.setValues("alpha", this.values.alpha - (this.values.alpha * ratio));
+	      return this;
+	   },
 
-		greyscale: function () {
-			var rgb = this.values.rgb;
-			// http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
-			var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
-			this.setValues('rgb', [val, val, val]);
-			return this;
-		},
+	   opaquer: function(ratio) {
+	      this.setValues("alpha", this.values.alpha + (this.values.alpha * ratio));
+	      return this;
+	   },
 
-		clearer: function (ratio) {
-			this.setValues('alpha', this.values.alpha - (this.values.alpha * ratio));
-			return this;
-		},
+	   rotate: function(degrees) {
+	      var hue = this.values.hsl[0];
+	      hue = (hue + degrees) % 360;
+	      hue = hue < 0 ? 360 + hue : hue;
+	      this.values.hsl[0] = hue;
+	      this.setValues("hsl", this.values.hsl);
+	      return this;
+	   },
 
-		opaquer: function (ratio) {
-			this.setValues('alpha', this.values.alpha + (this.values.alpha * ratio));
-			return this;
-		},
+	   mix: function(color2, weight) {
+	      weight = 1 - (weight == null ? 0.5 : weight);
 
-		rotate: function (degrees) {
-			var hue = this.values.hsl[0];
-			hue = (hue + degrees) % 360;
-			hue = hue < 0 ? 360 + hue : hue;
-			this.values.hsl[0] = hue;
-			this.setValues('hsl', this.values.hsl);
-			return this;
-		},
+	      // algorithm from Sass's mix(). Ratio of first color in mix is
+	      // determined by the alphas of both colors and the weight
+	      var t1 = weight * 2 - 1,
+	          d = this.alpha() - color2.alpha();
 
-		/**
-		 * Ported from sass implementation in C
-		 * https://github.com/sass/libsass/blob/0e6b4a2850092356aa3ece07c6b249f0221caced/functions.cpp#L209
-		 */
-		mix: function (mixinColor, weight) {
-			var color1 = this;
-			var color2 = mixinColor;
-			var p = weight === undefined ? 0.5 : weight;
+	      var weight1 = (((t1 * d == -1) ? t1 : (t1 + d) / (1 + t1 * d)) + 1) / 2;
+	      var weight2 = 1 - weight1;
 
-			var w = 2 * p - 1;
-			var a = color1.alpha() - color2.alpha();
+	      var rgb = this.rgbArray();
+	      var rgb2 = color2.rgbArray();
 
-			var w1 = (((w * a === -1) ? w : (w + a) / (1 + w * a)) + 1) / 2.0;
-			var w2 = 1 - w1;
+	      for (var i = 0; i < rgb.length; i++) {
+	         rgb[i] = rgb[i] * weight1 + rgb2[i] * weight2;
+	      }
+	      this.setValues("rgb", rgb);
 
-			return this
-				.rgb(
-					w1 * color1.red() + w2 * color2.red(),
-					w1 * color1.green() + w2 * color2.green(),
-					w1 * color1.blue() + w2 * color2.blue()
-				)
-				.alpha(color1.alpha() * p + color2.alpha() * (1 - p));
-		},
+	      var alpha = this.alpha() * weight + color2.alpha() * (1 - weight);
+	      this.setValues("alpha", alpha);
 
-		toJSON: function () {
-			return this.rgb();
-		},
+	      return this;
+	   },
 
-		clone: function () {
-			return new Color(this.rgb());
-		}
+	   toJSON: function() {
+	     return this.rgb();
+	   },
+
+	   clone: function() {
+	     return new Color(this.rgb());
+	   }
+	}
+
+
+	Color.prototype.getValues = function(space) {
+	   var vals = {};
+	   for (var i = 0; i < space.length; i++) {
+	      vals[space[i]] = this.values[space][i];
+	   }
+	   if (this.values.alpha != 1) {
+	      vals["a"] = this.values.alpha;
+	   }
+	   // {r: 255, g: 255, b: 255, a: 0.4}
+	   return vals;
+	}
+
+	Color.prototype.setValues = function(space, vals) {
+	   var spaces = {
+	      "rgb": ["red", "green", "blue"],
+	      "hsl": ["hue", "saturation", "lightness"],
+	      "hsv": ["hue", "saturation", "value"],
+	      "hwb": ["hue", "whiteness", "blackness"],
+	      "cmyk": ["cyan", "magenta", "yellow", "black"]
+	   };
+
+	   var maxes = {
+	      "rgb": [255, 255, 255],
+	      "hsl": [360, 100, 100],
+	      "hsv": [360, 100, 100],
+	      "hwb": [360, 100, 100],
+	      "cmyk": [100, 100, 100, 100]
+	   };
+
+	   var alpha = 1;
+	   if (space == "alpha") {
+	      alpha = vals;
+	   }
+	   else if (vals.length) {
+	      // [10, 10, 10]
+	      this.values[space] = vals.slice(0, space.length);
+	      alpha = vals[space.length];
+	   }
+	   else if (vals[space[0]] !== undefined) {
+	      // {r: 10, g: 10, b: 10}
+	      for (var i = 0; i < space.length; i++) {
+	        this.values[space][i] = vals[space[i]];
+	      }
+	      alpha = vals.a;
+	   }
+	   else if (vals[spaces[space][0]] !== undefined) {
+	      // {red: 10, green: 10, blue: 10}
+	      var chans = spaces[space];
+	      for (var i = 0; i < space.length; i++) {
+	        this.values[space][i] = vals[chans[i]];
+	      }
+	      alpha = vals.alpha;
+	   }
+	   this.values.alpha = Math.max(0, Math.min(1, (alpha !== undefined ? alpha : this.values.alpha) ));
+	   if (space == "alpha") {
+	      return;
+	   }
+
+	   // cap values of the space prior converting all values
+	   for (var i = 0; i < space.length; i++) {
+	      var capped = Math.max(0, Math.min(maxes[space][i], this.values[space][i]));
+	      this.values[space][i] = Math.round(capped);
+	   }
+
+	   // convert to all the other color spaces
+	   for (var sname in spaces) {
+	      if (sname != space) {
+	         this.values[sname] = convert[space][sname](this.values[space])
+	      }
+
+	      // cap values
+	      for (var i = 0; i < sname.length; i++) {
+	         var capped = Math.max(0, Math.min(maxes[sname][i], this.values[sname][i]));
+	         this.values[sname][i] = Math.round(capped);
+	      }
+	   }
+	   return true;
+	}
+
+	Color.prototype.setSpace = function(space, args) {
+	   var vals = args[0];
+	   if (vals === undefined) {
+	      // color.rgb()
+	      return this.getValues(space);
+	   }
+	   // color.rgb(10, 10, 10)
+	   if (typeof vals == "number") {
+	      vals = Array.prototype.slice.call(args);
+	   }
+	   this.setValues(space, vals);
+	   return this;
+	}
+
+	Color.prototype.setChannel = function(space, index, val) {
+	   if (val === undefined) {
+	      // color.red()
+	      return this.values[space][index];
+	   }
+	   // color.red(100)
+	   this.values[space][index] = val;
+	   this.setValues(space, this.values[space]);
+	   return this;
+	}
+	;
+	    }).call(module.exports);
+	    
+	    __require.modules["color"]._cached = module.exports;
+	    return module.exports;
 	};
 
-	Color.prototype.getValues = function (space) {
-		var vals = {};
-
-		for (var i = 0; i < space.length; i++) {
-			vals[space.charAt(i)] = this.values[space][i];
-		}
-
-		if (this.values.alpha !== 1) {
-			vals.a = this.values.alpha;
-		}
-
-		// {r: 255, g: 255, b: 255, a: 0.4}
-		return vals;
+	require.modules["color/node_modules/color-convert/package.json"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = "color/node_modules/color-convert";
+	    var __filename = "color/node_modules/color-convert/package.json";
+	    
+	    var require = function (file) {
+	        return __require(file, "color/node_modules/color-convert");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, "color/node_modules/color-convert");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color/node_modules/color-convert/package.json"]._cached = module.exports;
+	    
+	    (function () {
+	        module.exports = {"name":"color-convert","description":"Plain color conversion functions","version":"0.5.0","author":{"name":"Heather Arthur","email":"fayearthur@gmail.com"},"repository":{"type":"git","url":"http://github.com/harthur/color-convert.git"},"main":"./index","devDependencies":{"browserify":">=1.0.0","uglify-js":"1.0.x"},"keywords":["color","colour","rgb"],"bugs":{"url":"https://github.com/harthur/color-convert/issues"},"homepage":"https://github.com/harthur/color-convert","_id":"color-convert@0.5.0","_shasum":"4032cab2128c81670c7b394d77b6783f49caaaf7","_from":"color-convert@>=0.5.0 <0.6.0","_npmVersion":"1.4.9","_npmUser":{"name":"harth","email":"fayearthur@gmail.com"},"maintainers":[{"name":"harth","email":"fayearthur@gmail.com"}],"dist":{"shasum":"4032cab2128c81670c7b394d77b6783f49caaaf7","tarball":"http://registry.npmjs.org/color-convert/-/color-convert-0.5.0.tgz"},"directories":{},"_resolved":"https://registry.npmjs.org/color-convert/-/color-convert-0.5.0.tgz"};
+	    }).call(module.exports);
+	    
+	    __require.modules["color/node_modules/color-convert/package.json"]._cached = module.exports;
+	    return module.exports;
 	};
 
-	Color.prototype.setValues = function (space, vals) {
-		var spaces = {
-			rgb: ['red', 'green', 'blue'],
-			hsl: ['hue', 'saturation', 'lightness'],
-			hsv: ['hue', 'saturation', 'value'],
-			hwb: ['hue', 'whiteness', 'blackness'],
-			cmyk: ['cyan', 'magenta', 'yellow', 'black']
-		};
-
-		var maxes = {
-			rgb: [255, 255, 255],
-			hsl: [360, 100, 100],
-			hsv: [360, 100, 100],
-			hwb: [360, 100, 100],
-			cmyk: [100, 100, 100, 100]
-		};
-
-		var i;
-		var alpha = 1;
-		if (space === 'alpha') {
-			alpha = vals;
-		} else if (vals.length) {
-			// [10, 10, 10]
-			this.values[space] = vals.slice(0, space.length);
-			alpha = vals[space.length];
-		} else if (vals[space.charAt(0)] !== undefined) {
-			// {r: 10, g: 10, b: 10}
-			for (i = 0; i < space.length; i++) {
-				this.values[space][i] = vals[space.charAt(i)];
-			}
-
-			alpha = vals.a;
-		} else if (vals[spaces[space][0]] !== undefined) {
-			// {red: 10, green: 10, blue: 10}
-			var chans = spaces[space];
-
-			for (i = 0; i < space.length; i++) {
-				this.values[space][i] = vals[chans[i]];
-			}
-
-			alpha = vals.alpha;
-		}
-
-		this.values.alpha = Math.max(0, Math.min(1, (alpha === undefined ? this.values.alpha : alpha)));
-
-		if (space === 'alpha') {
-			return false;
-		}
-
-		var capped;
-
-		// cap values of the space prior converting all values
-		for (i = 0; i < space.length; i++) {
-			capped = Math.max(0, Math.min(maxes[space][i], this.values[space][i]));
-			this.values[space][i] = Math.round(capped);
-		}
-
-		// convert to all the other color spaces
-		for (var sname in spaces) {
-			if (sname !== space) {
-				this.values[sname] = convert[space][sname](this.values[space]);
-			}
-
-			// cap values
-			for (i = 0; i < sname.length; i++) {
-				capped = Math.max(0, Math.min(maxes[sname][i], this.values[sname][i]));
-				this.values[sname][i] = Math.round(capped);
-			}
-		}
-
-		return true;
-	};
-
-	Color.prototype.setSpace = function (space, args) {
-		var vals = args[0];
-
-		if (vals === undefined) {
-			// color.rgb()
-			return this.getValues(space);
-		}
-
-		// color.rgb(10, 10, 10)
-		if (typeof vals === 'number') {
-			vals = Array.prototype.slice.call(args);
-		}
-
-		this.setValues(space, vals);
-		return this;
-	};
-
-	Color.prototype.setChannel = function (space, index, val) {
-		if (val === undefined) {
-			// color.red()
-			return this.values[space][index];
-		} else if (val === this.values[space][index]) {
-			// color.red(color.red())
-			return this;
-		}
-
-		// color.red(100)
-		this.values[space][index] = val;
-		this.setValues(space, this.values[space]);
-
-		return this;
-	};
-
-	module.exports = Color;
-
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var conversions = __webpack_require__(18);
+	require.modules["color-convert"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = ".";
+	    var __filename = "color-convert";
+	    
+	    var require = function (file) {
+	        return __require(file, ".");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, ".");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color-convert"]._cached = module.exports;
+	    
+	    (function () {
+	        var conversions = require("./conversions");
 
 	var convert = function() {
 	   return new Converter();
@@ -1902,13 +1987,32 @@
 	   }
 	});
 
-	module.exports = convert;
+	module.exports = convert;;
+	    }).call(module.exports);
+	    
+	    __require.modules["color-convert"]._cached = module.exports;
+	    return module.exports;
+	};
 
-/***/ },
-/* 18 */
-/***/ function(module, exports) {
-
-	/* MIT license */
+	require.modules["./conversions"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = ".";
+	    var __filename = "./conversions";
+	    
+	    var require = function (file) {
+	        return __require(file, ".");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, ".");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["./conversions"]._cached = module.exports;
+	    
+	    (function () {
+	        /* MIT license */
 
 	module.exports = {
 	  rgb2hsl: rgb2hsl,
@@ -2038,8 +2142,8 @@
 	  var r = rgb[0],
 	      g = rgb[1],
 	      b = rgb[2],
-	      h = rgb2hsl(rgb)[0],
-	      w = 1/255 * Math.min(r, Math.min(g, b)),
+	      h = rgb2hsl(rgb)[0]
+	      w = 1/255 * Math.min(r, Math.min(g, b))
 	      b = 1 - 1/255 * Math.max(r, Math.max(g, b));
 
 	  return [h, w * 100, b * 100];
@@ -2052,9 +2156,9 @@
 	      c, m, y, k;
 
 	  k = Math.min(1 - r, 1 - g, 1 - b);
-	  c = (1 - r - k) / (1 - k) || 0;
-	  m = (1 - g - k) / (1 - k) || 0;
-	  y = (1 - b - k) / (1 - k) || 0;
+	  c = (1 - r - k) / (1 - k);
+	  m = (1 - g - k) / (1 - k);
+	  y = (1 - b - k) / (1 - k);
 	  return [c * 100, m * 100, y * 100, k * 100];
 	}
 
@@ -2148,13 +2252,6 @@
 	      s = hsl[1] / 100,
 	      l = hsl[2] / 100,
 	      sv, v;
-
-	  if(l === 0) {
-	      // no need to do calc on black
-	      // also avoids divide by 0 error
-	      return [0, 0, 0];
-	  }
-
 	  l *= 2;
 	  s *= (l <= 1) ? l : 2 - l;
 	  v = (l + s) / 2;
@@ -2212,7 +2309,6 @@
 	  l = (2 - s) * v;
 	  sl = s * v;
 	  sl /= (l <= 1) ? l : 2 - l;
-	  sl = sl || 0;
 	  l /= 2;
 	  return [h, sl * 100, l * 100];
 	}
@@ -2606,14 +2702,58 @@
 	for (var key in cssKeywords) {
 	  reverseKeywords[JSON.stringify(cssKeywords[key])] = key;
 	}
+	;
+	    }).call(module.exports);
+	    
+	    __require.modules["./conversions"]._cached = module.exports;
+	    return module.exports;
+	};
 
+	require.modules["color/node_modules/color-string/package.json"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = "color/node_modules/color-string";
+	    var __filename = "color/node_modules/color-string/package.json";
+	    
+	    var require = function (file) {
+	        return __require(file, "color/node_modules/color-string");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, "color/node_modules/color-string");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color/node_modules/color-string/package.json"]._cached = module.exports;
+	    
+	    (function () {
+	        module.exports = {"name":"color-string","description":"Parser and generator for CSS color strings","version":"0.2.1","author":{"name":"Heather Arthur","email":"fayearthur@gmail.com"},"repository":{"type":"git","url":"http://github.com/harthur/color-string.git"},"main":"./color-string","dependencies":{"color-convert":"0.5.x"},"devDependencies":{"browserify":">=1.0.0","uglify-js":"1.0.x"},"keywords":["color","colour","rgb","css"],"bugs":{"url":"https://github.com/harthur/color-string/issues"},"homepage":"https://github.com/harthur/color-string","_id":"color-string@0.2.1","dist":{"shasum":"2f3c1e6c1d04ddf751633b28db7fbc152055d34e","tarball":"http://registry.npmjs.org/color-string/-/color-string-0.2.1.tgz"},"_from":"color-string@>=0.2.0 <0.3.0","_npmVersion":"1.3.25","_npmUser":{"name":"harth","email":"fayearthur@gmail.com"},"maintainers":[{"name":"harth","email":"fayearthur@gmail.com"}],"directories":{},"_shasum":"2f3c1e6c1d04ddf751633b28db7fbc152055d34e","_resolved":"https://registry.npmjs.org/color-string/-/color-string-0.2.1.tgz"};
+	    }).call(module.exports);
+	    
+	    __require.modules["color/node_modules/color-string/package.json"]._cached = module.exports;
+	    return module.exports;
+	};
 
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* MIT license */
-	var colorNames = __webpack_require__(20);
+	require.modules["color-string"] = function () {
+	    var module = { exports : {} };
+	    var exports = module.exports;
+	    var __dirname = ".";
+	    var __filename = "color-string";
+	    
+	    var require = function (file) {
+	        return __require(file, ".");
+	    };
+	    
+	    require.resolve = function (file) {
+	        return __require.resolve(name, ".");
+	    };
+	    
+	    require.modules = __require.modules;
+	    __require.modules["color-string"]._cached = module.exports;
+	    
+	    (function () {
+	        /* MIT license */
+	var convert = require("color-convert");
 
 	module.exports = {
 	   getRgba: getRgba,
@@ -2640,8 +2780,8 @@
 	   }
 	   var abbr =  /^#([a-fA-F0-9]{3})$/,
 	       hex =  /^#([a-fA-F0-9]{6})$/,
-	       rgba = /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/,
-	       per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/,
+	       rgba = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d\.]+)\s*)?\)$/,
+	       per = /^rgba?\(\s*([\d\.]+)\%\s*,\s*([\d\.]+)\%\s*,\s*([\d\.]+)\%\s*(?:,\s*([\d\.]+)\s*)?\)$/,
 	       keyword = /(\D+)/;
 
 	   var rgb = [0, 0, 0],
@@ -2675,7 +2815,7 @@
 	      if (match[1] == "transparent") {
 	         return [0, 0, 0, 0];
 	      }
-	      rgb = colorNames[match[1]];
+	      rgb = convert.keyword2rgb(match[1]);
 	      if (!rgb) {
 	         return;
 	      }
@@ -2690,7 +2830,7 @@
 	   else {
 	      a = scale(a, 0, 1);
 	   }
-	   rgb[3] = a;
+	   rgb.push(a);
 	   return rgb;
 	}
 
@@ -2698,14 +2838,13 @@
 	   if (!string) {
 	      return;
 	   }
-	   var hsl = /^hsla?\(\s*([+-]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)/;
+	   var hsl = /^hsla?\(\s*(\d+)\s*,\s*([\d\.]+)%\s*,\s*([\d\.]+)%\s*(?:,\s*([\d\.]+)\s*)?\)/;
 	   var match = string.match(hsl);
 	   if (match) {
-	      var alpha = parseFloat(match[4]);
 	      var h = scale(parseInt(match[1]), 0, 360),
 	          s = scale(parseFloat(match[2]), 0, 100),
 	          l = scale(parseFloat(match[3]), 0, 100),
-	          a = scale(isNaN(alpha) ? 1 : alpha, 0, 1);
+	          a = scale(parseFloat(match[4]) || 1, 0, 1);
 	      return [h, s, l, a];
 	   }
 	}
@@ -2714,14 +2853,13 @@
 	   if (!string) {
 	      return;
 	   }
-	   var hwb = /^hwb\(\s*([+-]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)/;
+	   var hwb = /^hwb\(\s*(\d+)\s*,\s*([\d\.]+)%\s*,\s*([\d\.]+)%\s*(?:,\s*([\d\.]+)\s*)?\)/;
 	   var match = string.match(hwb);
 	   if (match) {
-	    var alpha = parseFloat(match[4]);
 	      var h = scale(parseInt(match[1]), 0, 360),
 	          w = scale(parseFloat(match[2]), 0, 100),
 	          b = scale(parseFloat(match[3]), 0, 100),
-	          a = scale(isNaN(alpha) ? 1 : alpha, 0, 1);
+	          a = scale(parseFloat(match[4]) || 1, 0, 1);
 	      return [h, w, b, a];
 	   }
 	}
@@ -2814,7 +2952,7 @@
 	}
 
 	function keyword(rgb) {
-	  return reverseNames[rgb.slice(0, 3)];
+	   return convert.rgb2keyword(rgb.slice(0, 3));
 	}
 
 	// helpers
@@ -2826,169 +2964,471 @@
 	  var str = num.toString(16).toUpperCase();
 	  return (str.length < 2) ? "0" + str : str;
 	}
+	;
+	    }).call(module.exports);
+	    
+	    __require.modules["color-string"]._cached = module.exports;
+	    return module.exports;
+	};
+	 return require("/color")})();
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
 
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
 
-	//create a list of reverse color names
-	var reverseNames = {};
-	for (var name in colorNames) {
-	   reverseNames[colorNames[name]] = name;
+	// shim for using process in browser
+
+	var process = module.exports = {};
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+
+	function cleanUpNextTick() {
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
 	}
+
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = setTimeout(cleanUpNextTick);
+	    draining = true;
+
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    clearTimeout(timeout);
+	}
+
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        setTimeout(drainQueue, 0);
+	    }
+	};
+
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+
+	function noop() {}
+
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
 
 
 /***/ },
-/* 20 */
+/* 7 */
 /***/ function(module, exports) {
 
-	module.exports = {
-		"aliceblue": [240, 248, 255],
-		"antiquewhite": [250, 235, 215],
-		"aqua": [0, 255, 255],
-		"aquamarine": [127, 255, 212],
-		"azure": [240, 255, 255],
-		"beige": [245, 245, 220],
-		"bisque": [255, 228, 196],
-		"black": [0, 0, 0],
-		"blanchedalmond": [255, 235, 205],
-		"blue": [0, 0, 255],
-		"blueviolet": [138, 43, 226],
-		"brown": [165, 42, 42],
-		"burlywood": [222, 184, 135],
-		"cadetblue": [95, 158, 160],
-		"chartreuse": [127, 255, 0],
-		"chocolate": [210, 105, 30],
-		"coral": [255, 127, 80],
-		"cornflowerblue": [100, 149, 237],
-		"cornsilk": [255, 248, 220],
-		"crimson": [220, 20, 60],
-		"cyan": [0, 255, 255],
-		"darkblue": [0, 0, 139],
-		"darkcyan": [0, 139, 139],
-		"darkgoldenrod": [184, 134, 11],
-		"darkgray": [169, 169, 169],
-		"darkgreen": [0, 100, 0],
-		"darkgrey": [169, 169, 169],
-		"darkkhaki": [189, 183, 107],
-		"darkmagenta": [139, 0, 139],
-		"darkolivegreen": [85, 107, 47],
-		"darkorange": [255, 140, 0],
-		"darkorchid": [153, 50, 204],
-		"darkred": [139, 0, 0],
-		"darksalmon": [233, 150, 122],
-		"darkseagreen": [143, 188, 143],
-		"darkslateblue": [72, 61, 139],
-		"darkslategray": [47, 79, 79],
-		"darkslategrey": [47, 79, 79],
-		"darkturquoise": [0, 206, 209],
-		"darkviolet": [148, 0, 211],
-		"deeppink": [255, 20, 147],
-		"deepskyblue": [0, 191, 255],
-		"dimgray": [105, 105, 105],
-		"dimgrey": [105, 105, 105],
-		"dodgerblue": [30, 144, 255],
-		"firebrick": [178, 34, 34],
-		"floralwhite": [255, 250, 240],
-		"forestgreen": [34, 139, 34],
-		"fuchsia": [255, 0, 255],
-		"gainsboro": [220, 220, 220],
-		"ghostwhite": [248, 248, 255],
-		"gold": [255, 215, 0],
-		"goldenrod": [218, 165, 32],
-		"gray": [128, 128, 128],
-		"green": [0, 128, 0],
-		"greenyellow": [173, 255, 47],
-		"grey": [128, 128, 128],
-		"honeydew": [240, 255, 240],
-		"hotpink": [255, 105, 180],
-		"indianred": [205, 92, 92],
-		"indigo": [75, 0, 130],
-		"ivory": [255, 255, 240],
-		"khaki": [240, 230, 140],
-		"lavender": [230, 230, 250],
-		"lavenderblush": [255, 240, 245],
-		"lawngreen": [124, 252, 0],
-		"lemonchiffon": [255, 250, 205],
-		"lightblue": [173, 216, 230],
-		"lightcoral": [240, 128, 128],
-		"lightcyan": [224, 255, 255],
-		"lightgoldenrodyellow": [250, 250, 210],
-		"lightgray": [211, 211, 211],
-		"lightgreen": [144, 238, 144],
-		"lightgrey": [211, 211, 211],
-		"lightpink": [255, 182, 193],
-		"lightsalmon": [255, 160, 122],
-		"lightseagreen": [32, 178, 170],
-		"lightskyblue": [135, 206, 250],
-		"lightslategray": [119, 136, 153],
-		"lightslategrey": [119, 136, 153],
-		"lightsteelblue": [176, 196, 222],
-		"lightyellow": [255, 255, 224],
-		"lime": [0, 255, 0],
-		"limegreen": [50, 205, 50],
-		"linen": [250, 240, 230],
-		"magenta": [255, 0, 255],
-		"maroon": [128, 0, 0],
-		"mediumaquamarine": [102, 205, 170],
-		"mediumblue": [0, 0, 205],
-		"mediumorchid": [186, 85, 211],
-		"mediumpurple": [147, 112, 219],
-		"mediumseagreen": [60, 179, 113],
-		"mediumslateblue": [123, 104, 238],
-		"mediumspringgreen": [0, 250, 154],
-		"mediumturquoise": [72, 209, 204],
-		"mediumvioletred": [199, 21, 133],
-		"midnightblue": [25, 25, 112],
-		"mintcream": [245, 255, 250],
-		"mistyrose": [255, 228, 225],
-		"moccasin": [255, 228, 181],
-		"navajowhite": [255, 222, 173],
-		"navy": [0, 0, 128],
-		"oldlace": [253, 245, 230],
-		"olive": [128, 128, 0],
-		"olivedrab": [107, 142, 35],
-		"orange": [255, 165, 0],
-		"orangered": [255, 69, 0],
-		"orchid": [218, 112, 214],
-		"palegoldenrod": [238, 232, 170],
-		"palegreen": [152, 251, 152],
-		"paleturquoise": [175, 238, 238],
-		"palevioletred": [219, 112, 147],
-		"papayawhip": [255, 239, 213],
-		"peachpuff": [255, 218, 185],
-		"peru": [205, 133, 63],
-		"pink": [255, 192, 203],
-		"plum": [221, 160, 221],
-		"powderblue": [176, 224, 230],
-		"purple": [128, 0, 128],
-		"rebeccapurple": [102, 51, 153],
-		"red": [255, 0, 0],
-		"rosybrown": [188, 143, 143],
-		"royalblue": [65, 105, 225],
-		"saddlebrown": [139, 69, 19],
-		"salmon": [250, 128, 114],
-		"sandybrown": [244, 164, 96],
-		"seagreen": [46, 139, 87],
-		"seashell": [255, 245, 238],
-		"sienna": [160, 82, 45],
-		"silver": [192, 192, 192],
-		"skyblue": [135, 206, 235],
-		"slateblue": [106, 90, 205],
-		"slategray": [112, 128, 144],
-		"slategrey": [112, 128, 144],
-		"snow": [255, 250, 250],
-		"springgreen": [0, 255, 127],
-		"steelblue": [70, 130, 180],
-		"tan": [210, 180, 140],
-		"teal": [0, 128, 128],
-		"thistle": [216, 191, 216],
-		"tomato": [255, 99, 71],
-		"turquoise": [64, 224, 208],
-		"violet": [238, 130, 238],
-		"wheat": [245, 222, 179],
-		"white": [255, 255, 255],
-		"whitesmoke": [245, 245, 245],
-		"yellow": [255, 255, 0],
-		"yellowgreen": [154, 205, 50]
+	
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	
+	/**
+	 * delta t stuff
+	 */
+
+	function main_loop() {
+	  /**
+	   * Check for changes,
+	   * - if none, do nothing
+	   * - if changes, invoke reader and GO!
+	   */
+
+	  window.requestAnimationFrame(main_loop);
+	}
+
+	window.requestAnimationFrame(main_loop);
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	input.onchange = function(event, explicit, direction, weighted_mode) {
+
+	  var explicit = typeof explicit === 'undefined' ? false : explicit;
+	  var direction = typeof direction === 'undefined' ? true : direction;
+	  var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
+	  
+	  var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
+
+	  //checks if the browser supports the file API
+	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
+	    alert("Browser does not support the File API.");
+	  }
+
+	  var files = document.getElementById('input').files;
+	  if (!files.length) {
+	    alert("No file selected.");
+	    return;
+	  }
+
+	  //only json files
+	  splitFileName = files[0].name.split(".");
+	  if(!splitFileName.pop().match('json')) {
+	    alert("Invalid file type - it must be a json file.");
+	    return;
+	  }
+	  // -> only works in firefox - chrome has no file.type
+	  /*if (!files[0].type.match('json')){
+	    alert('Wrong file type.');
+	    return;
+	  }*/
+
+	  var reader = new FileReader();
+	  var result = null;
+
+	  reader.onloadend = function(event){
+	    if (event.target.readyState == FileReader.DONE) {
+	      //console.log(event.target.result);
+	      var parsedFile = JSON.parse(event.target.result);
+	      window.graph = json.readFromJSON(parsedFile);
+
+	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
+	      document.querySelector("#edges").innerHTML = parsedFile.edges;
+	      //document.querySelector("#time").innerHTML = parsedFile.edges;
+
+	      //console.log(parsedFile.data);
+	      result = parsedFile.data;
+	    }
+	  }
+	  reader.readAsText(files[0]);
+
+	  return result;
 	};
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	var FSelem = {
+	      el: null,
+	      width: null,
+	      height: null
+	    };
+
+	function switchToFullScreen(elem_string) {
+	  var elem = document.querySelector(elem_string);
+	  var canvas = document.querySelector(elem_string + " canvas");
+	  console.log(canvas);
+	  if (elem) {
+	    FSelem = {
+	      el: elem,
+	      width: elem.clientWidth,
+	      height: elem.clientHeight
+	    }
+	    // console.log(elem);
+	    if (elem.requestFullscreen) {
+	      elem.requestFullscreen();
+	    } else if (elem.msRequestFullscreen) {
+	      elem.msRequestFullscreen();
+	    } else if (elem.mozRequestFullScreen) {
+	      elem.mozRequestFullScreen();
+	    } else if (elem.webkitRequestFullscreen) {
+	      elem.webkitRequestFullscreen();
+	    }
+	    canvas.focus();
+	  }
+	  else {
+	    alert("Element to full-screen does not exist...");
+	  }
+	}
+
+	function FShandler( event ) {
+	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
+	  if ( fullscreenElement ) {
+	      // console.log("fullscreen enabled!");
+	      fullscreenElement.style.width = "100%";
+	      fullscreenElement.style.height = "100%";
+	  }
+	  else {
+	      // console.log("fullscreen disabled!");
+	      // we can't get the element that WAS in fullscreen,
+	      // so we fall back to a manual entry...
+	      // console.log(FSelem);
+	      FSelem.el.style.width = FSelem.width+"px";
+	      FSelem.el.style.height = FSelem.height+"px";
+	  }
+	}
+
+	function setAndUpdateNrMutilate() {
+	  var val = document.querySelector("#nr_mutilate_per_frame").value;
+	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
+	  window.$GV.setNrMutilate(val);
+	}
+
+	document.addEventListener("fullscreenchange", FShandler);
+	document.addEventListener("webkitfullscreenchange", FShandler);
+	document.addEventListener("mozfullscreenchange", FShandler);
+	document.addEventListener("MSFullscreenChange", FShandler);
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var keys = __webpack_require__(1).keys;
+	var globals = __webpack_require__(1).globals;
+	var camera = __webpack_require__(2).camera;
+	var defaults = __webpack_require__(1).defaults;
+	var update = __webpack_require__(2).update;
+	var network = __webpack_require__(2).network;
+	var container = __webpack_require__(1).container;
+	var mouse = __webpack_require__(1).globals.mouse;
+	var nodeIntersection = __webpack_require__(4).nodeIntersection;
+	var INTERSECTED = __webpack_require__(4).INTERSECTED;
+	var callbacks = __webpack_require__(1).callbacks;
+
+	// for testing purposes
+	var intersect_cb1 = function(node) {  
+	  document.querySelector("#nodeID").innerHTML = node._id;  
+	}
+	callbacks.node_intersects.push(intersect_cb1);
+
+
+	//rotation
+	var axis_x = new THREE.Vector3( 1, 0, 0 ),
+	    axis_y = new THREE.Vector3( 0, 1, 0 ),
+	    axis_z = new THREE.Vector3( 0, 0, 1 );
+
+	window.addEventListener('keypress', key, false);
+	function key(event) {
+	  switch (event.charCode) {
+	    case keys.KEY_W: //zoom in
+	      camera.position.y = camera.position.y - defaults.delta_distance; break;
+	    case keys.KEY_S: //zoom out
+	      camera.position.y = camera.position.y + defaults.delta_distance; break;
+	    case keys.KEY_A: //move left
+	      camera.position.x = camera.position.x + defaults.delta_distance; break;
+	    case keys.KEY_D: //move right
+	      camera.position.x = camera.position.x - defaults.delta_distance; break;
+	    case keys.KEY_R:
+	      network.translateZ(defaults.delta_distance); break;
+	    case keys.KEY_F:
+	      network.translateZ(-defaults.delta_distance); break;
+
+	    case keys.KEY_X:
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SX:
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_Y:
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SY:
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_C:
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SC:
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      break;
+	    default:
+	      break;
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	//zoom in and out
+	window.addEventListener('mousewheel', mousewheel, false);
+	function mousewheel(event) {
+	  //wheel down: negative value
+	  //wheel up: positive value
+	  if(event.shiftKey) {
+	    console.log("wheel");
+	    if(event.wheelDelta < 0) {
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	    }
+	    else {
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	    }
+	  }
+	  else {
+	    camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
+	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
+	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	window.addEventListener( 'mousemove', mouseMove, false );
+	function mouseMove(event) {
+	  
+	  if(event.shiftKey && event.buttons == 1) {
+	    if(event.movementX > 0) {
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	    }
+	    else if(event.movementX < 0) {
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	    }
+	    else if(event.movementY > 0) {
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	    }
+	    else if(event.movementY < 0) {
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	    }
+	  }
+	  //left mouse button
+	  else if(event.buttons == 1) {
+	    var mouseX = event.clientX / container.WIDTH;
+	    var mouseY = event.clientY / container.HEIGHT;
+
+	    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
+	    var max_x = globals.graph_dims.MAX_X/2;
+	    var max_y = globals.graph_dims.MAX_Y/2;    
+	    
+	    if(camera.position.x > max_x) {
+	      camera.position.x = max_x;
+	    }
+	    else if(camera.position.x < -max_x) {
+	      camera.position.x = -max_x;
+	    }
+	    else if(camera.position.y > max_y) {
+	      camera.position.y = max_y;
+	    }
+	    else if(camera.position.y < -max_y) {
+	      camera.position.y = -max_y;
+	    }
+	    
+	    //movement in y: up is negative, down is positive
+	    camera.position.x = camera.position.x - (mouseX * event.movementX);
+	    camera.position.y = camera.position.y + (mouseY * event.movementY);
+	  }
+
+	  //raycaster
+	  // calculate mouse position in normalized device coordinates
+	  // (-1 to +1) for both components
+	  event.preventDefault();  
+	  var element = document.querySelector('#containerGraph');
+	  var rect = element.getBoundingClientRect();  
+	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
+	  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
+	  //intersect after init grap
+	  if(network.children[0] != null) {
+	    window.requestAnimationFrame(nodeIntersection);
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	window.addEventListener('click', click, false);
+	function click(event) {
+	  if(INTERSECTED.node != null) {
+	    document.querySelector("#nodeInfo").style.visibility = 'visible';
+	    var ni = callbacks.node_intersects;
+	    for (var cb in ni) {
+	      if (typeof ni[cb] === 'function') {
+	        ni[cb](INTERSECTED.node);
+	      }
+	    }
+	  }
+	}
+
+	module.exports = {
+	  mouse: mouse
+	};
+
 
 /***/ }
 /******/ ]);

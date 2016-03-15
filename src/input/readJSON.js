@@ -1,7 +1,10 @@
-// var $G = require('graphinius').$G;
-var json = new $G.input.JsonInput(false, false);
+input.onchange = function(event, explicit, direction, weighted_mode) {
 
-input.onchange = function() {
+  var explicit = typeof explicit === 'undefined' ? false : explicit;
+  var direction = typeof direction === 'undefined' ? true : direction;
+  var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
+  
+  var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
 
   //checks if the browser supports the file API
   if (!window.File && window.FileReader && window.FileList && window.Blob) {

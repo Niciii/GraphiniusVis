@@ -45,7 +45,13 @@ var config = {
       0xc4d0db, 0xf6b68a, 0xffff33, 0x003fff,
       0xec2337, 0x008744, 0xffa700, 0x1df726,
       0x8fd621, 0x2d049b, 0x873bd3, 0x85835f
-    ]
+    ],
+    
+    //for bfs and dfs coloring
+    bfs_gradient_start_color: '#ff0000',
+    bfs_gradient_end_color: '#00abff',
+    dfs_gradient_start_color: '#ff0000',
+    dfs_gradient_end_color: '#00abff'
   },
   globals: {
     mouse: new THREE.Vector2(),

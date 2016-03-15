@@ -17,7 +17,11 @@
         <input id="changeNodeColorButton" value="Change node color of Graph" type="button" onclick=$GV.core.mutate.colorAllNodes(0)><br/>
         <input id="changeEdgeColorButton" value="Change edge color of Graph" type="button" onclick=$GV.core.mutate.colorAllEdges(0)><br/>
         <input id="addRandomNodesButton" value="Add random node" type="button" onclick=$GV.core.mutate.addRandomNodes()><br/>
-        <input id="updateAllNodesButton" value="Update all nodes" type="button" onclick=$GV.view.interaction.updateAll()>
+        <input id="updateAllNodesButton" value="Update all nodes" type="button" onclick=$GV.view.interaction.updateAll()><br/>
+        <input id="randomBFSButton" value="BFS - random node" type="button" onclick=$GV.core.mutate.colorBFS(null)><br/>
+        <input id="chosenBFSButton" value="BFS - chosen node" type="button" onclick=$GV.core.mutate.colorBFSclick()><br/>
+        <input id="randomDFSButton" value="DFS - random node" type="button" onclick=$GV.core.mutate.colorDFS(null)><br/>
+        <input id="chosenDFSButton" value="DFS - chosen node" type="button" onclick=$GV.core.mutate.colorDFSclick()>
 
         <h3>Information about the graph</h3>
         <div id="graphInfo"><ul>

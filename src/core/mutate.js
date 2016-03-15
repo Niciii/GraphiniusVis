@@ -5,6 +5,9 @@ var edges_obj_idx = require("./render.js").edges_obj_idx;
 var dims = require("./init.js").globals.graph_dims;
 var defaults = require("./init.js").defaults;
 var TWO_D_MODE = require("../view/interaction.js").TWO_D_MODE;
+var INTERSECTED = require("../view/interaction.js").INTERSECTED;
+
+var segment_color_obj = {};
 
 //add node to graph but without edges
 function addNode(new_node) {
@@ -153,25 +156,26 @@ function colorAllNodes(hexColor) {
   window.requestAnimationFrame(update);
 }
 
-function colorSingleEdge(edge, hexColor) {
-  var new_color = new THREE.Color(hexColor);
+function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {
+  var new_color_a = new THREE.Color(hex_color_node_a);
+  var new_color_b = new THREE.Color(hex_color_node_b);
   var index = 1;
   if(edge._directed) {
     index = 2;
   }
-  var edge_olors = network.children[index].geometry.getAttribute('color').array;
+  var edge_colors = network.children[index].geometry.getAttribute('color').array;
   var edge_id = edge.getID();
   var idx = edges_obj_idx[edge_id];
 
-  edge_olors[idx] = new_color.r;
-  edge_olors[idx + 1] = new_color.g;
-  edge_olors[idx + 2] = new_color.b;
-  edge_olors[idx + 3] = new_color.r;
-  edge_olors[idx + 4] = new_color.g;
-  edge_olors[idx + 5] = new_color.b;
+  edge_colors[idx] = new_color_a.r;
+  edge_colors[idx + 1] = new_color_a.g;
+  edge_colors[idx + 2] = new_color_a.b;
+  edge_colors[idx + 3] = new_color_b.r;
+  edge_colors[idx + 4] = new_color_b.g;
+  edge_colors[idx + 5] = new_color_b.b;
 
   network.children[index].geometry.attributes.color.needsUpdate = true;
-  window.requestAnimationFrame(update);
+  //window.requestAnimationFrame(update);
 }
 
 function colorAllEdges(hexColor) {
@@ -202,10 +206,15 @@ function colorAllEdges(hexColor) {
   window.requestAnimationFrame(update);
 }
 
-function colorBFS() {  
+//Hint: index = node id
+function colorBFS(node) {
+  segment_color_obj = {};
   var max_distance = 0,
       additional_node = false;
-  var start_node = graph.getRandomNode();
+  var start_node = graph.getRandomNode();;
+  if(node != null) {
+    start_node = node;
+  }
   var bfs = $G.search.BFS(graph, start_node);
   for(index in bfs) {
     max_distance = Math.max(max_distance, bfs[index].distance);
@@ -217,31 +226,80 @@ function colorBFS() {
   if(additional_node) {
     max_distance += 1;
   }
+  
   var Gradient = require('gradient');  
-  var grad = Gradient('#ff0000', '#00abff', max_distance);
+  var grad = Gradient(defaults.bfs_gradient_start_color,
+                      defaults.bfs_gradient_end_color, 
+                      max_distance);
   var colors = grad.toArray('hexString');
   
   for(index in bfs) {
-    colorSingleNode(bfs[index].parent, colors[bfs[index].distance]);
+    colorSingleNode(graph.getNodeById(index), colors[bfs[index].distance]);
+    segment_color_obj[index] = colors[bfs[index].distance];
   }
-  console.log(bfs);
+  
+  //TODO directed
+  //[und_edges, dir_edges].forEach(function(edges) {
+  //});
+  for(edge_index in und_edges) {
+    var edge = und_edges[edge_index];
+    var node_a_id = edge._node_a.getID();
+    var node_b_id = edge._node_b.getID();
+    
+    if(segment_color_obj[node_a_id] !== 'undefined' && 
+       segment_color_obj[node_b_id] !== 'undefined') {
+      colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+    }
+  }
+  //console.log(bfs);
   window.requestAnimationFrame(update);
 }
 
-function colorDFS() {
-  var start_node = graph.getRandomNode();
+//Hint: index = node id
+function colorDFS(node) {
+  segment_color_obj = {};
+  var start_node = graph.getRandomNode();;
+  if(node != null) {
+    start_node = node;
+  }
   var dfs = $G.search.DFS(graph, start_node);
-  console.log(dfs);
-  
-  //TODO for directed graphs -> more than one array
+  //console.log(dfs);
+
   var Gradient = require('gradient');  
-  var grad = Gradient('#ff0000', '#00abff', 1);
+  var grad = Gradient(defaults.dfs_gradient_start_color, 
+                      defaults.dfs_gradient_end_color, 
+                      dfs.length);
   var colors = grad.toArray('hexString');
   
-  for(index in dfs[0]) {
-    colorSingleNode(dfs[0][index].parent, colors[0]);
+  for(var i = 0; i < dfs.length; i++) {
+    for(index in dfs[i]) {
+      colorSingleNode(graph.getNodeById(index), colors[i]);
+      segment_color_obj[index] = colors[i];
+    }
   }
+  
+  [und_edges, dir_edges].forEach(function(edges) {
+    for(edge_index in edges) {
+    var edge = edges[edge_index];
+    var node_a_id = edge._node_a.getID();
+    var node_b_id = edge._node_b.getID();
+    
+      if(segment_color_obj[node_a_id] !== 'undefined' && 
+         segment_color_obj[node_b_id] !== 'undefined') {
+        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+      }
+    }
+  });
+  
   window.requestAnimationFrame(update);
+}
+
+function colorBFSclick() {
+  colorBFS(INTERSECTED.node);
+}
+
+function colorDFSclick() {
+  colorDFS(INTERSECTED.node);
 }
 
 module.exports = {
@@ -254,5 +312,7 @@ module.exports = {
   colorSingleEdge: colorSingleEdge,
   colorAllEdges: colorAllEdges,
   colorBFS: colorBFS,
-  colorDFS: colorDFS
+  colorDFS: colorDFS,
+  colorBFSclick: colorBFSclick,
+  colorDFSclick: colorDFSclick
 }
