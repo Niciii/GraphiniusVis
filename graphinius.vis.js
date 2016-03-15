@@ -544,26 +544,45 @@
 	}
 
 	function colorBFS() {  
-	  var max_distance = 0;
+	  var max_distance = 0,
+	      additional_node = false;
 	  var start_node = graph.getRandomNode();
 	  var bfs = $G.search.BFS(graph, start_node);
 	  for(index in bfs) {
 	    max_distance = Math.max(max_distance, bfs[index].distance);
+	    
+	    if(bfs[index].distance == 0) {
+	      additional_node = true;
+	    }
 	  }
-	  
+	  if(additional_node) {
+	    max_distance += 1;
+	  }
 	  var Gradient = __webpack_require__(14);  
 	  var grad = Gradient('#ff0000', '#00abff', max_distance);
 	  var colors = grad.toArray('hexString');
-	  //console.log(colors);
 	  
 	  for(index in bfs) {
-	    var node = bfs[index];
-	    colorSingleNode(node.parent, colors[bfs[index].distance-1]);
+	    colorSingleNode(bfs[index].parent, colors[bfs[index].distance]);
 	  }
+	  console.log(bfs);
 	  window.requestAnimationFrame(update);
 	}
 
 	function colorDFS() {
+	  var start_node = graph.getRandomNode();
+	  var dfs = $G.search.DFS(graph, start_node);
+	  console.log(dfs);
+	  
+	  //TODO for directed graphs -> more than one array
+	  var Gradient = __webpack_require__(14);  
+	  var grad = Gradient('#ff0000', '#00abff', 1);
+	  var colors = grad.toArray('hexString');
+	  
+	  for(index in dfs[0]) {
+	    colorSingleNode(dfs[0][index].parent, colors[0]);
+	  }
+	  window.requestAnimationFrame(update);
 	}
 
 	module.exports = {
