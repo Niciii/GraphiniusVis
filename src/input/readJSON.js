@@ -1,7 +1,7 @@
 input.onchange = function(event, explicit, direction, weighted_mode) {
 
   var explicit = typeof explicit === 'undefined' ? false : explicit;
-  var direction = typeof direction === 'undefined' ? true : direction;
+  var direction = typeof direction === 'undefined' ? false : direction;
   var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
   
   var json = new $G.input.JsonInput(explicit, direction, weighted_mode);

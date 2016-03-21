@@ -48,8 +48,9 @@ var config = {
     ],
     
     //for bfs and dfs coloring
-    bfs_gradient_start_color: '#ff0000',
-    bfs_gradient_end_color: '#00abff',
+    bfs_gradient_start_color: '#1a3ff6', //blue
+    bfs_gradient_middle_color: '#81cf28', //green
+    bfs_gradient_end_color: '#f61a1a', //red
     dfs_gradient_start_color: '#ff0000',
     dfs_gradient_end_color: '#00abff'
   },
@@ -65,7 +66,8 @@ var config = {
       MIN_Z: 0,
       MAX_Z: 0,
       AVG_Z: 0
-    }
+    },
+    selected_node: null
   },
   callbacks: {
     node_intersects: []

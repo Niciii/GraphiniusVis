@@ -3,6 +3,7 @@ var update = require("./render.js").update;
 var nodes_obj_idx = require("./render.js").nodes_obj_idx;
 var edges_obj_idx = require("./render.js").edges_obj_idx;
 var dims = require("./init.js").globals.graph_dims;
+var selected_node = require("./init.js").globals.selected_node;
 var defaults = require("./init.js").defaults;
 var TWO_D_MODE = require("../view/interaction.js").TWO_D_MODE;
 var INTERSECTED = require("../view/interaction.js").INTERSECTED;
@@ -210,32 +211,59 @@ function colorAllEdges(hexColor) {
 function colorBFS(node) {
   segment_color_obj = {};
   var max_distance = 0,
-      additional_node = false;
+      additional_node = false,
+      infinity_node = false;
   var start_node = graph.getRandomNode();;
   if(node != null) {
     start_node = node;
   }
-  var bfs = $G.search.BFS(graph, start_node);
+  var bfs = $G.search.BFS(graph, start_node);  
   for(index in bfs) {
-    max_distance = Math.max(max_distance, bfs[index].distance);
-    
     if(bfs[index].distance == 0) {
       additional_node = true;
+    }
+    else if(bfs[index].distance == Infinity) {
+      infinity_node = true;
+    }
+    else {
+      max_distance = Math.max(max_distance, bfs[index].distance);
     }
   }
   if(additional_node) {
     max_distance += 1;
   }
+  if(infinity_node) {
+    max_distance += 1;
+  }
+
+  var start_color = new THREE.Color(defaults.bfs_gradient_start_color);
+  var middle_color = new THREE.Color(defaults.bfs_gradient_middle_color);  
+  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);  
+  var gradient = [],
+      firstColor = start_color,
+      secondColor = middle_color;
   
-  var Gradient = require('gradient');  
-  var grad = Gradient(defaults.bfs_gradient_start_color,
-                      defaults.bfs_gradient_end_color, 
-                      max_distance);
-  var colors = grad.toArray('hexString');
+  var half = max_distance / 2;
+  for(var i = 0; i < max_distance; i++) {
+    if(i > half) {
+      firstColor = middle_color;
+      secondColor = end_color;
+    }
+
+    var newColor = new THREE.Color();
+    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / max_distance * i;
+    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / max_distance * i;
+    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / max_distance * i;
+    gradient.push(newColor);
+  }
   
   for(index in bfs) {
-    colorSingleNode(graph.getNodeById(index), colors[bfs[index].distance]);
-    segment_color_obj[index] = colors[bfs[index].distance];
+    var hex_color = '#ffffff';
+    if(bfs[index].distance != Infinity) {
+      hex_color = gradient[bfs[index].distance].getHex();
+    }
+    colorSingleNode(graph.getNodeById(index), hex_color);
+    segment_color_obj[index] = hex_color;
   }
   
   //TODO directed
@@ -265,11 +293,11 @@ function colorDFS(node) {
   var dfs = $G.search.DFS(graph, start_node);
   //console.log(dfs);
 
-  var Gradient = require('gradient');  
-  var grad = Gradient(defaults.dfs_gradient_start_color, 
-                      defaults.dfs_gradient_end_color, 
-                      dfs.length);
-  var colors = grad.toArray('hexString');
+  //var Gradient = require('gradient');  
+  //var grad = Gradient(defaults.dfs_gradient_start_color, 
+                      //defaults.dfs_gradient_end_color, 
+                      //dfs.length);
+  //var colors = grad.toArray('hexString');
   
   for(var i = 0; i < dfs.length; i++) {
     for(index in dfs[i]) {
@@ -295,11 +323,12 @@ function colorDFS(node) {
 }
 
 function colorBFSclick() {
-  colorBFS(INTERSECTED.node);
+  //console.log(selected_node);
+  colorBFS(selected_node);
 }
 
 function colorDFSclick() {
-  colorDFS(INTERSECTED.node);
+  colorDFS(selected_node);
 }
 
 module.exports = {

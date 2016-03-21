@@ -1,5 +1,6 @@
 var keys = require("../core/init.js").keys;
 var globals = require("../core/init.js").globals;
+var selected_node = require("../core/init.js").globals.selected_node;
 var camera = require("../core/render.js").camera;
 var defaults = require("../core/init.js").defaults;
 var update = require("../core/render.js").update;
@@ -160,8 +161,9 @@ function mouseMove(event) {
 }
 
 window.addEventListener('click', click, false);
-function click(event) {
+function click(event) {  
   if(INTERSECTED.node != null) {
+    selected_node = INTERSECTED.node;
     document.querySelector("#nodeInfo").style.visibility = 'visible';
     var ni = callbacks.node_intersects;
     for (var cb in ni) {
