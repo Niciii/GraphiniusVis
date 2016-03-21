@@ -51,9 +51,10 @@ var config = {
     bfs_gradient_end_color: 0x901A43, // open todo red
     bfs_gradient_middle_color: 0xfff730, // lemontiger yellow
     bfs_gradient_start_color: 0x079207, // dark shit green
-
-    dfs_gradient_start_color: '#ff0000',
-    dfs_gradient_end_color: '#00abff'
+    
+    //color for colorSingleEdge/Node, addEdge
+    edge_color: '#ff0000',
+    node_color: '#ff0000'
   },
   globals: {
     mouse: new THREE.Vector2(),
@@ -68,7 +69,8 @@ var config = {
       MAX_Z: 0,
       AVG_Z: 0
     },
-    selected_node: null
+    selected_node: null,
+    TWO_D_MODE: false
   },
   callbacks: {
     node_intersects: []

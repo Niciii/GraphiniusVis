@@ -6,9 +6,9 @@ var edges_obj_idx = require("../core/render.js").edges_obj_idx;
 var dims = require("../core/init.js").globals.graph_dims;
 var mouse = require("../core/init.js").globals.mouse;
 var defaults = require("../core/init.js").defaults;
+var globals = require("../core/init.js").globals;
 
-var TWO_D_MODE = 0,
-    INTERSECTED = {
+var INTERSECTED = {
       index: 0, color: new THREE.Color(), node: null
     },
     raycaster = new THREE.Raycaster();
@@ -25,7 +25,7 @@ function updateNodePosition(update_node) {
   old_nodes[index + 1] = update_node.getFeature('coords').y;
   old_nodes[index + 2] = update_node.getFeature('coords').z;
 
-  if(TWO_D_MODE) {
+  if(globals.TWO_D_MODE) {
     old_nodes[index + 2] = 0;
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
@@ -149,44 +149,37 @@ function updateRandomPostions() {
 }
 
 function switchTo2D() {
-  TWO_D_MODE = true;
-  var array = network.children[0].geometry.attributes.position.array;
-  for(var i = 0; i < array.length;) {
-    array[i + 2] = 0;
-    i+=3;
-  }
+  globals.TWO_D_MODE = true;
+  var nodes_array = network.children[0].geometry.attributes.position.array,
+      undEdges_array = network.children[1].geometry.attributes.position.array,
+      dirEdges_array = network.children[2].geometry.attributes.position.array;
+  
+  [nodes_array, undEdges_array, dirEdges_array].forEach(function(array) {
+    for(var i = 0; i < array.length;) {
+      array[i + 2] = 0;
+      i+=3;
+    }
+  });
+  
   network.children[0].geometry.attributes.position.needsUpdate = true;
-
-  array = network.children[1].geometry.attributes.position.array;
-  for(var i = 0; i < array.length;) {
-    array[i + 2] = 0;
-    i+=3;
-  }
   network.children[1].geometry.attributes.position.needsUpdate = true;
-
-  array = network.children[2].geometry.attributes.position.array;
-  for(var i = 0; i < array.length;) {
-    array[i + 2] = 0;
-    i+=3;
-  }
   network.children[2].geometry.attributes.position.needsUpdate = true;
-
   window.requestAnimationFrame(update);
 }
 
 function switchTo3D() {
-  TWO_D_MODE = false;
-  var array = network.children[0].geometry.attributes.position.array;
+  globals.TWO_D_MODE = false;
+
   var i = 0;
+  var array = network.children[0].geometry.attributes.position.array;
   for(node in nodes_obj) {
     var z = nodes_obj[node].getFeature('coords').z;
     array[i + 2] = z;
     i+=3;
   }
-  network.children[0].geometry.attributes.position.needsUpdate = true;
 
+  i = 0;
   array = network.children[1].geometry.attributes.position.array;
-  var i = 0;
   for (var edge_index in und_edges) {
     var edge = und_edges[edge_index];
     var node_a_id = edge._node_a.getID();
@@ -196,7 +189,6 @@ function switchTo3D() {
     array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
     i += 6;
   }
-  network.children[1].geometry.attributes.position.needsUpdate = true;
 
   i = 0;
   array = network.children[2].geometry.attributes.position.array;
@@ -209,6 +201,9 @@ function switchTo3D() {
     array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
     i += 6;
   }
+  
+  network.children[0].geometry.attributes.position.needsUpdate = true;
+  network.children[1].geometry.attributes.position.needsUpdate = true;
   network.children[2].geometry.attributes.position.needsUpdate = true;
   window.requestAnimationFrame(update);
 }
@@ -259,7 +254,6 @@ function nodeIntersection() {
 
 module.exports = {
     INTERSECTED: INTERSECTED,
-    TWO_D_MODE: TWO_D_MODE,
     updateNodePosition: updateNodePosition,
     updateAll: updateAll,
     updateRandomPostions: updateRandomPostions,

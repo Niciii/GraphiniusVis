@@ -3,7 +3,7 @@ var defaults = require("./init.js").defaults;
 var mouse = require("./init.js").globals.mouse;
 var dims = require("./init.js").globals.graph_dims;
 
-    //basics
+//basics
 var network = new THREE.Group(),
     camera = new THREE.PerspectiveCamera(
       70,
@@ -11,14 +11,9 @@ var network = new THREE.Group(),
       0.1, 1000),
     scene = new THREE.Scene(),
     renderer = new THREE.WebGLRenderer({antialias: false}),
-    //raycaster = new THREE.Raycaster(),
     //tmp object to find indices
     nodes_obj_idx = {},
     edges_obj_idx = {};
-    //INTERSECTED = {
-      //index: 0, color: new THREE.Color()
-    //};
-
 
 function renderGraph(graph) {
   console.log("render graph");

@@ -150,9 +150,10 @@
 	    bfs_gradient_end_color: 0x901A43, // open todo red
 	    bfs_gradient_middle_color: 0xfff730, // lemontiger yellow
 	    bfs_gradient_start_color: 0x079207, // dark shit green
-
-	    dfs_gradient_start_color: '#ff0000',
-	    dfs_gradient_end_color: '#00abff'
+	    
+	    //color for colorSingleEdge/Node, addEdge
+	    edge_color: '#ff0000',
+	    node_color: '#ff0000'
 	  },
 	  globals: {
 	    mouse: new THREE.Vector2(),
@@ -167,7 +168,8 @@
 	      MAX_Z: 0,
 	      AVG_Z: 0
 	    },
-	    selected_node: null
+	    selected_node: null,
+	    TWO_D_MODE: false
 	  },
 	  callbacks: {
 	    node_intersects: []
@@ -185,7 +187,7 @@
 	var mouse = __webpack_require__(1).globals.mouse;
 	var dims = __webpack_require__(1).globals.graph_dims;
 
-	    //basics
+	//basics
 	var network = new THREE.Group(),
 	    camera = new THREE.PerspectiveCamera(
 	      70,
@@ -193,14 +195,9 @@
 	      0.1, 1000),
 	    scene = new THREE.Scene(),
 	    renderer = new THREE.WebGLRenderer({antialias: false}),
-	    //raycaster = new THREE.Raycaster(),
 	    //tmp object to find indices
 	    nodes_obj_idx = {},
 	    edges_obj_idx = {};
-	    //INTERSECTED = {
-	      //index: 0, color: new THREE.Color()
-	    //};
-
 
 	function renderGraph(graph) {
 	  console.log("render graph");
@@ -355,7 +352,6 @@
 	var globals = __webpack_require__(1).globals;
 	var dims = __webpack_require__(1).globals.graph_dims;
 	var defaults = __webpack_require__(1).defaults;
-	var TWO_D_MODE = __webpack_require__(4).TWO_D_MODE;
 	var INTERSECTED = __webpack_require__(4).INTERSECTED;
 
 	var segment_color_obj = {};
@@ -380,7 +376,7 @@
 	  new_colors[new_nodes.length - 2] = new_color.g;
 	  new_colors[new_nodes.length - 1] = new_color.b;
 
-	  if(TWO_D_MODE) {
+	  if(globals.TWO_D_MODE) {
 	    new_nodes[new_nodes.length - 1] = 0;
 	  }
 
@@ -399,6 +395,11 @@
 	      y_ = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y),
 	      z_ = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z),
 	      idx = Object.keys(nodes_obj_idx).length;
+	      
+	  if(globals.TWO_D_MODE) {
+	    z_ = 0;
+	  }
+	  
 	  var new_node = graph.addNode(idx, {coords: {x: x_, y: y_, z:z_}});
 	  addNode(new_node);
 	}
@@ -414,26 +415,47 @@
 	  old_nodes[index + 1] = NaN;
 	  old_nodes[index + 2] = NaN;
 
-	  //remove edge
-	  var old_edges = network.children[1].geometry.getAttribute('position').array;
-	  var und_edges = hide_node.undEdges();
-	  for(var i = 0; i < Object.keys(und_edges).length; i++) {
-	    var edge = und_edges[Object.keys(hide_node.undEdges())[i]];
+	  //TODO
+	  //remove edge - directed
+	  //if(Object.keys(window.graph.getDirEdges()).length > 0) {
+	    //var old_edges = network.children[2].geometry.getAttribute('position').array;
+	    //var dir_edges = hide_node.getDirEdges();
+	    //for(var i = 0; i < Object.keys(dir_edges).length; i++) {
+	      //var edge = dir_edges[Object.keys(hide_node.getDirEdges())[i]];
 
-	    //update from-node
-	    var edge_index = edges_obj_idx[edge.getID()];
-	    old_edges[edge_index] = NaN;
-	    old_edges[edge_index + 1] = NaN;
-	    old_edges[edge_index + 2] = NaN;
-	    old_edges[edge_index + 3] = NaN;
-	    old_edges[edge_index + 4] = NaN;
-	    old_edges[edge_index + 5] = NaN;
-	  }
+	      ////update from-node
+	      //var edge_index = edges_obj_idx[edge.getID()];
+	      //old_edges[edge_index] = NaN;
+	      //old_edges[edge_index + 1] = NaN;
+	      //old_edges[edge_index + 2] = NaN;
+	      //old_edges[edge_index + 3] = NaN;
+	      //old_edges[edge_index + 4] = NaN;
+	      //old_edges[edge_index + 5] = NaN;
+	    //}
+	  //}
+	  
+	  //remove edge - undirected
+	  //if(Object.keys(window.graph.getUndEdges()).length > 0) {
+	    var old_edges = network.children[1].geometry.getAttribute('position').array;
+	    var und_edges = hide_node.undEdges();
+	    for(var i = 0; i < Object.keys(und_edges).length; i++) {
+	      var edge = und_edges[Object.keys(hide_node.undEdges())[i]];
+
+	      //update from-node
+	      var edge_index = edges_obj_idx[edge.getID()];
+	      old_edges[edge_index] = NaN;
+	      old_edges[edge_index + 1] = NaN;
+	      old_edges[edge_index + 2] = NaN;
+	      old_edges[edge_index + 3] = NaN;
+	      old_edges[edge_index + 4] = NaN;
+	      old_edges[edge_index + 5] = NaN;
+	    }
+	  //}
+
 	  network.children[0].geometry.attributes.position.needsUpdate = true;
 	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  //TODO for directed and undirected edges
-	  //network.children[2].geometry.attributes.position.needsUpdate = true;
-	 window.requestAnimationFrame(update);
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
 	}
 
 	function addEdge(edge) {
@@ -446,7 +468,7 @@
 	  var old_colors = network.children[index].geometry.getAttribute('color').array;
 	  var new_edges = new Float32Array(old_edges.length + 6); // 3 xyz-coordinate * 2 nodes
 	  var new_colors = new Float32Array(old_colors.length + 6);
-	  var new_color = new THREE.Color(0xff7373);
+	  var new_color = new THREE.Color(defaults.edge_color);
 	  for(var i = 0; i < old_edges.length; i++) {
 	    new_edges[i] = old_edges[i];
 	    new_colors[i] = old_colors[i];
@@ -475,7 +497,8 @@
 	}
 
 	function colorSingleNode(node, hexColor) {
-	  var newColor = new THREE.Color(hexColor);
+	  var newColor = new THREE.Color(hexColor || defaults.node_color);
+	  console.log(globals.node_col);
 	  var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
 	  var node_id = node.getID();
@@ -484,8 +507,6 @@
 	  nodeColors[index + 1] = newColor.g;
 	  nodeColors[index + 2] = newColor.b;
 	  network.children[0].geometry.attributes.color.needsUpdate = true;
-
-	  //window.requestAnimationFrame(update);
 	}
 
 	function colorAllNodes(hexColor) {
@@ -507,9 +528,11 @@
 	  window.requestAnimationFrame(update);
 	}
 
-	function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {
-	  var new_color_a = new THREE.Color(hex_color_node_a);
-	  var new_color_b = new THREE.Color(hex_color_node_b);
+	function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {  
+	  var new_color_a = new THREE.Color(hex_color_node_a || defaults.edge_color);
+	  var new_color_b = new THREE.Color(hex_color_node_b || defaults.edge_color);
+	  console.log(defaults.edge_color);
+	  
 	  var index = 1;
 	  if(edge._directed) {
 	    index = 2;
@@ -526,7 +549,6 @@
 	  edge_colors[idx + 5] = new_color_b.b;
 
 	  network.children[index].geometry.attributes.color.needsUpdate = true;
-	  //window.requestAnimationFrame(update);
 	}
 
 	function colorAllEdges(hexColor) {
@@ -539,18 +561,14 @@
 	  var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
 	  var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
 
-	  for(var i = 0; i < edgeColors1.length;) {
-	    edgeColors1[i] = newColor.r;
-	    edgeColors1[i + 1] = newColor.g;
-	    edgeColors1[i + 2] = newColor.b;
-	    i += 3;
-	  }
-	  for(var i = 0; i < edgeColors2.length;) {
-	    edgeColors2[i] = newColor.r;
-	    edgeColors2[i + 1] = newColor.g;
-	    edgeColors2[i + 2] = newColor.b;
-	    i += 3;
-	  }
+	  [edgeColors1, edgeColors2].forEach(function(edgesColor) {
+	    for(var i = 0; i < edgesColor.length;) {
+	      edgesColor[i] = newColor.r;
+	      edgesColor[i + 1] = newColor.g;
+	      edgesColor[i + 2] = newColor.b;
+	      i += 3;
+	    }
+	  });
 
 	  network.children[1].geometry.attributes.color.needsUpdate = true;
 	  network.children[2].geometry.attributes.color.needsUpdate = true;
@@ -562,29 +580,26 @@
 	  segment_color_obj = {};
 	  var max_distance = 0,
 	      additional_node = false,
-	      infinity_node = false;
-	  var start_node = graph.getRandomNode();;
+	      infinity_node = false,
+	      start_node = graph.getRandomNode();
 	  if(node != null) {
 	    start_node = node;
 	  }
 	  var bfs = $G.search.BFS(graph, start_node);  
 	  for(index in bfs) {
-	    if ( bfs[index].distance !== Number.POSITIVE_INFINITY) {
+	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
 	      max_distance = Math.max(max_distance, bfs[index].distance);
 	    }
 	  }
 
-	  console.log("MAX DISTANCE IS: " + max_distance);
-
-	  var start_color = new THREE.Color(defaults.bfs_gradient_start_color);
-	  var middle_color = new THREE.Color(defaults.bfs_gradient_middle_color);  
-	  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);
-
-	  var gradient = [],
+	  var start_color = new THREE.Color(defaults.bfs_gradient_start_color),
+	      middle_color = new THREE.Color(defaults.bfs_gradient_middle_color),
+	      end_color = new THREE.Color(defaults.bfs_gradient_end_color),
+	      gradient = [],
 	      firstColor = start_color,
-	      secondColor = middle_color;
-	  
-	  var half = max_distance / 2;
+	      secondColor = middle_color,
+	      half = max_distance / 2;
+	      
 	  for(var i = 0; i <= max_distance; i++) {
 	    if(i > half) {
 	      firstColor = middle_color;
@@ -596,11 +611,9 @@
 	    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / half * i_mod_half;
 	    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
 	    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
-
-	    console.log("New color: ");
-	    console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
-
 	    gradient.push(newColor);
+	    //console.log("New color: ");
+	    //console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
 	  }
 	  
 	  for(index in bfs) {
@@ -611,20 +624,20 @@
 	    colorSingleNode(graph.getNodeById(index), hex_color);
 	    segment_color_obj[index] = hex_color;
 	  }
-	  
-	  //TODO directed
-	  //[und_edges, dir_edges].forEach(function(edges) {
-	  //});
-	  for(edge_index in und_edges) {
-	    var edge = und_edges[edge_index];
-	    var node_a_id = edge._node_a.getID();
-	    var node_b_id = edge._node_b.getID();
-	    
-	    if(segment_color_obj[node_a_id] !== 'undefined' && 
-	       segment_color_obj[node_b_id] !== 'undefined') {
-	      colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+
+	  [und_edges, dir_edges].forEach(function(edges) {
+	    for(edge_index in und_edges) {
+	      var edge = und_edges[edge_index];
+	      var node_a_id = edge._node_a.getID();
+	      var node_b_id = edge._node_b.getID();
+	      
+	      if(segment_color_obj[node_a_id] !== 'undefined' && 
+	         segment_color_obj[node_b_id] !== 'undefined') {
+	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+	      }
 	    }
-	  }
+	  });
+
 	  //console.log(bfs);
 	  window.requestAnimationFrame(update);
 	}
@@ -632,24 +645,28 @@
 	//Hint: index = node id
 	function colorDFS(node) {
 	  segment_color_obj = {};
-	  var start_node = graph.getRandomNode();;
+	  var start_node = graph.getRandomNode(),
+	      colors = [];
 	  if(node != null) {
 	    start_node = node;
 	  }
 	  var dfs = $G.search.DFS(graph, start_node);
 	  //console.log(dfs);
 
-	  //var Gradient = require('gradient');  
-	  //var grad = Gradient(defaults.dfs_gradient_start_color, 
-	                      //defaults.dfs_gradient_end_color, 
-	                      //dfs.length);
-	  //var colors = grad.toArray('hexString');
+	  for (var i = 0; i < dfs.length; i++) {    
+	    var new_color = new THREE.Color();
+	    new_color.r = Math.floor(Math.random() * 256) / 256.0;
+	    new_color.g = Math.floor(Math.random() * 256) / 256.0;
+	    new_color.b = Math.floor(Math.random() * 256) / 256.0;
+	    colors.push(new_color.getHex());
+	  }
 	  
 	  for(var i = 0; i < dfs.length; i++) {
 	    for(index in dfs[i]) {
 	      colorSingleNode(graph.getNodeById(index), colors[i]);
 	      segment_color_obj[index] = colors[i];
 	    }
+	    console.log(dfs[i]);
 	  }
 	  
 	  [und_edges, dir_edges].forEach(function(edges) {
@@ -669,7 +686,6 @@
 	}
 
 	function colorBFSclick() {
-	  console.log(globals.selected_node);
 	  colorBFS(globals.selected_node);
 	}
 
@@ -705,9 +721,9 @@
 	var dims = __webpack_require__(1).globals.graph_dims;
 	var mouse = __webpack_require__(1).globals.mouse;
 	var defaults = __webpack_require__(1).defaults;
+	var globals = __webpack_require__(1).globals;
 
-	var TWO_D_MODE = 0,
-	    INTERSECTED = {
+	var INTERSECTED = {
 	      index: 0, color: new THREE.Color(), node: null
 	    },
 	    raycaster = new THREE.Raycaster();
@@ -724,7 +740,7 @@
 	  old_nodes[index + 1] = update_node.getFeature('coords').y;
 	  old_nodes[index + 2] = update_node.getFeature('coords').z;
 
-	  if(TWO_D_MODE) {
+	  if(globals.TWO_D_MODE) {
 	    old_nodes[index + 2] = 0;
 	  }
 	  network.children[0].geometry.attributes.position.needsUpdate = true;
@@ -848,44 +864,37 @@
 	}
 
 	function switchTo2D() {
-	  TWO_D_MODE = true;
-	  var array = network.children[0].geometry.attributes.position.array;
-	  for(var i = 0; i < array.length;) {
-	    array[i + 2] = 0;
-	    i+=3;
-	  }
+	  globals.TWO_D_MODE = true;
+	  var nodes_array = network.children[0].geometry.attributes.position.array,
+	      undEdges_array = network.children[1].geometry.attributes.position.array,
+	      dirEdges_array = network.children[2].geometry.attributes.position.array;
+	  
+	  [nodes_array, undEdges_array, dirEdges_array].forEach(function(array) {
+	    for(var i = 0; i < array.length;) {
+	      array[i + 2] = 0;
+	      i+=3;
+	    }
+	  });
+	  
 	  network.children[0].geometry.attributes.position.needsUpdate = true;
-
-	  array = network.children[1].geometry.attributes.position.array;
-	  for(var i = 0; i < array.length;) {
-	    array[i + 2] = 0;
-	    i+=3;
-	  }
 	  network.children[1].geometry.attributes.position.needsUpdate = true;
-
-	  array = network.children[2].geometry.attributes.position.array;
-	  for(var i = 0; i < array.length;) {
-	    array[i + 2] = 0;
-	    i+=3;
-	  }
 	  network.children[2].geometry.attributes.position.needsUpdate = true;
-
 	  window.requestAnimationFrame(update);
 	}
 
 	function switchTo3D() {
-	  TWO_D_MODE = false;
-	  var array = network.children[0].geometry.attributes.position.array;
+	  globals.TWO_D_MODE = false;
+
 	  var i = 0;
+	  var array = network.children[0].geometry.attributes.position.array;
 	  for(node in nodes_obj) {
 	    var z = nodes_obj[node].getFeature('coords').z;
 	    array[i + 2] = z;
 	    i+=3;
 	  }
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
 
+	  i = 0;
 	  array = network.children[1].geometry.attributes.position.array;
-	  var i = 0;
 	  for (var edge_index in und_edges) {
 	    var edge = und_edges[edge_index];
 	    var node_a_id = edge._node_a.getID();
@@ -895,7 +904,6 @@
 	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
 	    i += 6;
 	  }
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
 
 	  i = 0;
 	  array = network.children[2].geometry.attributes.position.array;
@@ -908,6 +916,9 @@
 	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
 	    i += 6;
 	  }
+	  
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
 	  network.children[2].geometry.attributes.position.needsUpdate = true;
 	  window.requestAnimationFrame(update);
 	}
@@ -958,7 +969,6 @@
 
 	module.exports = {
 	    INTERSECTED: INTERSECTED,
-	    TWO_D_MODE: TWO_D_MODE,
 	    updateNodePosition: updateNodePosition,
 	    updateAll: updateAll,
 	    updateRandomPostions: updateRandomPostions,
@@ -1011,6 +1021,13 @@
 	  var explicit = typeof explicit === 'undefined' ? false : explicit;
 	  var direction = typeof direction === 'undefined' ? false : direction;
 	  var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
+	  
+	  if(document.querySelector('#undirected').checked) {
+	    direction = false;
+	  }
+	  else {
+	    direction = true;
+	  }
 	  
 	  var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
 

@@ -4,6 +4,13 @@ input.onchange = function(event, explicit, direction, weighted_mode) {
   var direction = typeof direction === 'undefined' ? false : direction;
   var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
   
+  if(document.querySelector('#undirected').checked) {
+    direction = false;
+  }
+  else {
+    direction = true;
+  }
+  
   var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
 
   //checks if the browser supports the file API
