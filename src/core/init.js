@@ -16,8 +16,8 @@ var config = {
   },
   // default size of canvas/container
   container: {
-    WIDTH: 1500,
-    HEIGHT: 900
+    WIDTH: 1200,
+    HEIGHT: 800
   },
   // default render parameters
   defaults: {
@@ -48,9 +48,10 @@ var config = {
     ],
     
     //for bfs and dfs coloring
-    bfs_gradient_start_color: '#1a3ff6', //blue
-    bfs_gradient_middle_color: '#81cf28', //green
-    bfs_gradient_end_color: '#f61a1a', //red
+    bfs_gradient_end_color: 0x901A43, // open todo red
+    bfs_gradient_middle_color: 0xfff730, // lemontiger yellow
+    bfs_gradient_start_color: 0x079207, // dark shit green
+
     dfs_gradient_start_color: '#ff0000',
     dfs_gradient_end_color: '#00abff'
   },

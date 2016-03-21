@@ -2,8 +2,8 @@ var network = require("./render.js").network;
 var update = require("./render.js").update;
 var nodes_obj_idx = require("./render.js").nodes_obj_idx;
 var edges_obj_idx = require("./render.js").edges_obj_idx;
+var globals = require("./init.js").globals;
 var dims = require("./init.js").globals.graph_dims;
-var selected_node = require("./init.js").globals.selected_node;
 var defaults = require("./init.js").defaults;
 var TWO_D_MODE = require("../view/interaction.js").TWO_D_MODE;
 var INTERSECTED = require("../view/interaction.js").INTERSECTED;
@@ -219,47 +219,43 @@ function colorBFS(node) {
   }
   var bfs = $G.search.BFS(graph, start_node);  
   for(index in bfs) {
-    if(bfs[index].distance == 0) {
-      additional_node = true;
-    }
-    else if(bfs[index].distance == Infinity) {
-      infinity_node = true;
-    }
-    else {
+    if ( bfs[index].distance !== Number.POSITIVE_INFINITY) {
       max_distance = Math.max(max_distance, bfs[index].distance);
     }
   }
-  if(additional_node) {
-    max_distance += 1;
-  }
-  if(infinity_node) {
-    max_distance += 1;
-  }
+
+  console.log("MAX DISTANCE IS: " + max_distance);
 
   var start_color = new THREE.Color(defaults.bfs_gradient_start_color);
   var middle_color = new THREE.Color(defaults.bfs_gradient_middle_color);  
-  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);  
+  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);
+
   var gradient = [],
       firstColor = start_color,
       secondColor = middle_color;
   
   var half = max_distance / 2;
-  for(var i = 0; i < max_distance; i++) {
+  for(var i = 0; i <= max_distance; i++) {
     if(i > half) {
       firstColor = middle_color;
       secondColor = end_color;
     }
 
+    var i_mod_half = (i % half) ? (i % half) : ((i-1) % half);
     var newColor = new THREE.Color();
-    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / max_distance * i;
-    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / max_distance * i;
-    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / max_distance * i;
+    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / half * i_mod_half;
+    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
+    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
+
+    console.log("New color: ");
+    console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
+
     gradient.push(newColor);
   }
   
   for(index in bfs) {
     var hex_color = '#ffffff';
-    if(bfs[index].distance != Infinity) {
+    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
       hex_color = gradient[bfs[index].distance].getHex();
     }
     colorSingleNode(graph.getNodeById(index), hex_color);
@@ -323,8 +319,8 @@ function colorDFS(node) {
 }
 
 function colorBFSclick() {
-  //console.log(selected_node);
-  colorBFS(selected_node);
+  console.log(globals.selected_node);
+  colorBFS(globals.selected_node);
 }
 
 function colorDFSclick() {
@@ -344,4 +340,4 @@ module.exports = {
   colorDFS: colorDFS,
   colorBFSclick: colorBFSclick,
   colorDFSclick: colorDFSclick
-}
+};

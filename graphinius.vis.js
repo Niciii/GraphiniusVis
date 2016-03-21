@@ -47,16 +47,16 @@
 	/* WEBPACK VAR INJECTION */(function(global) {var init			= __webpack_require__(1),
 	    render          = __webpack_require__(2),
 	    mutate          = __webpack_require__(3),
-	    hist_reader     = __webpack_require__(7),
-	    main_loop       = __webpack_require__(8),
-	    readCSV         = __webpack_require__(9),
-	    readJSON        = __webpack_require__(10),
-	    const_layout    = __webpack_require__(11),
-	    force_layout    = __webpack_require__(12),
-	    generic_layout  = __webpack_require__(13),
-	    fullscreen      = __webpack_require__(14),
+	    hist_reader     = __webpack_require__(5),
+	    main_loop       = __webpack_require__(6),
+	    readCSV         = __webpack_require__(7),
+	    readJSON        = __webpack_require__(8),
+	    const_layout    = __webpack_require__(9),
+	    force_layout    = __webpack_require__(10),
+	    generic_layout  = __webpack_require__(11),
+	    fullscreen      = __webpack_require__(12),
 	    interaction     = __webpack_require__(4),
-	    navigation      = __webpack_require__(15);
+	    navigation      = __webpack_require__(13);
 
 
 	var out = typeof window !== 'undefined' ? window : global;
@@ -115,8 +115,8 @@
 	  },
 	  // default size of canvas/container
 	  container: {
-	    WIDTH: 1500,
-	    HEIGHT: 900
+	    WIDTH: 1200,
+	    HEIGHT: 800
 	  },
 	  // default render parameters
 	  defaults: {
@@ -147,9 +147,10 @@
 	    ],
 	    
 	    //for bfs and dfs coloring
-	    bfs_gradient_start_color: '#1a3ff6', //blue
-	    bfs_gradient_middle_color: '#81cf28', //green
-	    bfs_gradient_end_color: '#f61a1a', //red
+	    bfs_gradient_end_color: 0x901A43, // open todo red
+	    bfs_gradient_middle_color: 0xfff730, // lemontiger yellow
+	    bfs_gradient_start_color: 0x079207, // dark shit green
+
 	    dfs_gradient_start_color: '#ff0000',
 	    dfs_gradient_end_color: '#00abff'
 	  },
@@ -351,8 +352,8 @@
 	var update = __webpack_require__(2).update;
 	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
 	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
+	var globals = __webpack_require__(1).globals;
 	var dims = __webpack_require__(1).globals.graph_dims;
-	var selected_node = __webpack_require__(1).globals.selected_node;
 	var defaults = __webpack_require__(1).defaults;
 	var TWO_D_MODE = __webpack_require__(4).TWO_D_MODE;
 	var INTERSECTED = __webpack_require__(4).INTERSECTED;
@@ -568,47 +569,43 @@
 	  }
 	  var bfs = $G.search.BFS(graph, start_node);  
 	  for(index in bfs) {
-	    if(bfs[index].distance == 0) {
-	      additional_node = true;
-	    }
-	    else if(bfs[index].distance == Infinity) {
-	      infinity_node = true;
-	    }
-	    else {
+	    if ( bfs[index].distance !== Number.POSITIVE_INFINITY) {
 	      max_distance = Math.max(max_distance, bfs[index].distance);
 	    }
 	  }
-	  if(additional_node) {
-	    max_distance += 1;
-	  }
-	  if(infinity_node) {
-	    max_distance += 1;
-	  }
+
+	  console.log("MAX DISTANCE IS: " + max_distance);
 
 	  var start_color = new THREE.Color(defaults.bfs_gradient_start_color);
 	  var middle_color = new THREE.Color(defaults.bfs_gradient_middle_color);  
-	  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);  
+	  var end_color = new THREE.Color(defaults.bfs_gradient_end_color);
+
 	  var gradient = [],
 	      firstColor = start_color,
 	      secondColor = middle_color;
 	  
 	  var half = max_distance / 2;
-	  for(var i = 0; i < max_distance; i++) {
+	  for(var i = 0; i <= max_distance; i++) {
 	    if(i > half) {
 	      firstColor = middle_color;
 	      secondColor = end_color;
 	    }
 
+	    var i_mod_half = (i % half) ? (i % half) : ((i-1) % half);
 	    var newColor = new THREE.Color();
-	    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / max_distance * i;
-	    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / max_distance * i;
-	    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / max_distance * i;
+	    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / half * i_mod_half;
+	    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
+	    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
+
+	    console.log("New color: ");
+	    console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
+
 	    gradient.push(newColor);
 	  }
 	  
 	  for(index in bfs) {
 	    var hex_color = '#ffffff';
-	    if(bfs[index].distance != Infinity) {
+	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
 	      hex_color = gradient[bfs[index].distance].getHex();
 	    }
 	    colorSingleNode(graph.getNodeById(index), hex_color);
@@ -672,8 +669,8 @@
 	}
 
 	function colorBFSclick() {
-	  //console.log(selected_node);
-	  colorBFS(selected_node);
+	  console.log(globals.selected_node);
+	  colorBFS(globals.selected_node);
 	}
 
 	function colorDFSclick() {
@@ -693,7 +690,7 @@
 	  colorDFS: colorDFS,
 	  colorBFSclick: colorBFSclick,
 	  colorDFSclick: colorDFSclick
-	}
+	};
 
 
 /***/ },
@@ -972,15 +969,13 @@
 
 
 /***/ },
-/* 5 */,
-/* 6 */,
-/* 7 */
+/* 5 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 8 */
+/* 6 */
 /***/ function(module, exports) {
 
 	
@@ -1002,13 +997,13 @@
 
 
 /***/ },
-/* 9 */
+/* 7 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports) {
 
 	input.onchange = function(event, explicit, direction, weighted_mode) {
@@ -1066,6 +1061,18 @@
 
 
 /***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
 /* 11 */
 /***/ function(module, exports) {
 
@@ -1073,18 +1080,6 @@
 
 /***/ },
 /* 12 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 13 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 14 */
 /***/ function(module, exports) {
 
 	var FSelem = {
@@ -1151,12 +1146,11 @@
 
 
 /***/ },
-/* 15 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var keys = __webpack_require__(1).keys;
 	var globals = __webpack_require__(1).globals;
-	var selected_node = __webpack_require__(1).globals.selected_node;
 	var camera = __webpack_require__(2).camera;
 	var defaults = __webpack_require__(1).defaults;
 	var update = __webpack_require__(2).update;
@@ -1170,7 +1164,7 @@
 	// for testing purposes
 	var intersect_cb1 = function(node) {  
 	  document.querySelector("#nodeID").innerHTML = node._id;  
-	}
+	};
 	callbacks.node_intersects.push(intersect_cb1);
 
 
@@ -1319,7 +1313,9 @@
 	window.addEventListener('click', click, false);
 	function click(event) {  
 	  if(INTERSECTED.node != null) {
-	    selected_node = INTERSECTED.node;
+	    globals.selected_node = INTERSECTED.node;
+	    console.log(globals.selected_node);
+
 	    document.querySelector("#nodeInfo").style.visibility = 'visible';
 	    var ni = callbacks.node_intersects;
 	    for (var cb in ni) {
