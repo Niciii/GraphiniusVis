@@ -26,6 +26,10 @@ var config = {
     tranparent: true,
     opacity: 0.5, //default is 1; range: 0.0 - 1.0
     linewidth: 1,
+    //for force directed layout
+    start_node_color: 0xff59b2,
+    start_edge_color: 0x007dc1,
+    fd_node_size: 15,
     
     //raycaster
     highlight_node_color: new THREE.Color(0xf1ecfb),
@@ -70,7 +74,13 @@ var config = {
       AVG_Z: 0
     },
     selected_node: null,
-    TWO_D_MODE: false
+    TWO_D_MODE: false,
+    INTERSECTED: {
+      index: 0, color: new THREE.Color(), node: null
+    },
+    raycaster: new THREE.Raycaster(),
+    rendererForceDirectedGraph: null,
+    forceDirectedGraph: null
   },
   callbacks: {
     node_intersects: []

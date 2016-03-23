@@ -12,35 +12,52 @@
           <input type="radio" id="undirected" name="direction" value="undirected" checked><label for="undirected">undirected graph</label><br>
           <input type="radio" id="directed" name="direction" value="directed"><label for="directed">directed graph</label><br><br>
         <form>
-        <input id="input" class="button" type="file" onchange><br><br>
+        <input id="input" value="Read File" class="button" type="file" onchange><br><br>
         <input id="renderButton" value="Render Graph" type="button" onclick=$GV.core.render.renderGraph()>
+<!--
+        <input id="rerenderButton" value="Rerender Graph" type="button" onclick=$GV.core.render.rerenderGraph()>
+-->
 
-      <h3>Graph Activities</h3>        
+      <h3>Graph Activities</h3>
+        <div class="onoffswitch">
+          <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch" checked onclick=$GV.core.render.showGraph()>
+          <label class="onoffswitch-label" for="myonoffswitch">
+              <span class="onoffswitch-inner"></span>
+              <span class="onoffswitch-switch"></span>
+          </label>
+        </div><br/>
         <input id="switch2DButton" value="Switch to 2D" type="button" onclick=$GV.view.interaction.switchTo2D()><br/>
         <input id="switch3DButton" value="Switch to 3D" type="button" onclick=$GV.view.interaction.switchTo3D()><br/><br/>
-        <input id="changeNodeColorButton" value="Change node color of Graph" type="button" onclick=$GV.core.mutate.colorAllNodes(0)><br/>
-        <input id="changeEdgeColorButton" value="Change edge color of Graph" type="button" onclick=$GV.core.mutate.colorAllEdges(0)><br/><br/>
-        <input id="addRandomNodesButton" value="Add random node" type="button" onclick=$GV.core.mutate.addRandomNodes()><br/>
-        <input id="updateAllNodesButton" value="Update all nodes" type="button" onclick=$GV.view.interaction.updateAll()><br/><br/>
-        <input id="randomBFSButton" value="BFS - random node" type="button" onclick=$GV.core.mutate.colorBFS(null)><br/>
-        <input id="chosenBFSButton" value="BFS - chosen node" type="button" onclick=$GV.core.mutate.colorBFSclick()><br/><br/>
-        <input id="randomDFSButton" value="DFS - random node" type="button" onclick=$GV.core.mutate.colorDFS(null)><br/>
-        <input id="chosenDFSButton" value="DFS - chosen node" type="button" onclick=$GV.core.mutate.colorDFSclick()>
+        <input id="changeNodeSize" type="range" name="range" min="5" max="80" value="10" onclick=$GV.view.interaction.changeNodeSize(range.value)><br/>
+        <input id="changeNodeColorButton" value="Change Node Color" type="button" onclick=$GV.core.mutate.colorAllNodes(0)><br/>
+        <input id="changeEdgeColorButton" value="Change Edge Color" type="button" onclick=$GV.core.mutate.colorAllEdges(0)><br/><br/>
+        <input id="addRandomNodesButton" value="Add Random Node" type="button" onclick=$GV.core.mutate.addRandomNodes()><br/>
+        <input id="updateAllNodesButton" value="Update All Nodes" type="button" onclick=$GV.view.interaction.updateAll()><br/><br/>
+        <input id="randomBFSButton" value="BFS (random)" type="button" onclick=$GV.core.mutate.colorBFS(null)><br/>
+        <input id="chosenBFSButton" value="BFS (click)" type="button" onclick=$GV.core.mutate.colorBFSclick()><br/><br/>
+        <input id="randomDFSButton" value="DFS (random)" type="button" onclick=$GV.core.mutate.colorDFS(null)><br/>
+        <input id="chosenDFSButton" value="DFS (click)" type="button" onclick=$GV.core.mutate.colorDFSclick()><br/><br/>
+        <input id="chosenHideNodeButton" value="Hide Node (click)" type="button" onclick=$GV.core.mutate.hideNodeClick()><br/>
+        <input id="chosenColorNodeButton" value="Color Node (click)" type="button" onclick=$GV.core.mutate.colorSingleNodeClick()><br/>
+        <input id="chosenUpdateNodeButton" value="Update Node (click)" type="button" onclick=$GV.view.interaction.updateNodePositionClick()>
 
         <h3>Graph Information</h3>
-        <div id="graphInfo"><ul>
-          <li>Number of nodes: <span id="nodes"></span></li>
-          <li>Number of edges: <span id="edges"></span></li>
-          <li>Time to read <span id="time"></span></li>
-        </ul></div>
+        <div id="graphInfo">
+          Number of nodes: <span id="nodes"></span><br/>
+          Number of edges: <span id="edges"></span><br/>
+<!--
+          Time to read <span id="time"></span>
+-->
+        </div>
       </div>
 
       <div><h2>Visualisation</h2>
         <div id="graphVis" width="100%">
-					<div id="fullscreenSwitch" onclick="switchToFullScreen('#containerGraph')"> Fullscreen </div>
-          
+					<div id="fullscreenSwitch" onclick="switchToFullScreen('#containerGraph')"> Fullscreen </div>          
           <div id="containerGraph" class="containerGraph" >
             <div id="nodeInfo">Node ID: <span id="nodeID"></span></div>
+          </div>
+          <div id="containerNgraph" class="containerNgraph">
           </div>
         </div>
       </div>
@@ -49,8 +66,5 @@
 		<script type="text/javascript" src="lib/three.min.js"></script>
 		<script type="text/javascript" src="lib/graphinius.min.js"></script>
     <script type="text/javascript" src="graphinius.vis.js"></script>
-<!--
-    <script type="text/javascript" src="lib/gradient.js"></script>
--->
   </body>
 </html>

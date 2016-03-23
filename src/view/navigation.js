@@ -7,7 +7,6 @@ var network = require("../core/render.js").network;
 var container = require("../core/init.js").container;
 var mouse = require("../core/init.js").globals.mouse;
 var nodeIntersection = require("./interaction.js").nodeIntersection;
-var INTERSECTED = require("./interaction.js").INTERSECTED;
 var callbacks = require("../core/init.js").callbacks;
 
 // for testing purposes
@@ -15,7 +14,6 @@ var intersect_cb1 = function(node) {
   document.querySelector("#nodeID").innerHTML = node._id;  
 };
 callbacks.node_intersects.push(intersect_cb1);
-
 
 //rotation
 var axis_x = new THREE.Vector3( 1, 0, 0 ),
@@ -71,13 +69,16 @@ function key(event) {
 }
 
 //zoom in and out
-window.addEventListener('mousewheel', mousewheel, false);
+var eventWheel = 'mousewheel';
+if(typeof InstallTrigger !== 'undefined') {
+  eventWheel = 'wheel';
+}
+window.addEventListener(eventWheel, mousewheel, false);
 function mousewheel(event) {
-  //wheel down: negative value
-  //wheel up: positive value
+  //wheel down: negative value; firefox positive
+  //wheel up: positive value; firefox negative
   if(event.shiftKey) {
-    console.log("wheel");
-    if(event.wheelDelta < 0) {
+    if(event.wheelDelta < 0 || event.deltaY > 0) {
       network.rotateOnAxis(axis_y, -defaults.delta_rotation);
       axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
     }
@@ -87,14 +88,20 @@ function mousewheel(event) {
     }
   }
   else {
-    camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
+    //firefox
+    if(typeof InstallTrigger !== 'undefined') {
+      camera.fov -= defaults.ZOOM_FACTOR * event.deltaY;
+    }
+    else {
+      camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
+    }    
     camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
     camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
   }
   window.requestAnimationFrame(update);
 }
 
-window.addEventListener( 'mousemove', mouseMove, false );
+window.addEventListener('mousemove', mouseMove, false);
 function mouseMove(event) {
   
   if(event.shiftKey && event.buttons == 1) {
@@ -161,15 +168,13 @@ function mouseMove(event) {
 
 window.addEventListener('click', click, false);
 function click(event) {  
-  if(INTERSECTED.node != null) {
-    globals.selected_node = INTERSECTED.node;
-    console.log(globals.selected_node);
-
+  if(globals.INTERSECTED.node != null) {
+    globals.selected_node = globals.INTERSECTED.node;
     document.querySelector("#nodeInfo").style.visibility = 'visible';
     var ni = callbacks.node_intersects;
     for (var cb in ni) {
       if (typeof ni[cb] === 'function') {
-        ni[cb](INTERSECTED.node);
+        ni[cb](globals.INTERSECTED.node);
       }
     }
   }

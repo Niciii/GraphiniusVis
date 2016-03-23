@@ -8,11 +8,6 @@ var mouse = require("../core/init.js").globals.mouse;
 var defaults = require("../core/init.js").defaults;
 var globals = require("../core/init.js").globals;
 
-var INTERSECTED = {
-      index: 0, color: new THREE.Color(), node: null
-    },
-    raycaster = new THREE.Raycaster();
-
 //update node and edge position
 function updateNodePosition(update_node) {
 
@@ -30,29 +25,41 @@ function updateNodePosition(update_node) {
   }
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
-  //update edges
-  var old_edges = network.children[1].geometry.getAttribute('position').array;
-  var und_edges = update_node.undEdges();
-  for(var i = 0; i < Object.keys(und_edges).length; i++) {
-    var edge = und_edges[Object.keys(update_node.undEdges())[i]];
+  //update edges  
+  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+                    update_node.undEdges()];
+  //TODO - directed
+  var in_out_edges = {};
+  for (var e in update_node.inEdges()) { in_out_edges[e] = update_node.inEdges()[e]; }
+  for (var e in update_node.outEdges()) { in_out_edges[e] = update_node.outEdges()[e]; }
+  //----
+  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+                    in_out_edges];
+  
+  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+    var old_edges = all_edges_of_a_node[0];
+    var edges = all_edges_of_a_node[1];
+    for(var i = 0; i < Object.keys(edges).length; i++) {
+      var edge = edges[Object.keys(edges)[i]];
 
-    //update from-node
-    var edge_index = edges_obj_idx[edge.getID()];
-    if(edge._node_a === update_node) {
-      old_edges[edge_index] = update_node.getFeature('coords').x;
-      old_edges[edge_index + 1] = update_node.getFeature('coords').y;
-      old_edges[edge_index + 2] = update_node.getFeature('coords').z;
+      //update from-node
+      var edge_index = edges_obj_idx[edge.getID()];
+      if(edge._node_a === update_node) {
+        old_edges[edge_index] = update_node.getFeature('coords').x;
+        old_edges[edge_index + 1] = update_node.getFeature('coords').y;
+        old_edges[edge_index + 2] = update_node.getFeature('coords').z;
+      }
+      //update to-node
+      else if(edge._node_b === update_node) {
+        old_edges[edge_index + 3] = update_node.getFeature('coords').x;
+        old_edges[edge_index + 4] = update_node.getFeature('coords').y;
+        old_edges[edge_index + 5] = update_node.getFeature('coords').z;
+      }
     }
-    //update to-node
-    else if(edge._node_b === update_node) {
-      old_edges[edge_index + 3] = update_node.getFeature('coords').x;
-      old_edges[edge_index + 4] = update_node.getFeature('coords').y;
-      old_edges[edge_index + 5] = update_node.getFeature('coords').z;
-    }
-  }
+  });
+  
   network.children[1].geometry.attributes.position.needsUpdate = true;
-  //TODO for directed and undirected edges
-  //network.children[2].geometry.attributes.position.needsUpdate = true;
+  network.children[2].geometry.attributes.position.needsUpdate = true;
   window.requestAnimationFrame(update);
 }
 
@@ -66,14 +73,16 @@ function updateAll() {
     old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
     i += 3;
   }
+  
   window.cnt = 0;
   requestAnimationFrame(updateRandomPostions);
 }
 
 function updateRandomPostions() {
+  //update node
   var node_obj = graph.getNodes();
   var old_nodes = network.children[0].geometry.getAttribute('position').array;
-  var old_edges = network.children[1].geometry.getAttribute('position').array;
+  
   for(node in node_obj) {
     var index = nodes_obj_idx[node];
     node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - dims.AVG_X;
@@ -85,10 +94,16 @@ function updateRandomPostions() {
     old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
   }
 
-  var und_edges = graph.getUndEdges();
-  var dir_edges = graph.getDirEdges();
-  [und_edges, dir_edges].forEach(function(edges) {
+  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+                    graph.getUndEdges()];
+  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+                    graph.getDirEdges()];
+  
+  //update edges
+  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
     var i = 0;
+    var old_edges = all_edges_of_a_node[0];
+    var edges = all_edges_of_a_node[1];
     for (var edge_index in edges) {
       var edge = edges[edge_index];
       var node_a_id = edge._node_a.getID();
@@ -112,7 +127,9 @@ function updateRandomPostions() {
   if(window.cnt++ < 100) {
     requestAnimationFrame(updateRandomPostions);
   }
+  //set nodes/edges to original coordinates
   else {
+    //set coordinates of nodes
     var i = 0;
     for(node in node_obj) {
       var index = nodes_obj_idx[node];
@@ -125,8 +142,11 @@ function updateRandomPostions() {
       old_nodes[index + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
       old_nodes[index + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
     }
-    [und_edges, dir_edges].forEach(function(edges) {
+    //set coordinates of edges
+    [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
       var i = 0;
+      var old_edges = all_edges_of_a_node[0];
+      var edges = all_edges_of_a_node[1];
       for (var edge_index in edges) {
         var edge = edges[edge_index];
         var node_a_id = edge._node_a.getID();
@@ -141,6 +161,7 @@ function updateRandomPostions() {
         i += 6;
       }
     });
+    
     network.children[0].geometry.attributes.position.needsUpdate = true;
     network.children[1].geometry.attributes.position.needsUpdate = true;
     network.children[2].geometry.attributes.position.needsUpdate = true;
@@ -210,24 +231,24 @@ function switchTo3D() {
 
 function nodeIntersection() {
   var attributes = network.children[0].geometry.attributes;
-  raycaster.setFromCamera(mouse, camera);
-  raycaster.params.Points.threshold = 1;
+  globals.raycaster.setFromCamera(mouse, camera);
+  globals.raycaster.params.Points.threshold = 1;
 
   var particlesToIntersect = [];
   particlesToIntersect.push(network.children[0]);
-  var intersects = raycaster.intersectObjects(particlesToIntersect);
+  var intersects = globals.raycaster.intersectObjects(particlesToIntersect);
 
-  if(intersects.length > 0 && intersects[0].index != INTERSECTED.index) {
+  if(intersects.length > 0 && intersects[0].index != globals.INTERSECTED.index) {
     //console.log("intersected objects");
     //console.log(intersectsParticles);
 
     //set previous node
-    attributes.color.array[INTERSECTED.index*3] = INTERSECTED.color.r;
-    attributes.color.array[INTERSECTED.index*3 + 1] = INTERSECTED.color.g;
-    attributes.color.array[INTERSECTED.index*3 + 2] = INTERSECTED.color.b;
+    attributes.color.array[globals.INTERSECTED.index*3] = globals.INTERSECTED.color.r;
+    attributes.color.array[globals.INTERSECTED.index*3 + 1] = globals.INTERSECTED.color.g;
+    attributes.color.array[globals.INTERSECTED.index*3 + 2] = globals.INTERSECTED.color.b;
     
-    INTERSECTED.index = intersects[0].index;
-    INTERSECTED.color.setRGB(
+    globals.INTERSECTED.index = intersects[0].index;
+    globals.INTERSECTED.color.setRGB(
       attributes.color.array[intersects[0].index*3], 
       attributes.color.array[intersects[0].index*3 + 1],
       attributes.color.array[intersects[0].index*3 + 2]
@@ -245,19 +266,35 @@ function nodeIntersection() {
     
     //get key by index
     var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-    INTERSECTED.node = window.graph.getNodeById(nodeID);
+    globals.INTERSECTED.node = window.graph.getNodeById(nodeID);
     
     //Hint: update is called in navigation
     //window.requestAnimationFrame(update);
   }
 }
 
+function updateNodePositionClick() {
+  globals.selected_node._features.coords.x = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X);
+  globals.selected_node._features.coords.y = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y);
+  globals.selected_node._features.coords.z = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z);
+  
+  updateNodePosition(globals.selected_node);
+}
+
+function changeNodeSize(size) {
+  if(!document.querySelector("#myonoffswitch").checked) {
+    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
+      nodeUI.size = size;
+    });
+  }
+}
+
 module.exports = {
-    INTERSECTED: INTERSECTED,
     updateNodePosition: updateNodePosition,
     updateAll: updateAll,
-    updateRandomPostions: updateRandomPostions,
+    updateNodePositionClick: updateNodePositionClick,
     switchTo2D: switchTo2D,
     switchTo3D: switchTo3D,
-    nodeIntersection: nodeIntersection
+    nodeIntersection: nodeIntersection,
+    changeNodeSize: changeNodeSize
 };

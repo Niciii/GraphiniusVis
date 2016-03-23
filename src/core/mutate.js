@@ -5,7 +5,6 @@ var edges_obj_idx = require("./render.js").edges_obj_idx;
 var globals = require("./init.js").globals;
 var dims = require("./init.js").globals.graph_dims;
 var defaults = require("./init.js").defaults;
-var INTERSECTED = require("../view/interaction.js").INTERSECTED;
 
 var segment_color_obj = {};
 
@@ -68,31 +67,22 @@ function hideNode(hide_node) {
   old_nodes[index + 1] = NaN;
   old_nodes[index + 2] = NaN;
 
-  //TODO
   //remove edge - directed
-  //if(Object.keys(window.graph.getDirEdges()).length > 0) {
-    //var old_edges = network.children[2].geometry.getAttribute('position').array;
-    //var dir_edges = hide_node.getDirEdges();
-    //for(var i = 0; i < Object.keys(dir_edges).length; i++) {
-      //var edge = dir_edges[Object.keys(hide_node.getDirEdges())[i]];
-
-      ////update from-node
-      //var edge_index = edges_obj_idx[edge.getID()];
-      //old_edges[edge_index] = NaN;
-      //old_edges[edge_index + 1] = NaN;
-      //old_edges[edge_index + 2] = NaN;
-      //old_edges[edge_index + 3] = NaN;
-      //old_edges[edge_index + 4] = NaN;
-      //old_edges[edge_index + 5] = NaN;
-    //}
-  //}
+  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+                    hide_node.undEdges()];
+  //TODO - directed
+  var in_out_edges = {};
+  for (var e in hide_node.inEdges()) { in_out_edges[e] = hide_node.inEdges()[e]; }
+  for (var e in hide_node.outEdges()) { in_out_edges[e] = hide_node.outEdges()[e]; }
+  //----
+  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+                    in_out_edges];
   
-  //remove edge - undirected
-  //if(Object.keys(window.graph.getUndEdges()).length > 0) {
-    var old_edges = network.children[1].geometry.getAttribute('position').array;
-    var und_edges = hide_node.undEdges();
-    for(var i = 0; i < Object.keys(und_edges).length; i++) {
-      var edge = und_edges[Object.keys(hide_node.undEdges())[i]];
+  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+    var old_edges = all_edges_of_a_node[0];
+    var edges = all_edges_of_a_node[1];
+    for(var i = 0; i < Object.keys(edges).length; i++) {
+      var edge = edges[Object.keys(edges)[i]];
 
       //update from-node
       var edge_index = edges_obj_idx[edge.getID()];
@@ -103,7 +93,7 @@ function hideNode(hide_node) {
       old_edges[edge_index + 4] = NaN;
       old_edges[edge_index + 5] = NaN;
     }
-  //}
+  });
 
   network.children[0].geometry.attributes.position.needsUpdate = true;
   network.children[1].geometry.attributes.position.needsUpdate = true;
@@ -151,7 +141,6 @@ function addEdge(edge) {
 
 function colorSingleNode(node, hexColor) {
   var newColor = new THREE.Color(hexColor || defaults.node_color);
-  console.log(globals.node_col);
   var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
   var node_id = node.getID();
@@ -159,6 +148,7 @@ function colorSingleNode(node, hexColor) {
   nodeColors[index] = newColor.r;
   nodeColors[index + 1] = newColor.g;
   nodeColors[index + 2] = newColor.b;
+  
   network.children[0].geometry.attributes.color.needsUpdate = true;
 }
 
@@ -167,24 +157,30 @@ function colorAllNodes(hexColor) {
     var randomIndex = Math.floor((Math.random() * defaults.randomColors.length));
     hexColor = defaults.randomColors[randomIndex];
   }
+    
+  if(document.querySelector("#myonoffswitch").checked) {
+    var newColor = new THREE.Color(hexColor);
+    var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
-  var newColor = new THREE.Color(hexColor);
-  var nodeColors = network.children[0].geometry.getAttribute('color').array;
-
-  for(var i = 0; i < nodeColors.length;) {
-    nodeColors[i] = newColor.r;
-    nodeColors[i + 1] = newColor.g;
-    nodeColors[i + 2] = newColor.b;
-    i += 3;
+    for(var i = 0; i < nodeColors.length;) {
+      nodeColors[i] = newColor.r;
+      nodeColors[i + 1] = newColor.g;
+      nodeColors[i + 2] = newColor.b;
+      i += 3;
+    }
+    network.children[0].geometry.attributes.color.needsUpdate = true;
+    window.requestAnimationFrame(update);
   }
-  network.children[0].geometry.attributes.color.needsUpdate = true;
-  window.requestAnimationFrame(update);
+  else {
+    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
+      nodeUI.color = hexColor;
+    });
+  }
 }
 
 function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {  
   var new_color_a = new THREE.Color(hex_color_node_a || defaults.edge_color);
   var new_color_b = new THREE.Color(hex_color_node_b || defaults.edge_color);
-  console.log(defaults.edge_color);
   
   var index = 1;
   if(edge._directed) {
@@ -210,24 +206,31 @@ function colorAllEdges(hexColor) {
     hexColor = defaults.randomColors[randomIndex];
   }
 
-  var newColor = new THREE.Color(hexColor);
-  var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
-  var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
+  if(document.querySelector("#myonoffswitch").checked) {
+    var newColor = new THREE.Color(hexColor);
+    var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
+    var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
 
-  [edgeColors1, edgeColors2].forEach(function(edgesColor) {
-    for(var i = 0; i < edgesColor.length;) {
-      edgesColor[i] = newColor.r;
-      edgesColor[i + 1] = newColor.g;
-      edgesColor[i + 2] = newColor.b;
-      i += 3;
-    }
-  });
+    [edgeColors1, edgeColors2].forEach(function(edgesColor) {
+      for(var i = 0; i < edgesColor.length;) {
+        edgesColor[i] = newColor.r;
+        edgesColor[i + 1] = newColor.g;
+        edgesColor[i + 2] = newColor.b;
+        i += 3;
+      }
+    });
 
-  network.children[1].geometry.attributes.color.needsUpdate = true;
-  network.children[2].geometry.attributes.color.needsUpdate = true;
-  window.requestAnimationFrame(update);
+    network.children[1].geometry.attributes.color.needsUpdate = true;
+    network.children[2].geometry.attributes.color.needsUpdate = true;
+    window.requestAnimationFrame(update);
+  }
+  else {
+    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+      linkUI.fromColor = hexColor;
+      linkUI.toColor = hexColor;
+    });
+  }
 }
-
 //Hint: index = node id
 function colorBFS(node) {
   segment_color_obj = {};
@@ -274,13 +277,18 @@ function colorBFS(node) {
     if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
       hex_color = gradient[bfs[index].distance].getHex();
     }
+    
     colorSingleNode(graph.getNodeById(index), hex_color);
     segment_color_obj[index] = hex_color;
+    
+    //for force directed layout
+    var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
+    nodeUI.color = hex_color;
   }
 
   [und_edges, dir_edges].forEach(function(edges) {
-    for(edge_index in und_edges) {
-      var edge = und_edges[edge_index];
+    for(edge_index in edges) {
+      var edge = edges[edge_index];
       var node_a_id = edge._node_a.getID();
       var node_b_id = edge._node_b.getID();
       
@@ -289,6 +297,12 @@ function colorBFS(node) {
         colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
       }
     }
+  });
+  
+  //for force directed layout
+  globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+    linkUI.fromColor = segment_color_obj[linkUI.from.id];
+    linkUI.toColor = segment_color_obj[linkUI.to.id];
   });
 
   //console.log(bfs);
@@ -313,13 +327,17 @@ function colorDFS(node) {
     new_color.b = Math.floor(Math.random() * 256) / 256.0;
     colors.push(new_color.getHex());
   }
-  
+
+  //for constant layout
   for(var i = 0; i < dfs.length; i++) {
     for(index in dfs[i]) {
       colorSingleNode(graph.getNodeById(index), colors[i]);
       segment_color_obj[index] = colors[i];
+      
+      //for force directed layout
+      var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
+      nodeUI.color = colors[i];
     }
-    console.log(dfs[i]);
   }
   
   [und_edges, dir_edges].forEach(function(edges) {
@@ -335,6 +353,23 @@ function colorDFS(node) {
     }
   });
   
+  //for force directed layout
+  globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+    linkUI.fromColor = segment_color_obj[linkUI.from.id];
+    linkUI.toColor = segment_color_obj[linkUI.to.id];
+  });
+  
+  window.requestAnimationFrame(update);
+}
+
+function hideNodeClick() {
+  hideNode(globals.selected_node);
+}
+
+function colorSingleNodeClick() {
+  var randomIndex = Math.floor((Math.random() * defaults.randomColors.length)), 
+      hexColor = defaults.randomColors[randomIndex];
+  colorSingleNode(globals.selected_node, hexColor);
   window.requestAnimationFrame(update);
 }
 
@@ -343,15 +378,17 @@ function colorBFSclick() {
 }
 
 function colorDFSclick() {
-  colorDFS(selected_node);
+  colorDFS(globals.selected_node);
 }
 
 module.exports = {
   addNode: addNode,
   addRandomNodes: addRandomNodes,
   hideNode: hideNode,
+  hideNodeClick: hideNodeClick,
   addEdge: addEdge,
   colorSingleNode: colorSingleNode,
+  colorSingleNodeClick: colorSingleNodeClick,
   colorAllNodes: colorAllNodes,
   colorSingleEdge: colorSingleEdge,
   colorAllEdges: colorAllEdges,
