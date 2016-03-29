@@ -46,17 +46,17 @@
 
 	/* WEBPACK VAR INJECTION */(function(global) {var init			= __webpack_require__(1),
 	    render          = __webpack_require__(2),
-	    mutate          = __webpack_require__(3),
-	    hist_reader     = __webpack_require__(4),
-	    main_loop       = __webpack_require__(5),
-	    readCSV         = __webpack_require__(6),
-	    readJSON        = __webpack_require__(7),
-	    const_layout    = __webpack_require__(8),
-	    force_layout    = __webpack_require__(9),
-	    generic_layout  = __webpack_require__(10),
-	    fullscreen      = __webpack_require__(11),
-	    interaction     = __webpack_require__(12),
-	    navigation      = __webpack_require__(13);
+	    mutate          = __webpack_require__(53),
+	    hist_reader     = __webpack_require__(54),
+	    main_loop       = __webpack_require__(55),
+	    readCSV         = __webpack_require__(56),
+	    readJSON        = __webpack_require__(57),
+	    const_layout    = __webpack_require__(58),
+	    force_layout    = __webpack_require__(59),
+	    generic_layout  = __webpack_require__(60),
+	    fullscreen      = __webpack_require__(61),
+	    interaction     = __webpack_require__(62),
+	    navigation      = __webpack_require__(63);
 
 
 	var out = typeof window !== 'undefined' ? window : global;
@@ -322,8 +322,8 @@
 	};
 
 	function renderNgraph(graph) {
-	  globals.forceDirectedGraph = __webpack_require__(14)();
-	  for(node in node_keys) {
+	  globals.forceDirectedGraph = __webpack_require__(3)();
+	  for(node in nodes_obj) {
 	    globals.forceDirectedGraph.addNode(nodes_obj[node].getID());
 	  }
 	  [und_edges, dir_edges].forEach(function(edges) {
@@ -334,8 +334,8 @@
 	      globals.forceDirectedGraph.addLink(node_a_id, node_b_id);
 	    }
 	  });
-	  
-	  var renderGraph = __webpack_require__(16);
+
+	  var renderGraph = __webpack_require__(5);
 	  globals.rendererForceDirectedGraph = renderGraph(globals.forceDirectedGraph, {
 	    container: document.querySelector('#containerNgraph'),
 	    node: createNodeUI,
@@ -348,14 +348,14 @@
 	      dragCoeff : 0.02
 	    }
 	  });
-	  
+
 	  function createNodeUI(node) {
 	    return {
 	      color: defaults.start_node_color,
 	      size: defaults.fd_node_size
 	    };
 	  }
-	  
+
 	  function createLinkUI(link) {
 	    return {
 	      fromColor: defaults.start_edge_color,
@@ -369,7 +369,7 @@
 	  if(document.querySelector("#myonoffswitch").checked) {
 	    document.querySelector("#containerNgraph").style.visibility = 'hidden';
 	    document.querySelector("#containerGraph").style.visibility = 'visible';
-	    
+
 	    document.querySelector("#switch2DButton").style.visibility = 'visible';
 	    document.querySelector("#switch3DButton").style.visibility = 'visible';
 	    document.querySelector("#updateAllNodesButton").style.visibility = 'visible';
@@ -382,10 +382,10 @@
 	    document.querySelector("#changeNodeSize").style.visibility = 'hidden';
 	  }
 	  //force directed layout
-	  else {    
+	  else {
 	    document.querySelector("#containerNgraph").style.visibility = 'visible';
 	    document.querySelector("#containerGraph").style.visibility = 'hidden';
-	    
+
 	    document.querySelector("#switch2DButton").style.visibility = 'hidden';
 	    document.querySelector("#switch3DButton").style.visibility = 'hidden';
 	    document.querySelector("#updateAllNodesButton").style.visibility = 'hidden';
@@ -413,12 +413,12 @@
 	    window.dir_edges = window.graph.getDirEdges();
 	    window.dir_edges_keys = Object.keys(window.dir_edges);
 	  }
-	  
+
 	  renderConstantGraph(graph);
-	  renderNgraph(graph);  
+	  // renderNgraph(graph);
 	  showGraph();
-	  
-	  console.log("render graph");
+
+	  console.log("rendering graph...");
 	}
 
 	function rerenderGraph() {
@@ -459,1092 +459,6 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var network = __webpack_require__(2).network;
-	var update = __webpack_require__(2).update;
-	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
-	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
-	var globals = __webpack_require__(1).globals;
-	var dims = __webpack_require__(1).globals.graph_dims;
-	var defaults = __webpack_require__(1).defaults;
-
-	var segment_color_obj = {};
-
-	//add node to graph but without edges
-	function addNode(new_node) {
-	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
-	  var old_colors = network.children[0].geometry.getAttribute('color').array;
-	  var new_nodes = new Float32Array(old_nodes.length + 3);
-	  var new_colors = new Float32Array(new_nodes.length);
-	  var new_color = new THREE.Color(0xff7373);
-
-	  for(var i = 0; i < old_nodes.length; i++) {
-	    new_nodes[i] = old_nodes[i];
-	    new_colors[i] = old_colors[i];
-	  }
-
-	  new_nodes[new_nodes.length - 3] = new_node.getFeature('coords').x;
-	  new_nodes[new_nodes.length - 2] = new_node.getFeature('coords').y;
-	  new_nodes[new_nodes.length - 1] = new_node.getFeature('coords').z;
-	  new_colors[new_nodes.length - 3] = new_color.r;
-	  new_colors[new_nodes.length - 2] = new_color.g;
-	  new_colors[new_nodes.length - 1] = new_color.b;
-
-	  if(globals.TWO_D_MODE) {
-	    new_nodes[new_nodes.length - 1] = 0;
-	  }
-
-	  //index: last element of old_nodes array
-	  nodes_obj_idx[new_node.getID()] = old_nodes.length;
-
-	  network.children[0].geometry.addAttribute('position', new THREE.BufferAttribute(new_nodes, 3));
-	  network.children[0].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[0].geometry.attributes.color.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function addRandomNodes() {
-	  var x_ = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X),
-	      y_ = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y),
-	      z_ = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z),
-	      idx = Object.keys(nodes_obj_idx).length;
-	      
-	  if(globals.TWO_D_MODE) {
-	    z_ = 0;
-	  }
-	  
-	  var new_node = graph.addNode(idx, {coords: {x: x_, y: y_, z:z_}});
-	  addNode(new_node);
-	}
-
-	//remove node and their edges
-	function hideNode(hide_node) {
-	  //remove node
-	  var node_id = hide_node.getID();
-	  var index = nodes_obj_idx[node_id];
-
-	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
-	  old_nodes[index] = NaN;
-	  old_nodes[index + 1] = NaN;
-	  old_nodes[index + 2] = NaN;
-
-	  //remove edge - directed
-	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
-	                    hide_node.undEdges()];
-	  //TODO - directed
-	  var in_out_edges = {};
-	  for (var e in hide_node.inEdges()) { in_out_edges[e] = hide_node.inEdges()[e]; }
-	  for (var e in hide_node.outEdges()) { in_out_edges[e] = hide_node.outEdges()[e]; }
-	  //----
-	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
-	                    in_out_edges];
-	  
-	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
-	    var old_edges = all_edges_of_a_node[0];
-	    var edges = all_edges_of_a_node[1];
-	    for(var i = 0; i < Object.keys(edges).length; i++) {
-	      var edge = edges[Object.keys(edges)[i]];
-
-	      //update from-node
-	      var edge_index = edges_obj_idx[edge.getID()];
-	      old_edges[edge_index] = NaN;
-	      old_edges[edge_index + 1] = NaN;
-	      old_edges[edge_index + 2] = NaN;
-	      old_edges[edge_index + 3] = NaN;
-	      old_edges[edge_index + 4] = NaN;
-	      old_edges[edge_index + 5] = NaN;
-	    }
-	  });
-
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function addEdge(edge) {
-	  var index = 1;
-	  if(edge._directed) {
-	    index = 2;
-	  }
-
-	  var old_edges = network.children[index].geometry.getAttribute('position').array;
-	  var old_colors = network.children[index].geometry.getAttribute('color').array;
-	  var new_edges = new Float32Array(old_edges.length + 6); // 3 xyz-coordinate * 2 nodes
-	  var new_colors = new Float32Array(old_colors.length + 6);
-	  var new_color = new THREE.Color(defaults.edge_color);
-	  for(var i = 0; i < old_edges.length; i++) {
-	    new_edges[i] = old_edges[i];
-	    new_colors[i] = old_colors[i];
-	  }
-
-	  new_edges[new_edges.length - 6] = edge._node_a.getFeature('coords').x;
-	  new_edges[new_edges.length - 5] = edge._node_a.getFeature('coords').y;
-	  new_edges[new_edges.length - 4] = edge._node_a.getFeature('coords').z;
-	  new_edges[new_edges.length - 3] = edge._node_b.getFeature('coords').x;
-	  new_edges[new_edges.length - 2] = edge._node_b.getFeature('coords').y;
-	  new_edges[new_edges.length - 1] = edge._node_b.getFeature('coords').z;
-
-	  new_colors[new_colors.length - 6] = new_color.r;
-	  new_colors[new_colors.length - 5] = new_color.g;
-	  new_colors[new_colors.length - 4] = new_color.b;
-	  new_colors[new_colors.length - 3] = new_color.r;
-	  new_colors[new_colors.length - 2] = new_color.g;
-	  new_colors[new_colors.length - 1] = new_color.b;
-
-	  //network.children[index].geometry.removeAttribute ('position');
-	  network.children[index].geometry.addAttribute('position', new THREE.BufferAttribute(new_edges, 3));
-	  network.children[index].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
-	  network.children[index].geometry.attributes.position.needsUpdate = true;
-	  network.children[index].geometry.attributes.color.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function colorSingleNode(node, hexColor) {
-	  var newColor = new THREE.Color(hexColor || defaults.node_color);
-	  var nodeColors = network.children[0].geometry.getAttribute('color').array;
-
-	  var node_id = node.getID();
-	  var index = nodes_obj_idx[node_id];
-	  nodeColors[index] = newColor.r;
-	  nodeColors[index + 1] = newColor.g;
-	  nodeColors[index + 2] = newColor.b;
-	  
-	  network.children[0].geometry.attributes.color.needsUpdate = true;
-	}
-
-	function colorAllNodes(hexColor) {
-	  if(hexColor == 0) {
-	    var randomIndex = Math.floor((Math.random() * defaults.randomColors.length));
-	    hexColor = defaults.randomColors[randomIndex];
-	  }
-	    
-	  if(document.querySelector("#myonoffswitch").checked) {
-	    var newColor = new THREE.Color(hexColor);
-	    var nodeColors = network.children[0].geometry.getAttribute('color').array;
-
-	    for(var i = 0; i < nodeColors.length;) {
-	      nodeColors[i] = newColor.r;
-	      nodeColors[i + 1] = newColor.g;
-	      nodeColors[i + 2] = newColor.b;
-	      i += 3;
-	    }
-	    network.children[0].geometry.attributes.color.needsUpdate = true;
-	    window.requestAnimationFrame(update);
-	  }
-	  else {
-	    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
-	      nodeUI.color = hexColor;
-	    });
-	  }
-	}
-
-	function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {  
-	  var new_color_a = new THREE.Color(hex_color_node_a || defaults.edge_color);
-	  var new_color_b = new THREE.Color(hex_color_node_b || defaults.edge_color);
-	  
-	  var index = 1;
-	  if(edge._directed) {
-	    index = 2;
-	  }
-	  var edge_colors = network.children[index].geometry.getAttribute('color').array;
-	  var edge_id = edge.getID();
-	  var idx = edges_obj_idx[edge_id];
-
-	  edge_colors[idx] = new_color_a.r;
-	  edge_colors[idx + 1] = new_color_a.g;
-	  edge_colors[idx + 2] = new_color_a.b;
-	  edge_colors[idx + 3] = new_color_b.r;
-	  edge_colors[idx + 4] = new_color_b.g;
-	  edge_colors[idx + 5] = new_color_b.b;
-
-	  network.children[index].geometry.attributes.color.needsUpdate = true;
-	}
-
-	function colorAllEdges(hexColor) {
-	  if(hexColor == 0) {
-	    var randomIndex = Math.floor((Math.random() * defaults.randomColors.length));
-	    hexColor = defaults.randomColors[randomIndex];
-	  }
-
-	  if(document.querySelector("#myonoffswitch").checked) {
-	    var newColor = new THREE.Color(hexColor);
-	    var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
-	    var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
-
-	    [edgeColors1, edgeColors2].forEach(function(edgesColor) {
-	      for(var i = 0; i < edgesColor.length;) {
-	        edgesColor[i] = newColor.r;
-	        edgesColor[i + 1] = newColor.g;
-	        edgesColor[i + 2] = newColor.b;
-	        i += 3;
-	      }
-	    });
-
-	    network.children[1].geometry.attributes.color.needsUpdate = true;
-	    network.children[2].geometry.attributes.color.needsUpdate = true;
-	    window.requestAnimationFrame(update);
-	  }
-	  else {
-	    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-	      linkUI.fromColor = hexColor;
-	      linkUI.toColor = hexColor;
-	    });
-	  }
-	}
-	//Hint: index = node id
-	function colorBFS(node) {
-	  segment_color_obj = {};
-	  var max_distance = 0,
-	      additional_node = false,
-	      infinity_node = false,
-	      start_node = graph.getRandomNode();
-	  if(node != null) {
-	    start_node = node;
-	  }
-	  var bfs = $G.search.BFS(graph, start_node);  
-	  for(index in bfs) {
-	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
-	      max_distance = Math.max(max_distance, bfs[index].distance);
-	    }
-	  }
-
-	  var start_color = new THREE.Color(defaults.bfs_gradient_start_color),
-	      middle_color = new THREE.Color(defaults.bfs_gradient_middle_color),
-	      end_color = new THREE.Color(defaults.bfs_gradient_end_color),
-	      gradient = [],
-	      firstColor = start_color,
-	      secondColor = middle_color,
-	      half = max_distance / 2;
-	      
-	  for(var i = 0; i <= max_distance; i++) {
-	    if(i > half) {
-	      firstColor = middle_color;
-	      secondColor = end_color;
-	    }
-
-	    var i_mod_half = (i % half) ? (i % half) : ((i-1) % half);
-	    var newColor = new THREE.Color();
-	    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / half * i_mod_half;
-	    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
-	    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
-	    gradient.push(newColor);
-	    //console.log("New color: ");
-	    //console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
-	  }
-	  
-	  for(index in bfs) {
-	    var hex_color = '#ffffff';
-	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
-	      hex_color = gradient[bfs[index].distance].getHex();
-	    }
-	    
-	    colorSingleNode(graph.getNodeById(index), hex_color);
-	    segment_color_obj[index] = hex_color;
-	    
-	    //for force directed layout
-	    var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
-	    nodeUI.color = hex_color;
-	  }
-
-	  [und_edges, dir_edges].forEach(function(edges) {
-	    for(edge_index in edges) {
-	      var edge = edges[edge_index];
-	      var node_a_id = edge._node_a.getID();
-	      var node_b_id = edge._node_b.getID();
-	      
-	      if(segment_color_obj[node_a_id] !== 'undefined' && 
-	         segment_color_obj[node_b_id] !== 'undefined') {
-	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
-	      }
-	    }
-	  });
-	  
-	  //for force directed layout
-	  globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-	    linkUI.fromColor = segment_color_obj[linkUI.from.id];
-	    linkUI.toColor = segment_color_obj[linkUI.to.id];
-	  });
-
-	  //console.log(bfs);
-	  window.requestAnimationFrame(update);
-	}
-
-	//Hint: index = node id
-	function colorDFS(node) {
-	  segment_color_obj = {};
-	  var start_node = graph.getRandomNode(),
-	      colors = [];
-	  if(node != null) {
-	    start_node = node;
-	  }
-	  var dfs = $G.search.DFS(graph, start_node);
-	  //console.log(dfs);
-
-	  for (var i = 0; i < dfs.length; i++) {    
-	    var new_color = new THREE.Color();
-	    new_color.r = Math.floor(Math.random() * 256) / 256.0;
-	    new_color.g = Math.floor(Math.random() * 256) / 256.0;
-	    new_color.b = Math.floor(Math.random() * 256) / 256.0;
-	    colors.push(new_color.getHex());
-	  }
-
-	  //for constant layout
-	  for(var i = 0; i < dfs.length; i++) {
-	    for(index in dfs[i]) {
-	      colorSingleNode(graph.getNodeById(index), colors[i]);
-	      segment_color_obj[index] = colors[i];
-	      
-	      //for force directed layout
-	      var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
-	      nodeUI.color = colors[i];
-	    }
-	  }
-	  
-	  [und_edges, dir_edges].forEach(function(edges) {
-	    for(edge_index in edges) {
-	    var edge = edges[edge_index];
-	    var node_a_id = edge._node_a.getID();
-	    var node_b_id = edge._node_b.getID();
-	    
-	      if(segment_color_obj[node_a_id] !== 'undefined' && 
-	         segment_color_obj[node_b_id] !== 'undefined') {
-	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
-	      }
-	    }
-	  });
-	  
-	  //for force directed layout
-	  globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-	    linkUI.fromColor = segment_color_obj[linkUI.from.id];
-	    linkUI.toColor = segment_color_obj[linkUI.to.id];
-	  });
-	  
-	  window.requestAnimationFrame(update);
-	}
-
-	function hideNodeClick() {
-	  hideNode(globals.selected_node);
-	}
-
-	function colorSingleNodeClick() {
-	  var randomIndex = Math.floor((Math.random() * defaults.randomColors.length)), 
-	      hexColor = defaults.randomColors[randomIndex];
-	  colorSingleNode(globals.selected_node, hexColor);
-	  window.requestAnimationFrame(update);
-	}
-
-	function colorBFSclick() {
-	  colorBFS(globals.selected_node);
-	}
-
-	function colorDFSclick() {
-	  colorDFS(globals.selected_node);
-	}
-
-	module.exports = {
-	  addNode: addNode,
-	  addRandomNodes: addRandomNodes,
-	  hideNode: hideNode,
-	  hideNodeClick: hideNodeClick,
-	  addEdge: addEdge,
-	  colorSingleNode: colorSingleNode,
-	  colorSingleNodeClick: colorSingleNodeClick,
-	  colorAllNodes: colorAllNodes,
-	  colorSingleEdge: colorSingleEdge,
-	  colorAllEdges: colorAllEdges,
-	  colorBFS: colorBFS,
-	  colorDFS: colorDFS,
-	  colorBFSclick: colorBFSclick,
-	  colorDFSclick: colorDFSclick
-	};
-
-
-/***/ },
-/* 4 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 5 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * delta t stuff
-	 */
-
-	function main_loop() {
-	  /**
-	   * Check for changes,
-	   * - if none, do nothing
-	   * - if changes, invoke reader and GO!
-	   */
-
-	  window.requestAnimationFrame(main_loop);
-	}
-
-	window.requestAnimationFrame(main_loop);
-
-
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	input.onchange = function(event, explicit, direction, weighted_mode) {
-
-	  var explicit = typeof explicit === 'undefined' ? false : explicit;
-	  var direction = typeof direction === 'undefined' ? false : direction;
-	  var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
-	  
-	  if(document.querySelector('#undirected').checked) {
-	    direction = false;
-	  }
-	  else {
-	    direction = true;
-	  }
-	  
-	  var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
-
-	  //checks if the browser supports the file API
-	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
-	    alert("Browser does not support the File API.");
-	  }
-
-	  var files = document.getElementById('input').files;
-	  if (!files.length) {
-	    alert("No file selected.");
-	    return;
-	  }
-
-	  //only json files
-	  splitFileName = files[0].name.split(".");
-	  if(!splitFileName.pop().match('json')) {
-	    alert("Invalid file type - it must be a json file.");
-	    return;
-	  }
-	  // -> only works in firefox - chrome has no file.type
-	  /*if (!files[0].type.match('json')){
-	    alert('Wrong file type.');
-	    return;
-	  }*/
-
-	  var reader = new FileReader();
-	  var result = null;
-
-	  reader.onloadend = function(event){
-	    if (event.target.readyState == FileReader.DONE) {
-	      //console.log(event.target.result);
-	      var parsedFile = JSON.parse(event.target.result);
-	      window.graph = json.readFromJSON(parsedFile);
-
-	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
-	      document.querySelector("#edges").innerHTML = parsedFile.edges;
-	      //document.querySelector("#time").innerHTML = parsedFile.edges;
-
-	      //console.log(parsedFile.data);
-	      result = parsedFile.data;
-	    }
-	  }
-	  reader.readAsText(files[0]);
-
-	  return result;
-	};
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	var FSelem = {
-	      el: null,
-	      width: null,
-	      height: null
-	    };
-
-	function switchToFullScreen(elem_string) {
-	  var elem = document.querySelector(elem_string);
-	  var canvas = document.querySelector(elem_string + " canvas");
-	  console.log(canvas);
-	  if (elem) {
-	    FSelem = {
-	      el: elem,
-	      width: elem.clientWidth,
-	      height: elem.clientHeight
-	    }
-	    // console.log(elem);
-	    if (elem.requestFullscreen) {
-	      elem.requestFullscreen();
-	    } else if (elem.msRequestFullscreen) {
-	      elem.msRequestFullscreen();
-	    } else if (elem.mozRequestFullScreen) {
-	      elem.mozRequestFullScreen();
-	    } else if (elem.webkitRequestFullscreen) {
-	      elem.webkitRequestFullscreen();
-	    }
-	    canvas.focus();
-	  }
-	  else {
-	    alert("Element to full-screen does not exist...");
-	  }
-	}
-
-	function FShandler( event ) {
-	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
-	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
-	  if ( fullscreenElement ) {
-	      // console.log("fullscreen enabled!");
-	      fullscreenElement.style.width = "100%";
-	      fullscreenElement.style.height = "100%";
-	  }
-	  else {
-	      // console.log("fullscreen disabled!");
-	      // we can't get the element that WAS in fullscreen,
-	      // so we fall back to a manual entry...
-	      // console.log(FSelem);
-	      FSelem.el.style.width = FSelem.width+"px";
-	      FSelem.el.style.height = FSelem.height+"px";
-	  }
-	}
-
-	function setAndUpdateNrMutilate() {
-	  var val = document.querySelector("#nr_mutilate_per_frame").value;
-	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
-	  window.$GV.setNrMutilate(val);
-	}
-
-	document.addEventListener("fullscreenchange", FShandler);
-	document.addEventListener("webkitfullscreenchange", FShandler);
-	document.addEventListener("mozfullscreenchange", FShandler);
-	document.addEventListener("MSFullscreenChange", FShandler);
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var network = __webpack_require__(2).network;
-	var camera = __webpack_require__(2).camera;
-	var update = __webpack_require__(2).update;
-	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
-	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
-	var dims = __webpack_require__(1).globals.graph_dims;
-	var mouse = __webpack_require__(1).globals.mouse;
-	var defaults = __webpack_require__(1).defaults;
-	var globals = __webpack_require__(1).globals;
-
-	//update node and edge position
-	function updateNodePosition(update_node) {
-
-	  var node_id = update_node.getID();
-	  var index = nodes_obj_idx[node_id];
-
-	  //update nodes
-	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
-	  old_nodes[index] = update_node.getFeature('coords').x;
-	  old_nodes[index + 1] = update_node.getFeature('coords').y;
-	  old_nodes[index + 2] = update_node.getFeature('coords').z;
-
-	  if(globals.TWO_D_MODE) {
-	    old_nodes[index + 2] = 0;
-	  }
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-
-	  //update edges  
-	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
-	                    update_node.undEdges()];
-	  //TODO - directed
-	  var in_out_edges = {};
-	  for (var e in update_node.inEdges()) { in_out_edges[e] = update_node.inEdges()[e]; }
-	  for (var e in update_node.outEdges()) { in_out_edges[e] = update_node.outEdges()[e]; }
-	  //----
-	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
-	                    in_out_edges];
-	  
-	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
-	    var old_edges = all_edges_of_a_node[0];
-	    var edges = all_edges_of_a_node[1];
-	    for(var i = 0; i < Object.keys(edges).length; i++) {
-	      var edge = edges[Object.keys(edges)[i]];
-
-	      //update from-node
-	      var edge_index = edges_obj_idx[edge.getID()];
-	      if(edge._node_a === update_node) {
-	        old_edges[edge_index] = update_node.getFeature('coords').x;
-	        old_edges[edge_index + 1] = update_node.getFeature('coords').y;
-	        old_edges[edge_index + 2] = update_node.getFeature('coords').z;
-	      }
-	      //update to-node
-	      else if(edge._node_b === update_node) {
-	        old_edges[edge_index + 3] = update_node.getFeature('coords').x;
-	        old_edges[edge_index + 4] = update_node.getFeature('coords').y;
-	        old_edges[edge_index + 5] = update_node.getFeature('coords').z;
-	      }
-	    }
-	  });
-	  
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function updateAll() {
-	  window.old_coordinates = new Float32Array(graph.nrNodes() * 3);
-	  var node_obj = graph.getNodes();
-	  var i = 0;
-	  for(node in nodes_obj) {
-	    old_coordinates[i] = node_obj[node].getFeature('coords').x;
-	    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
-	    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
-	    i += 3;
-	  }
-	  
-	  window.cnt = 0;
-	  requestAnimationFrame(updateRandomPostions);
-	}
-
-	function updateRandomPostions() {
-	  //update node
-	  var node_obj = graph.getNodes();
-	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
-	  
-	  for(node in node_obj) {
-	    var index = nodes_obj_idx[node];
-	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - dims.AVG_X;
-	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - dims.AVG_Y;
-	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - dims.AVG_Z;
-
-	    old_nodes[index] = node_obj[node].getFeature('coords').x;
-	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
-	    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
-	  }
-
-	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
-	                    graph.getUndEdges()];
-	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
-	                    graph.getDirEdges()];
-	  
-	  //update edges
-	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
-	    var i = 0;
-	    var old_edges = all_edges_of_a_node[0];
-	    var edges = all_edges_of_a_node[1];
-	    for (var edge_index in edges) {
-	      var edge = edges[edge_index];
-	      var node_a_id = edge._node_a.getID();
-	      var node_b_id = edge._node_b.getID();
-
-	      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
-	      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
-	      old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
-	      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
-	      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
-	      old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
-	      i += 6;
-	    }
-	  });
-
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-
-	  if(window.cnt++ < 100) {
-	    requestAnimationFrame(updateRandomPostions);
-	  }
-	  //set nodes/edges to original coordinates
-	  else {
-	    //set coordinates of nodes
-	    var i = 0;
-	    for(node in node_obj) {
-	      var index = nodes_obj_idx[node];
-	      node_obj[node].getFeature('coords').x = window.old_coordinates[i];
-	      node_obj[node].getFeature('coords').y = window.old_coordinates[i + 1];
-	      node_obj[node].getFeature('coords').z = window.old_coordinates[i + 2];
-	      i += 3;
-
-	      old_nodes[index] = node_obj[node].getFeature('coords').x - dims.AVG_X;
-	      old_nodes[index + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
-	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
-	    }
-	    //set coordinates of edges
-	    [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
-	      var i = 0;
-	      var old_edges = all_edges_of_a_node[0];
-	      var edges = all_edges_of_a_node[1];
-	      for (var edge_index in edges) {
-	        var edge = edges[edge_index];
-	        var node_a_id = edge._node_a.getID();
-	        var node_b_id = edge._node_b.getID();
-
-	        old_edges[i] = node_obj[node_a_id].getFeature('coords').x - dims.AVG_X;
-	        old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y - dims.AVG_Y;
-	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z - dims.AVG_Z;
-	        old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - dims.AVG_X;
-	        old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - dims.AVG_Y;
-	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - dims.AVG_Z;
-	        i += 6;
-	      }
-	    });
-	    
-	    network.children[0].geometry.attributes.position.needsUpdate = true;
-	    network.children[1].geometry.attributes.position.needsUpdate = true;
-	    network.children[2].geometry.attributes.position.needsUpdate = true;
-	    window.requestAnimationFrame(update);
-	  }
-	}
-
-	function switchTo2D() {
-	  globals.TWO_D_MODE = true;
-	  var nodes_array = network.children[0].geometry.attributes.position.array,
-	      undEdges_array = network.children[1].geometry.attributes.position.array,
-	      dirEdges_array = network.children[2].geometry.attributes.position.array;
-	  
-	  [nodes_array, undEdges_array, dirEdges_array].forEach(function(array) {
-	    for(var i = 0; i < array.length;) {
-	      array[i + 2] = 0;
-	      i+=3;
-	    }
-	  });
-	  
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function switchTo3D() {
-	  globals.TWO_D_MODE = false;
-
-	  var i = 0;
-	  var array = network.children[0].geometry.attributes.position.array;
-	  for(node in nodes_obj) {
-	    var z = nodes_obj[node].getFeature('coords').z;
-	    array[i + 2] = z;
-	    i+=3;
-	  }
-
-	  i = 0;
-	  array = network.children[1].geometry.attributes.position.array;
-	  for (var edge_index in und_edges) {
-	    var edge = und_edges[edge_index];
-	    var node_a_id = edge._node_a.getID();
-	    var node_b_id = edge._node_b.getID();
-
-	    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
-	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
-	    i += 6;
-	  }
-
-	  i = 0;
-	  array = network.children[2].geometry.attributes.position.array;
-	  for (var edge_index in dir_edges) {
-	    var edge = dir_edges[edge_index];
-	    var node_a_id = edge._node_a.getID();
-	    var node_b_id = edge._node_b.getID();
-
-	    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
-	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
-	    i += 6;
-	  }
-	  
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function nodeIntersection() {
-	  var attributes = network.children[0].geometry.attributes;
-	  globals.raycaster.setFromCamera(mouse, camera);
-	  globals.raycaster.params.Points.threshold = 1;
-
-	  var particlesToIntersect = [];
-	  particlesToIntersect.push(network.children[0]);
-	  var intersects = globals.raycaster.intersectObjects(particlesToIntersect);
-
-	  if(intersects.length > 0 && intersects[0].index != globals.INTERSECTED.index) {
-	    //console.log("intersected objects");
-	    //console.log(intersectsParticles);
-
-	    //set previous node
-	    attributes.color.array[globals.INTERSECTED.index*3] = globals.INTERSECTED.color.r;
-	    attributes.color.array[globals.INTERSECTED.index*3 + 1] = globals.INTERSECTED.color.g;
-	    attributes.color.array[globals.INTERSECTED.index*3 + 2] = globals.INTERSECTED.color.b;
-	    
-	    globals.INTERSECTED.index = intersects[0].index;
-	    globals.INTERSECTED.color.setRGB(
-	      attributes.color.array[intersects[0].index*3], 
-	      attributes.color.array[intersects[0].index*3 + 1],
-	      attributes.color.array[intersects[0].index*3 + 2]
-	    );
-	    
-	    //set new node
-	    attributes.color.array[intersects[0].index*3] = defaults.highlight_node_color.r;
-	    attributes.color.array[intersects[0].index*3 + 1] = defaults.highlight_node_color.g;
-	    attributes.color.array[intersects[0].index*3 + 2] = defaults.highlight_node_color.b;
-	    attributes.color.needsUpdate = true;
-
-	    //TODO resize node
-	    //attributes.size.array[intersects[0].index] = 20;
-	    //attributes.size.needsUpdate = true;
-	    
-	    //get key by index
-	    var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
-	    globals.INTERSECTED.node = window.graph.getNodeById(nodeID);
-	    
-	    //Hint: update is called in navigation
-	    //window.requestAnimationFrame(update);
-	  }
-	}
-
-	function updateNodePositionClick() {
-	  globals.selected_node._features.coords.x = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X);
-	  globals.selected_node._features.coords.y = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y);
-	  globals.selected_node._features.coords.z = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z);
-	  
-	  updateNodePosition(globals.selected_node);
-	}
-
-	function changeNodeSize(size) {
-	  if(!document.querySelector("#myonoffswitch").checked) {
-	    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
-	      nodeUI.size = size;
-	    });
-	  }
-	}
-
-	module.exports = {
-	    updateNodePosition: updateNodePosition,
-	    updateAll: updateAll,
-	    updateNodePositionClick: updateNodePositionClick,
-	    switchTo2D: switchTo2D,
-	    switchTo3D: switchTo3D,
-	    nodeIntersection: nodeIntersection,
-	    changeNodeSize: changeNodeSize
-	};
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var keys = __webpack_require__(1).keys;
-	var globals = __webpack_require__(1).globals;
-	var camera = __webpack_require__(2).camera;
-	var defaults = __webpack_require__(1).defaults;
-	var update = __webpack_require__(2).update;
-	var network = __webpack_require__(2).network;
-	var container = __webpack_require__(1).container;
-	var mouse = __webpack_require__(1).globals.mouse;
-	var nodeIntersection = __webpack_require__(12).nodeIntersection;
-	var callbacks = __webpack_require__(1).callbacks;
-
-	// for testing purposes
-	var intersect_cb1 = function(node) {  
-	  document.querySelector("#nodeID").innerHTML = node._id;  
-	};
-	callbacks.node_intersects.push(intersect_cb1);
-
-	//rotation
-	var axis_x = new THREE.Vector3( 1, 0, 0 ),
-	    axis_y = new THREE.Vector3( 0, 1, 0 ),
-	    axis_z = new THREE.Vector3( 0, 0, 1 );
-
-	window.addEventListener('keypress', key, false);
-	function key(event) {
-	  switch (event.charCode) {
-	    case keys.KEY_W: //zoom in
-	      camera.position.y = camera.position.y - defaults.delta_distance; break;
-	    case keys.KEY_S: //zoom out
-	      camera.position.y = camera.position.y + defaults.delta_distance; break;
-	    case keys.KEY_A: //move left
-	      camera.position.x = camera.position.x + defaults.delta_distance; break;
-	    case keys.KEY_D: //move right
-	      camera.position.x = camera.position.x - defaults.delta_distance; break;
-	    case keys.KEY_R:
-	      network.translateZ(defaults.delta_distance); break;
-	    case keys.KEY_F:
-	      network.translateZ(-defaults.delta_distance); break;
-
-	    case keys.KEY_X:
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SX:
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_Y:
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SY:
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	      break;
-	    case keys.KEY_C:
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      break;
-	    case keys.KEY_SC:
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      break;
-	    default:
-	      break;
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	//zoom in and out
-	var eventWheel = 'mousewheel';
-	if(typeof InstallTrigger !== 'undefined') {
-	  eventWheel = 'wheel';
-	}
-	window.addEventListener(eventWheel, mousewheel, false);
-	function mousewheel(event) {
-	  //wheel down: negative value; firefox positive
-	  //wheel up: positive value; firefox negative
-	  if(event.shiftKey) {
-	    if(event.wheelDelta < 0 || event.deltaY > 0) {
-	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
-	    }
-	    else {
-	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
-	    }
-	  }
-	  else {
-	    //firefox
-	    if(typeof InstallTrigger !== 'undefined') {
-	      camera.fov -= defaults.ZOOM_FACTOR * event.deltaY;
-	    }
-	    else {
-	      camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-	    }    
-	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
-	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	window.addEventListener('mousemove', mouseMove, false);
-	function mouseMove(event) {
-	  
-	  if(event.shiftKey && event.buttons == 1) {
-	    if(event.movementX > 0) {
-	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
-	    }
-	    else if(event.movementX < 0) {
-	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
-	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
-	    }
-	    else if(event.movementY > 0) {
-	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
-	    }
-	    else if(event.movementY < 0) {
-	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
-	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
-	    }
-	  }
-	  //left mouse button
-	  else if(event.buttons == 1) {
-	    var mouseX = event.clientX / container.WIDTH;
-	    var mouseY = event.clientY / container.HEIGHT;
-
-	    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
-	    var max_x = globals.graph_dims.MAX_X/2;
-	    var max_y = globals.graph_dims.MAX_Y/2;    
-	    
-	    if(camera.position.x > max_x) {
-	      camera.position.x = max_x;
-	    }
-	    else if(camera.position.x < -max_x) {
-	      camera.position.x = -max_x;
-	    }
-	    else if(camera.position.y > max_y) {
-	      camera.position.y = max_y;
-	    }
-	    else if(camera.position.y < -max_y) {
-	      camera.position.y = -max_y;
-	    }
-	    
-	    //movement in y: up is negative, down is positive
-	    camera.position.x = camera.position.x - (mouseX * event.movementX);
-	    camera.position.y = camera.position.y + (mouseY * event.movementY);
-	  }
-
-	  //raycaster
-	  // calculate mouse position in normalized device coordinates
-	  // (-1 to +1) for both components
-	  event.preventDefault();  
-	  var element = document.querySelector('#containerGraph');
-	  var rect = element.getBoundingClientRect();  
-	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
-	  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
-	  //intersect after init grap
-	  if(network.children[0] != null) {
-	    window.requestAnimationFrame(nodeIntersection);
-	  }
-	  window.requestAnimationFrame(update);
-	}
-
-	window.addEventListener('click', click, false);
-	function click(event) {  
-	  if(globals.INTERSECTED.node != null) {
-	    globals.selected_node = globals.INTERSECTED.node;
-	    document.querySelector("#nodeInfo").style.visibility = 'visible';
-	    var ni = callbacks.node_intersects;
-	    for (var cb in ni) {
-	      if (typeof ni[cb] === 'function') {
-	        ni[cb](globals.INTERSECTED.node);
-	      }
-	    }
-	  }
-	}
-
-	module.exports = {
-	  mouse: mouse
-	};
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
 	/**
 	 * @fileOverview Contains definition of the core graph object.
 	 */
@@ -1558,7 +472,7 @@
 	 */
 	module.exports = createGraph;
 
-	var eventify = __webpack_require__(15);
+	var eventify = __webpack_require__(4);
 
 	/**
 	 * Creates a new graph
@@ -2125,7 +1039,7 @@
 
 
 /***/ },
-/* 15 */
+/* 4 */
 /***/ function(module, exports) {
 
 	module.exports = function(subject) {
@@ -2219,10 +1133,10 @@
 
 
 /***/ },
-/* 16 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var THREE = __webpack_require__(17);
+	var THREE = __webpack_require__(6);
 
 	module.exports = pixel;
 
@@ -2232,17 +1146,17 @@
 	 */
 	module.exports.THREE = THREE;
 
-	var eventify = __webpack_require__(15);
+	var eventify = __webpack_require__(4);
 
-	var createNodeView = __webpack_require__(18);
-	var createEdgeView = __webpack_require__(23);
-	var createTooltipView = __webpack_require__(24);
-	var createAutoFit = __webpack_require__(28);
-	var createInput = __webpack_require__(31);
-	var validateOptions = __webpack_require__(35);
-	var flyTo = __webpack_require__(29);
+	var createNodeView = __webpack_require__(7);
+	var createEdgeView = __webpack_require__(12);
+	var createTooltipView = __webpack_require__(13);
+	var createAutoFit = __webpack_require__(17);
+	var createInput = __webpack_require__(20);
+	var validateOptions = __webpack_require__(24);
+	var flyTo = __webpack_require__(18);
 
-	var makeActive = __webpack_require__(63);
+	var makeActive = __webpack_require__(52);
 
 	function pixel(graph, options) {
 	  // This is our public API.
@@ -2659,7 +1573,7 @@
 
 
 /***/ },
-/* 17 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;var self = self || {};// File:src/Three.js
@@ -38852,15 +37766,15 @@
 
 
 /***/ },
-/* 18 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var THREE = __webpack_require__(17);
+	var THREE = __webpack_require__(6);
 
 	module.exports = nodeView;
 
 	function nodeView(scene) {
-	  var particleMaterial = __webpack_require__(19)();
+	  var particleMaterial = __webpack_require__(8)();
 	  var total;
 	  var nodes;
 	  var colors, points, sizes;
@@ -38983,18 +37897,18 @@
 
 
 /***/ },
-/* 19 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var THREE = __webpack_require__(17);
+	var THREE = __webpack_require__(6);
 
 	module.exports = createParticleMaterial;
 
 	function createParticleMaterial() {
 
-	  var vertexShader = __webpack_require__(20);
-	  var fragmentShader = __webpack_require__(21);
-	  var defaultTexture = __webpack_require__(22);
+	  var vertexShader = __webpack_require__(9);
+	  var fragmentShader = __webpack_require__(10);
+	  var defaultTexture = __webpack_require__(11);
 
 	  var loader = new THREE.TextureLoader();
 	  var texture = loader.load(defaultTexture);
@@ -39021,7 +37935,7 @@
 
 
 /***/ },
-/* 20 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -39040,7 +37954,7 @@
 
 
 /***/ },
-/* 21 */
+/* 10 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -39059,17 +37973,17 @@
 
 
 /***/ },
-/* 22 */
+/* 11 */
 /***/ function(module, exports) {
 
 	module.exports = 'data:image/png;base64,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';
 
 
 /***/ },
-/* 23 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var THREE = __webpack_require__(17);
+	var THREE = __webpack_require__(6);
 
 	module.exports = edgeView;
 
@@ -39205,7 +38119,7 @@
 
 
 /***/ },
-/* 24 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -39213,10 +38127,10 @@
 	 */
 	module.exports = createTooltipView;
 
-	var tooltipStyle = __webpack_require__(25);
-	var insertCSS = __webpack_require__(26);
+	var tooltipStyle = __webpack_require__(14);
+	var insertCSS = __webpack_require__(15);
 
-	var elementClass = __webpack_require__(27);
+	var elementClass = __webpack_require__(16);
 
 	function createTooltipView(container) {
 	  insertCSS(tooltipStyle);
@@ -39256,7 +38170,7 @@
 
 
 /***/ },
-/* 25 */
+/* 14 */
 /***/ function(module, exports) {
 
 	module.exports = [
@@ -39270,7 +38184,7 @@
 
 
 /***/ },
-/* 26 */
+/* 15 */
 /***/ function(module, exports) {
 
 	var inserted = {};
@@ -39298,7 +38212,7 @@
 
 
 /***/ },
-/* 27 */
+/* 16 */
 /***/ function(module, exports) {
 
 	module.exports = function(opts) {
@@ -39363,10 +38277,10 @@
 
 
 /***/ },
-/* 28 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var flyTo = __webpack_require__(29);
+	var flyTo = __webpack_require__(18);
 	module.exports = createAutoFit;
 
 	function createAutoFit(nodeView, camera) {
@@ -39389,14 +38303,14 @@
 
 
 /***/ },
-/* 29 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Moves camera to given point, and stops it and given radius
 	 */
-	var THREE = __webpack_require__(17);
-	var intersect = __webpack_require__(30);
+	var THREE = __webpack_require__(6);
+	var intersect = __webpack_require__(19);
 
 	module.exports = flyTo;
 
@@ -39418,7 +38332,7 @@
 
 
 /***/ },
-/* 30 */
+/* 19 */
 /***/ function(module, exports) {
 
 	module.exports = intersect;
@@ -39448,13 +38362,13 @@
 
 
 /***/ },
-/* 31 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var FlyControls = __webpack_require__(32);
-	var eventify = __webpack_require__(15);
-	var THREE = __webpack_require__(17);
-	var createHitTest = __webpack_require__(34);
+	var FlyControls = __webpack_require__(21);
+	var eventify = __webpack_require__(4);
+	var THREE = __webpack_require__(6);
+	var createHitTest = __webpack_require__(23);
 
 	module.exports = createInput;
 
@@ -39532,7 +38446,7 @@
 
 
 /***/ },
-/* 32 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -39542,8 +38456,8 @@
 	 * Adopted to common js by Andrei Kashcha
 	 */
 
-	var eventify = __webpack_require__(15);
-	var createKeyMap = __webpack_require__(33);
+	var eventify = __webpack_require__(4);
+	var createKeyMap = __webpack_require__(22);
 
 	module.exports = fly;
 
@@ -39814,7 +38728,7 @@
 
 
 /***/ },
-/* 33 */
+/* 22 */
 /***/ function(module, exports) {
 
 	/**
@@ -39841,14 +38755,14 @@
 
 
 /***/ },
-/* 34 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Gives an index of a node under mouse coordinates
 	 */
-	var eventify = __webpack_require__(15);
-	var THREE = __webpack_require__(17);
+	var eventify = __webpack_require__(4);
+	var THREE = __webpack_require__(6);
 
 	module.exports = createHitTest;
 
@@ -40099,7 +39013,7 @@
 
 
 /***/ },
-/* 35 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -40107,7 +39021,7 @@
 	 */
 	module.exports = validateOptions;
 
-	var createLayout = __webpack_require__(36); // the default layout
+	var createLayout = __webpack_require__(25); // the default layout
 
 	function validateOptions(options) {
 	  options = options || {};
@@ -40159,7 +39073,7 @@
 
 
 /***/ },
-/* 36 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -40171,8 +39085,8 @@
 	 * @returns {ojbect} api to operate with current layout. Only two methods required
 	 * to exist by ngraph.pixel: `step()` and `getNodePosition()`.
 	 */
-	var eventify = __webpack_require__(15);
-	var layout3d = __webpack_require__(37);
+	var eventify = __webpack_require__(4);
+	var layout3d = __webpack_require__(26);
 	var layout2d = layout3d.get2dLayout;
 
 	module.exports = createLayout;
@@ -40317,7 +39231,7 @@
 
 
 /***/ },
-/* 37 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -40327,17 +39241,17 @@
 	 * I was doing it wrong, will see if I can refactor/throw away this module.
 	 */
 	module.exports = createLayout;
-	createLayout.get2dLayout = __webpack_require__(38);
+	createLayout.get2dLayout = __webpack_require__(27);
 
 	function createLayout(graph, physicsSettings) {
-	  var merge = __webpack_require__(42);
+	  var merge = __webpack_require__(31);
 	  physicsSettings = merge(physicsSettings, {
-	        createQuadTree: __webpack_require__(54),
-	        createBounds: __webpack_require__(58),
-	        createDragForce: __webpack_require__(59),
-	        createSpringForce: __webpack_require__(60),
-	        integrator: __webpack_require__(61),
-	        createBody: __webpack_require__(62)
+	        createQuadTree: __webpack_require__(43),
+	        createBounds: __webpack_require__(47),
+	        createDragForce: __webpack_require__(48),
+	        createSpringForce: __webpack_require__(49),
+	        integrator: __webpack_require__(50),
+	        createBody: __webpack_require__(51)
 	      });
 
 	  return createLayout.get2dLayout(graph, physicsSettings);
@@ -40345,13 +39259,13 @@
 
 
 /***/ },
-/* 38 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = createLayout;
-	module.exports.simulator = __webpack_require__(39);
+	module.exports.simulator = __webpack_require__(28);
 
-	var eventify = __webpack_require__(15);
+	var eventify = __webpack_require__(4);
 
 	/**
 	 * Creates force based layout for a given graph.
@@ -40365,7 +39279,7 @@
 	    throw new Error('Graph structure cannot be undefined');
 	  }
 
-	  var createSimulator = __webpack_require__(39);
+	  var createSimulator = __webpack_require__(28);
 	  var physicsSimulator = createSimulator(physicsSettings);
 
 	  var nodeBodies = typeof Object.create === 'function' ? Object.create(null) : {};
@@ -40664,7 +39578,7 @@
 
 
 /***/ },
-/* 39 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -40673,10 +39587,10 @@
 	module.exports = physicsSimulator;
 
 	function physicsSimulator(settings) {
-	  var Spring = __webpack_require__(40);
-	  var expose = __webpack_require__(41);
-	  var merge = __webpack_require__(42);
-	  var eventify = __webpack_require__(15);
+	  var Spring = __webpack_require__(29);
+	  var expose = __webpack_require__(30);
+	  var merge = __webpack_require__(31);
+	  var eventify = __webpack_require__(4);
 
 	  settings = merge(settings, {
 	      /**
@@ -40721,12 +39635,12 @@
 	  });
 
 	  // We allow clients to override basic factory methods:
-	  var createQuadTree = settings.createQuadTree || __webpack_require__(43);
-	  var createBounds = settings.createBounds || __webpack_require__(48);
-	  var createDragForce = settings.createDragForce || __webpack_require__(49);
-	  var createSpringForce = settings.createSpringForce || __webpack_require__(50);
-	  var integrate = settings.integrator || __webpack_require__(51);
-	  var createBody = settings.createBody || __webpack_require__(52);
+	  var createQuadTree = settings.createQuadTree || __webpack_require__(32);
+	  var createBounds = settings.createBounds || __webpack_require__(37);
+	  var createDragForce = settings.createDragForce || __webpack_require__(38);
+	  var createSpringForce = settings.createSpringForce || __webpack_require__(39);
+	  var integrate = settings.integrator || __webpack_require__(40);
+	  var createBody = settings.createBody || __webpack_require__(41);
 
 	  var bodies = [], // Bodies in this simulation.
 	      springs = [], // Springs in this simulation.
@@ -40946,7 +39860,7 @@
 
 
 /***/ },
-/* 40 */
+/* 29 */
 /***/ function(module, exports) {
 
 	module.exports = Spring;
@@ -40966,7 +39880,7 @@
 
 
 /***/ },
-/* 41 */
+/* 30 */
 /***/ function(module, exports) {
 
 	module.exports = exposeProperties;
@@ -41016,7 +39930,7 @@
 
 
 /***/ },
-/* 42 */
+/* 31 */
 /***/ function(module, exports) {
 
 	module.exports = merge;
@@ -41053,7 +39967,7 @@
 
 
 /***/ },
-/* 43 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -41069,10 +39983,10 @@
 	  options.theta = typeof options.theta === 'number' ? options.theta : 0.8;
 
 	  // we require deterministic randomness here
-	  var random = __webpack_require__(44).random(1984),
-	    Node = __webpack_require__(45),
-	    InsertStack = __webpack_require__(46),
-	    isSamePosition = __webpack_require__(47);
+	  var random = __webpack_require__(33).random(1984),
+	    Node = __webpack_require__(34),
+	    InsertStack = __webpack_require__(35),
+	    isSamePosition = __webpack_require__(36);
 
 	  var gravity = options.gravity,
 	    updateQueue = [],
@@ -41383,7 +40297,7 @@
 
 
 /***/ },
-/* 44 */
+/* 33 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -41474,7 +40388,7 @@
 
 
 /***/ },
-/* 45 */
+/* 34 */
 /***/ function(module, exports) {
 
 	/**
@@ -41510,7 +40424,7 @@
 
 
 /***/ },
-/* 46 */
+/* 35 */
 /***/ function(module, exports) {
 
 	module.exports = InsertStack;
@@ -41558,7 +40472,7 @@
 
 
 /***/ },
-/* 47 */
+/* 36 */
 /***/ function(module, exports) {
 
 	module.exports = function isSamePosition(point1, point2) {
@@ -41570,11 +40484,11 @@
 
 
 /***/ },
-/* 48 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function (bodies, settings) {
-	  var random = __webpack_require__(44).random(42);
+	  var random = __webpack_require__(33).random(42);
 	  var boundingBox =  { x1: 0, y1: 0, x2: 0, y2: 0 };
 
 	  return {
@@ -41656,7 +40570,7 @@
 
 
 /***/ },
-/* 49 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -41667,8 +40581,8 @@
 	 * @param {Number=} options.dragCoeff drag force coefficient. 0.1 by default
 	 */
 	module.exports = function (options) {
-	  var merge = __webpack_require__(42),
-	      expose = __webpack_require__(41);
+	  var merge = __webpack_require__(31),
+	      expose = __webpack_require__(30);
 
 	  options = merge(options, {
 	    dragCoeff: 0.02
@@ -41689,7 +40603,7 @@
 
 
 /***/ },
-/* 50 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -41701,9 +40615,9 @@
 	 * @param {Number=} options.springLength desired length of a spring at rest.
 	 */
 	module.exports = function (options) {
-	  var merge = __webpack_require__(42);
-	  var random = __webpack_require__(44).random(42);
-	  var expose = __webpack_require__(41);
+	  var merge = __webpack_require__(31);
+	  var random = __webpack_require__(33).random(42);
+	  var expose = __webpack_require__(30);
 
 	  options = merge(options, {
 	    springCoeff: 0.0002,
@@ -41745,7 +40659,7 @@
 
 
 /***/ },
-/* 51 */
+/* 40 */
 /***/ function(module, exports) {
 
 	/**
@@ -41796,10 +40710,10 @@
 
 
 /***/ },
-/* 52 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var physics = __webpack_require__(53);
+	var physics = __webpack_require__(42);
 
 	module.exports = function(pos) {
 	  return new physics.Body(pos);
@@ -41807,7 +40721,7 @@
 
 
 /***/ },
-/* 53 */
+/* 42 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -41878,7 +40792,7 @@
 
 
 /***/ },
-/* 54 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -41899,10 +40813,10 @@
 	  options.theta = typeof options.theta === 'number' ? options.theta : 0.8;
 
 	  // we require deterministic randomness here
-	  var random = __webpack_require__(44).random(1984),
-	    Node = __webpack_require__(55),
-	    InsertStack = __webpack_require__(56),
-	    isSamePosition = __webpack_require__(57);
+	  var random = __webpack_require__(33).random(1984),
+	    Node = __webpack_require__(44),
+	    InsertStack = __webpack_require__(45),
+	    isSamePosition = __webpack_require__(46);
 
 	  var gravity = options.gravity,
 	    updateQueue = [],
@@ -42277,7 +41191,7 @@
 
 
 /***/ },
-/* 55 */
+/* 44 */
 /***/ function(module, exports) {
 
 	/**
@@ -42325,7 +41239,7 @@
 
 
 /***/ },
-/* 56 */
+/* 45 */
 /***/ function(module, exports) {
 
 	module.exports = InsertStack;
@@ -42373,7 +41287,7 @@
 
 
 /***/ },
-/* 57 */
+/* 46 */
 /***/ function(module, exports) {
 
 	module.exports = function isSamePosition(point1, point2) {
@@ -42386,11 +41300,11 @@
 
 
 /***/ },
-/* 58 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function (bodies, settings) {
-	  var random = __webpack_require__(44).random(42);
+	  var random = __webpack_require__(33).random(42);
 	  var boundingBox =  { x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 0 };
 
 	  return {
@@ -42489,7 +41403,7 @@
 
 
 /***/ },
-/* 59 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -42500,8 +41414,8 @@
 	 * @param {Number=} options.dragCoeff drag force coefficient. 0.1 by default
 	 */
 	module.exports = function (options) {
-	  var merge = __webpack_require__(42),
-	      expose = __webpack_require__(41);
+	  var merge = __webpack_require__(31),
+	      expose = __webpack_require__(30);
 
 	  options = merge(options, {
 	    dragCoeff: 0.02
@@ -42523,7 +41437,7 @@
 
 
 /***/ },
-/* 60 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -42535,9 +41449,9 @@
 	 * @param {Number=} options.springLength desired length of a spring at rest.
 	 */
 	module.exports = function (options) {
-	  var merge = __webpack_require__(42);
-	  var random = __webpack_require__(44).random(42);
-	  var expose = __webpack_require__(41);
+	  var merge = __webpack_require__(31);
+	  var random = __webpack_require__(33).random(42);
+	  var expose = __webpack_require__(30);
 
 	  options = merge(options, {
 	    springCoeff: 0.0002,
@@ -42583,7 +41497,7 @@
 
 
 /***/ },
-/* 61 */
+/* 50 */
 /***/ function(module, exports) {
 
 	/**
@@ -42637,10 +41551,10 @@
 
 
 /***/ },
-/* 62 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var physics = __webpack_require__(53);
+	var physics = __webpack_require__(42);
 
 	module.exports = function(pos) {
 	  return new physics.Body3d(pos);
@@ -42648,7 +41562,7 @@
 
 
 /***/ },
-/* 63 */
+/* 52 */
 /***/ function(module, exports) {
 
 	// This module allows to replace object properties with getters/setters,
@@ -42789,6 +41703,1100 @@
 	    }
 	  }
 	}
+
+
+/***/ },
+/* 53 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var network = __webpack_require__(2).network;
+	var update = __webpack_require__(2).update;
+	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
+	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
+	var globals = __webpack_require__(1).globals;
+	var dims = __webpack_require__(1).globals.graph_dims;
+	var defaults = __webpack_require__(1).defaults;
+
+	var segment_color_obj = {};
+
+	//add node to graph but without edges
+	function addNode(new_node) {
+	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+	  var old_colors = network.children[0].geometry.getAttribute('color').array;
+	  var new_nodes = new Float32Array(old_nodes.length + 3);
+	  var new_colors = new Float32Array(new_nodes.length);
+	  var new_color = new THREE.Color(0xff7373);
+
+	  for(var i = 0; i < old_nodes.length; i++) {
+	    new_nodes[i] = old_nodes[i];
+	    new_colors[i] = old_colors[i];
+	  }
+
+	  new_nodes[new_nodes.length - 3] = new_node.getFeature('coords').x;
+	  new_nodes[new_nodes.length - 2] = new_node.getFeature('coords').y;
+	  new_nodes[new_nodes.length - 1] = new_node.getFeature('coords').z;
+	  new_colors[new_nodes.length - 3] = new_color.r;
+	  new_colors[new_nodes.length - 2] = new_color.g;
+	  new_colors[new_nodes.length - 1] = new_color.b;
+
+	  if(globals.TWO_D_MODE) {
+	    new_nodes[new_nodes.length - 1] = 0;
+	  }
+
+	  //index: last element of old_nodes array
+	  nodes_obj_idx[new_node.getID()] = old_nodes.length;
+
+	  network.children[0].geometry.addAttribute('position', new THREE.BufferAttribute(new_nodes, 3));
+	  network.children[0].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[0].geometry.attributes.color.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function addRandomNodes() {
+	  var x_ = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X),
+	      y_ = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y),
+	      z_ = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z),
+	      idx = Object.keys(nodes_obj_idx).length;
+
+	  if(globals.TWO_D_MODE) {
+	    z_ = 0;
+	  }
+
+	  var new_node = graph.addNode(idx, {coords: {x: x_, y: y_, z:z_}});
+	  addNode(new_node);
+	}
+
+	//remove node and their edges
+	function hideNode(hide_node) {
+	  //remove node
+	  var node_id = hide_node.getID();
+	  var index = nodes_obj_idx[node_id];
+
+	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+	  old_nodes[index] = NaN;
+	  old_nodes[index + 1] = NaN;
+	  old_nodes[index + 2] = NaN;
+
+	  //remove edge - directed
+	  var undEdges = [ network.children[1].geometry.getAttribute('position').array,
+	                    hide_node.undEdges()];
+	  //TODO - directed
+	  var in_out_edges = {};
+	  for (var e in hide_node.inEdges()) { in_out_edges[e] = hide_node.inEdges()[e]; }
+	  for (var e in hide_node.outEdges()) { in_out_edges[e] = hide_node.outEdges()[e]; }
+	  //----
+	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+	                    in_out_edges];
+
+	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	    var old_edges = all_edges_of_a_node[0];
+	    var edges = all_edges_of_a_node[1];
+	    for(var i = 0; i < Object.keys(edges).length; i++) {
+	      var edge = edges[Object.keys(edges)[i]];
+
+	      //update from-node
+	      var edge_index = edges_obj_idx[edge.getID()];
+	      old_edges[edge_index] = NaN;
+	      old_edges[edge_index + 1] = NaN;
+	      old_edges[edge_index + 2] = NaN;
+	      old_edges[edge_index + 3] = NaN;
+	      old_edges[edge_index + 4] = NaN;
+	      old_edges[edge_index + 5] = NaN;
+	    }
+	  });
+
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function addEdge(edge) {
+	  var index = 1;
+	  if(edge._directed) {
+	    index = 2;
+	  }
+
+	  var old_edges = network.children[index].geometry.getAttribute('position').array;
+	  var old_colors = network.children[index].geometry.getAttribute('color').array;
+	  var new_edges = new Float32Array(old_edges.length + 6); // 3 xyz-coordinate * 2 nodes
+	  var new_colors = new Float32Array(old_colors.length + 6);
+	  var new_color = new THREE.Color(defaults.edge_color);
+	  for(var i = 0; i < old_edges.length; i++) {
+	    new_edges[i] = old_edges[i];
+	    new_colors[i] = old_colors[i];
+	  }
+
+	  new_edges[new_edges.length - 6] = edge._node_a.getFeature('coords').x;
+	  new_edges[new_edges.length - 5] = edge._node_a.getFeature('coords').y;
+	  new_edges[new_edges.length - 4] = edge._node_a.getFeature('coords').z;
+	  new_edges[new_edges.length - 3] = edge._node_b.getFeature('coords').x;
+	  new_edges[new_edges.length - 2] = edge._node_b.getFeature('coords').y;
+	  new_edges[new_edges.length - 1] = edge._node_b.getFeature('coords').z;
+
+	  new_colors[new_colors.length - 6] = new_color.r;
+	  new_colors[new_colors.length - 5] = new_color.g;
+	  new_colors[new_colors.length - 4] = new_color.b;
+	  new_colors[new_colors.length - 3] = new_color.r;
+	  new_colors[new_colors.length - 2] = new_color.g;
+	  new_colors[new_colors.length - 1] = new_color.b;
+
+	  //network.children[index].geometry.removeAttribute ('position');
+	  network.children[index].geometry.addAttribute('position', new THREE.BufferAttribute(new_edges, 3));
+	  network.children[index].geometry.addAttribute('color', new THREE.BufferAttribute(new_colors, 3));
+	  network.children[index].geometry.attributes.position.needsUpdate = true;
+	  network.children[index].geometry.attributes.color.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function colorSingleNode(node, hexColor) {
+	  var newColor = new THREE.Color(hexColor || defaults.node_color);
+	  var nodeColors = network.children[0].geometry.getAttribute('color').array;
+
+	  var node_id = node.getID();
+	  var index = nodes_obj_idx[node_id];
+	  nodeColors[index] = newColor.r;
+	  nodeColors[index + 1] = newColor.g;
+	  nodeColors[index + 2] = newColor.b;
+
+	  network.children[0].geometry.attributes.color.needsUpdate = true;
+	}
+
+	function colorAllNodes(hexColor) {
+	  if(hexColor == 0) {
+	    var randomIndex = Math.floor((Math.random() * defaults.randomColors.length));
+	    hexColor = defaults.randomColors[randomIndex];
+	  }
+
+	  if(document.querySelector("#myonoffswitch").checked) {
+	    var newColor = new THREE.Color(hexColor);
+	    var nodeColors = network.children[0].geometry.getAttribute('color').array;
+
+	    for(var i = 0; i < nodeColors.length;) {
+	      nodeColors[i] = newColor.r;
+	      nodeColors[i + 1] = newColor.g;
+	      nodeColors[i + 2] = newColor.b;
+	      i += 3;
+	    }
+	    network.children[0].geometry.attributes.color.needsUpdate = true;
+	    window.requestAnimationFrame(update);
+	  }
+	  else if (globals.rendererForceDirectedGraph) {
+	    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
+	      nodeUI.color = hexColor;
+	    });
+	  }
+	}
+
+	function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {
+	  var new_color_a = new THREE.Color(hex_color_node_a || defaults.edge_color);
+	  var new_color_b = new THREE.Color(hex_color_node_b || defaults.edge_color);
+
+	  var index = 1;
+	  if(edge._directed) {
+	    index = 2;
+	  }
+	  var edge_colors = network.children[index].geometry.getAttribute('color').array;
+	  var edge_id = edge.getID();
+	  var idx = edges_obj_idx[edge_id];
+
+	  edge_colors[idx] = new_color_a.r;
+	  edge_colors[idx + 1] = new_color_a.g;
+	  edge_colors[idx + 2] = new_color_a.b;
+	  edge_colors[idx + 3] = new_color_b.r;
+	  edge_colors[idx + 4] = new_color_b.g;
+	  edge_colors[idx + 5] = new_color_b.b;
+
+	  network.children[index].geometry.attributes.color.needsUpdate = true;
+	}
+
+	function colorAllEdges(hexColor) {
+	  if(hexColor == 0) {
+	    var randomIndex = Math.floor((Math.random() * defaults.randomColors.length));
+	    hexColor = defaults.randomColors[randomIndex];
+	  }
+
+	  if(document.querySelector("#myonoffswitch").checked) {
+	    var newColor = new THREE.Color(hexColor);
+	    var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
+	    var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
+
+	    [edgeColors1, edgeColors2].forEach(function(edgesColor) {
+	      for(var i = 0; i < edgesColor.length;) {
+	        edgesColor[i] = newColor.r;
+	        edgesColor[i + 1] = newColor.g;
+	        edgesColor[i + 2] = newColor.b;
+	        i += 3;
+	      }
+	    });
+
+	    network.children[1].geometry.attributes.color.needsUpdate = true;
+	    network.children[2].geometry.attributes.color.needsUpdate = true;
+	    window.requestAnimationFrame(update);
+	  }
+	  else if (globals.rendererForceDirectedGraph) {
+	    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+	      linkUI.fromColor = hexColor;
+	      linkUI.toColor = hexColor;
+	    });
+	  }
+	}
+	//Hint: index = node id
+	function colorBFS(node) {
+	  segment_color_obj = {};
+	  var max_distance = 0,
+	      additional_node = false,
+	      infinity_node = false,
+	      start_node = graph.getRandomNode();
+	  if(node != null) {
+	    start_node = node;
+	  }
+	  var bfs = $G.search.BFS(graph, start_node);
+	  for(index in bfs) {
+	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
+	      max_distance = Math.max(max_distance, bfs[index].distance);
+	    }
+	  }
+
+	  var start_color = new THREE.Color(defaults.bfs_gradient_start_color),
+	      middle_color = new THREE.Color(defaults.bfs_gradient_middle_color),
+	      end_color = new THREE.Color(defaults.bfs_gradient_end_color),
+	      gradient = [],
+	      firstColor = start_color,
+	      secondColor = middle_color,
+	      half = max_distance / 2;
+
+	  for(var i = 0; i <= max_distance; i++) {
+	    if(i > half) {
+	      firstColor = middle_color;
+	      secondColor = end_color;
+	    }
+
+	    var i_mod_half = (i % half) ? (i % half) : ((i-1) % half);
+	    var newColor = new THREE.Color();
+	    newColor.r = firstColor.r + (secondColor.r - firstColor.r) / half * i_mod_half;
+	    newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
+	    newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
+	    gradient.push(newColor);
+	    //console.log("New color: ");
+	    //console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
+	  }
+
+	  for(index in bfs) {
+	    var hex_color = '#ffffff';
+	    if(bfs[index].distance !== Number.POSITIVE_INFINITY) {
+	      hex_color = gradient[bfs[index].distance].getHex();
+	    }
+
+	    colorSingleNode(graph.getNodeById(index), hex_color);
+	    segment_color_obj[index] = hex_color;
+
+	    //for force directed layout
+	    if (globals.rendererForceDirectedGraph) {
+	      var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
+	      nodeUI.color = hex_color;
+	    }
+	  }
+
+	  [und_edges, dir_edges].forEach(function(edges) {
+	    for(edge_index in edges) {
+	      var edge = edges[edge_index];
+	      var node_a_id = edge._node_a.getID();
+	      var node_b_id = edge._node_b.getID();
+
+	      if(segment_color_obj[node_a_id] !== 'undefined' &&
+	         segment_color_obj[node_b_id] !== 'undefined') {
+	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+	      }
+	    }
+	  });
+
+	  //for force directed layout
+	  if (globals.rendererForceDirectedGraph) {
+	    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+	      linkUI.fromColor = segment_color_obj[linkUI.from.id];
+	      linkUI.toColor = segment_color_obj[linkUI.to.id];
+	    });
+	  }
+
+	  //console.log(bfs);
+	  window.requestAnimationFrame(update);
+	}
+
+	//Hint: index = node id
+	function colorDFS(node) {
+	  segment_color_obj = {};
+	  var start_node = graph.getRandomNode(),
+	      colors = [];
+	  if(node != null) {
+	    start_node = node;
+	  }
+	  var dfs = $G.search.DFS(graph, start_node);
+	  //console.log(dfs);
+
+	  for (var i = 0; i < dfs.length; i++) {
+	    var new_color = new THREE.Color();
+	    new_color.r = Math.floor(Math.random() * 256) / 256.0;
+	    new_color.g = Math.floor(Math.random() * 256) / 256.0;
+	    new_color.b = Math.floor(Math.random() * 256) / 256.0;
+	    colors.push(new_color.getHex());
+	  }
+
+	  //for constant layout
+	  for(var i = 0; i < dfs.length; i++) {
+	    for(index in dfs[i]) {
+	      colorSingleNode(graph.getNodeById(index), colors[i]);
+	      segment_color_obj[index] = colors[i];
+
+	      //for force directed layout
+	      if (globals.rendererForceDirectedGraph) {
+	        var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
+	        nodeUI.color = colors[i];
+	      }
+	    }
+	  }
+
+	  [und_edges, dir_edges].forEach(function(edges) {
+	    for(edge_index in edges) {
+	    var edge = edges[edge_index];
+	    var node_a_id = edge._node_a.getID();
+	    var node_b_id = edge._node_b.getID();
+
+	      if(segment_color_obj[node_a_id] !== 'undefined' &&
+	         segment_color_obj[node_b_id] !== 'undefined') {
+	        colorSingleEdge(edge, segment_color_obj[node_a_id], segment_color_obj[node_b_id]);
+	      }
+	    }
+	  });
+
+	  //for force directed layout
+	  if (globals.rendererForceDirectedGraph) {
+	    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
+	      linkUI.fromColor = segment_color_obj[linkUI.from.id];
+	      linkUI.toColor = segment_color_obj[linkUI.to.id];
+	    });
+	  }
+
+	  window.requestAnimationFrame(update);
+	}
+
+	function hideNodeClick() {
+	  hideNode(globals.selected_node);
+	}
+
+	function colorSingleNodeClick() {
+	  var randomIndex = Math.floor((Math.random() * defaults.randomColors.length)),
+	      hexColor = defaults.randomColors[randomIndex];
+	  colorSingleNode(globals.selected_node, hexColor);
+	  window.requestAnimationFrame(update);
+	}
+
+	function colorBFSclick() {
+	  colorBFS(globals.selected_node);
+	}
+
+	function colorDFSclick() {
+	  colorDFS(globals.selected_node);
+	}
+
+	module.exports = {
+	  addNode: addNode,
+	  addRandomNodes: addRandomNodes,
+	  hideNode: hideNode,
+	  hideNodeClick: hideNodeClick,
+	  addEdge: addEdge,
+	  colorSingleNode: colorSingleNode,
+	  colorSingleNodeClick: colorSingleNodeClick,
+	  colorAllNodes: colorAllNodes,
+	  colorSingleEdge: colorSingleEdge,
+	  colorAllEdges: colorAllEdges,
+	  colorBFS: colorBFS,
+	  colorDFS: colorDFS,
+	  colorBFSclick: colorBFSclick,
+	  colorDFSclick: colorDFSclick
+	};
+
+
+/***/ },
+/* 54 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 55 */
+/***/ function(module, exports) {
+
+	
+	/**
+	 * delta t stuff
+	 */
+
+	function main_loop() {
+	  /**
+	   * Check for changes,
+	   * - if none, do nothing
+	   * - if changes, invoke reader and GO!
+	   */
+
+	  window.requestAnimationFrame(main_loop);
+	}
+
+	window.requestAnimationFrame(main_loop);
+
+
+/***/ },
+/* 56 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 57 */
+/***/ function(module, exports) {
+
+	input.onchange = function(event, explicit, direction, weighted_mode) {
+
+	  var explicit = typeof explicit === 'undefined' ? false : explicit;
+	  var direction = typeof direction === 'undefined' ? false : direction;
+	  var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
+	  
+	  if(document.querySelector('#undirected').checked) {
+	    direction = false;
+	  }
+	  else {
+	    direction = true;
+	  }
+	  
+	  var json = new $G.input.JsonInput(explicit, direction, weighted_mode);
+
+	  //checks if the browser supports the file API
+	  if (!window.File && window.FileReader && window.FileList && window.Blob) {
+	    alert("Browser does not support the File API.");
+	  }
+
+	  var files = document.getElementById('input').files;
+	  if (!files.length) {
+	    alert("No file selected.");
+	    return;
+	  }
+
+	  //only json files
+	  splitFileName = files[0].name.split(".");
+	  if(!splitFileName.pop().match('json')) {
+	    alert("Invalid file type - it must be a json file.");
+	    return;
+	  }
+	  // -> only works in firefox - chrome has no file.type
+	  /*if (!files[0].type.match('json')){
+	    alert('Wrong file type.');
+	    return;
+	  }*/
+
+	  var reader = new FileReader();
+	  var result = null;
+
+	  reader.onloadend = function(event){
+	    if (event.target.readyState == FileReader.DONE) {
+	      //console.log(event.target.result);
+	      var parsedFile = JSON.parse(event.target.result);
+	      window.graph = json.readFromJSON(parsedFile);
+
+	      document.querySelector("#nodes").innerHTML = parsedFile.nodes;
+	      document.querySelector("#edges").innerHTML = parsedFile.edges;
+	      //document.querySelector("#time").innerHTML = parsedFile.edges;
+
+	      //console.log(parsedFile.data);
+	      result = parsedFile.data;
+	    }
+	  }
+	  reader.readAsText(files[0]);
+
+	  return result;
+	};
+
+
+/***/ },
+/* 58 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 59 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 60 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 61 */
+/***/ function(module, exports) {
+
+	var FSelem = {
+	      el: null,
+	      width: null,
+	      height: null
+	    };
+
+	function switchToFullScreen(elem_string) {
+	  var elem = document.querySelector(elem_string);
+	  var canvas = document.querySelector(elem_string + " canvas");
+	  console.log(canvas);
+	  if (elem) {
+	    FSelem = {
+	      el: elem,
+	      width: elem.clientWidth,
+	      height: elem.clientHeight
+	    }
+	    // console.log(elem);
+	    if (elem.requestFullscreen) {
+	      elem.requestFullscreen();
+	    } else if (elem.msRequestFullscreen) {
+	      elem.msRequestFullscreen();
+	    } else if (elem.mozRequestFullScreen) {
+	      elem.mozRequestFullScreen();
+	    } else if (elem.webkitRequestFullscreen) {
+	      elem.webkitRequestFullscreen();
+	    }
+	    canvas.focus();
+	  }
+	  else {
+	    alert("Element to full-screen does not exist...");
+	  }
+	}
+
+	function FShandler( event ) {
+	  var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+	  var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
+	  if ( fullscreenElement ) {
+	      // console.log("fullscreen enabled!");
+	      fullscreenElement.style.width = "100%";
+	      fullscreenElement.style.height = "100%";
+	  }
+	  else {
+	      // console.log("fullscreen disabled!");
+	      // we can't get the element that WAS in fullscreen,
+	      // so we fall back to a manual entry...
+	      // console.log(FSelem);
+	      FSelem.el.style.width = FSelem.width+"px";
+	      FSelem.el.style.height = FSelem.height+"px";
+	  }
+	}
+
+	function setAndUpdateNrMutilate() {
+	  var val = document.querySelector("#nr_mutilate_per_frame").value;
+	  document.querySelector("#nr_mutilate_per_frame_val").innerHTML = val;
+	  window.$GV.setNrMutilate(val);
+	}
+
+	document.addEventListener("fullscreenchange", FShandler);
+	document.addEventListener("webkitfullscreenchange", FShandler);
+	document.addEventListener("mozfullscreenchange", FShandler);
+	document.addEventListener("MSFullscreenChange", FShandler);
+
+
+/***/ },
+/* 62 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var network = __webpack_require__(2).network;
+	var camera = __webpack_require__(2).camera;
+	var update = __webpack_require__(2).update;
+	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
+	var edges_obj_idx = __webpack_require__(2).edges_obj_idx;
+	var dims = __webpack_require__(1).globals.graph_dims;
+	var mouse = __webpack_require__(1).globals.mouse;
+	var defaults = __webpack_require__(1).defaults;
+	var globals = __webpack_require__(1).globals;
+
+	//update node and edge position
+	function updateNodePosition(update_node) {
+
+	  var node_id = update_node.getID();
+	  var index = nodes_obj_idx[node_id];
+
+	  //update nodes
+	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+	  old_nodes[index] = update_node.getFeature('coords').x;
+	  old_nodes[index + 1] = update_node.getFeature('coords').y;
+	  old_nodes[index + 2] = update_node.getFeature('coords').z;
+
+	  if(globals.TWO_D_MODE) {
+	    old_nodes[index + 2] = 0;
+	  }
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+
+	  //update edges  
+	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+	                    update_node.undEdges()];
+	  //TODO - directed
+	  var in_out_edges = {};
+	  for (var e in update_node.inEdges()) { in_out_edges[e] = update_node.inEdges()[e]; }
+	  for (var e in update_node.outEdges()) { in_out_edges[e] = update_node.outEdges()[e]; }
+	  //----
+	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+	                    in_out_edges];
+	  
+	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	    var old_edges = all_edges_of_a_node[0];
+	    var edges = all_edges_of_a_node[1];
+	    for(var i = 0; i < Object.keys(edges).length; i++) {
+	      var edge = edges[Object.keys(edges)[i]];
+
+	      //update from-node
+	      var edge_index = edges_obj_idx[edge.getID()];
+	      if(edge._node_a === update_node) {
+	        old_edges[edge_index] = update_node.getFeature('coords').x;
+	        old_edges[edge_index + 1] = update_node.getFeature('coords').y;
+	        old_edges[edge_index + 2] = update_node.getFeature('coords').z;
+	      }
+	      //update to-node
+	      else if(edge._node_b === update_node) {
+	        old_edges[edge_index + 3] = update_node.getFeature('coords').x;
+	        old_edges[edge_index + 4] = update_node.getFeature('coords').y;
+	        old_edges[edge_index + 5] = update_node.getFeature('coords').z;
+	      }
+	    }
+	  });
+	  
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function updateAll() {
+	  window.old_coordinates = new Float32Array(graph.nrNodes() * 3);
+	  var node_obj = graph.getNodes();
+	  var i = 0;
+	  for(node in nodes_obj) {
+	    old_coordinates[i] = node_obj[node].getFeature('coords').x;
+	    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
+	    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+	    i += 3;
+	  }
+	  
+	  window.cnt = 0;
+	  requestAnimationFrame(updateRandomPostions);
+	}
+
+	function updateRandomPostions() {
+	  //update node
+	  var node_obj = graph.getNodes();
+	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+	  
+	  for(node in node_obj) {
+	    var index = nodes_obj_idx[node];
+	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - dims.AVG_X;
+	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - dims.AVG_Y;
+	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - dims.AVG_Z;
+
+	    old_nodes[index] = node_obj[node].getFeature('coords').x;
+	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
+	    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
+	  }
+
+	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+	                    graph.getUndEdges()];
+	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+	                    graph.getDirEdges()];
+	  
+	  //update edges
+	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	    var i = 0;
+	    var old_edges = all_edges_of_a_node[0];
+	    var edges = all_edges_of_a_node[1];
+	    for (var edge_index in edges) {
+	      var edge = edges[edge_index];
+	      var node_a_id = edge._node_a.getID();
+	      var node_b_id = edge._node_b.getID();
+
+	      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
+	      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
+	      old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
+	      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
+	      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
+	      old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
+	      i += 6;
+	    }
+	  });
+
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+
+	  if(window.cnt++ < 100) {
+	    requestAnimationFrame(updateRandomPostions);
+	  }
+	  //set nodes/edges to original coordinates
+	  else {
+	    //set coordinates of nodes
+	    var i = 0;
+	    for(node in node_obj) {
+	      var index = nodes_obj_idx[node];
+	      node_obj[node].getFeature('coords').x = window.old_coordinates[i];
+	      node_obj[node].getFeature('coords').y = window.old_coordinates[i + 1];
+	      node_obj[node].getFeature('coords').z = window.old_coordinates[i + 2];
+	      i += 3;
+
+	      old_nodes[index] = node_obj[node].getFeature('coords').x - dims.AVG_X;
+	      old_nodes[index + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
+	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
+	    }
+	    //set coordinates of edges
+	    [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	      var i = 0;
+	      var old_edges = all_edges_of_a_node[0];
+	      var edges = all_edges_of_a_node[1];
+	      for (var edge_index in edges) {
+	        var edge = edges[edge_index];
+	        var node_a_id = edge._node_a.getID();
+	        var node_b_id = edge._node_b.getID();
+
+	        old_edges[i] = node_obj[node_a_id].getFeature('coords').x - dims.AVG_X;
+	        old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y - dims.AVG_Y;
+	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z - dims.AVG_Z;
+	        old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - dims.AVG_X;
+	        old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - dims.AVG_Y;
+	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - dims.AVG_Z;
+	        i += 6;
+	      }
+	    });
+	    
+	    network.children[0].geometry.attributes.position.needsUpdate = true;
+	    network.children[1].geometry.attributes.position.needsUpdate = true;
+	    network.children[2].geometry.attributes.position.needsUpdate = true;
+	    window.requestAnimationFrame(update);
+	  }
+	}
+
+	function switchTo2D() {
+	  globals.TWO_D_MODE = true;
+	  var nodes_array = network.children[0].geometry.attributes.position.array,
+	      undEdges_array = network.children[1].geometry.attributes.position.array,
+	      dirEdges_array = network.children[2].geometry.attributes.position.array;
+	  
+	  [nodes_array, undEdges_array, dirEdges_array].forEach(function(array) {
+	    for(var i = 0; i < array.length;) {
+	      array[i + 2] = 0;
+	      i+=3;
+	    }
+	  });
+	  
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function switchTo3D() {
+	  globals.TWO_D_MODE = false;
+
+	  var i = 0;
+	  var array = network.children[0].geometry.attributes.position.array;
+	  for(node in nodes_obj) {
+	    var z = nodes_obj[node].getFeature('coords').z;
+	    array[i + 2] = z;
+	    i+=3;
+	  }
+
+	  i = 0;
+	  array = network.children[1].geometry.attributes.position.array;
+	  for (var edge_index in und_edges) {
+	    var edge = und_edges[edge_index];
+	    var node_a_id = edge._node_a.getID();
+	    var node_b_id = edge._node_b.getID();
+
+	    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
+	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
+	    i += 6;
+	  }
+
+	  i = 0;
+	  array = network.children[2].geometry.attributes.position.array;
+	  for (var edge_index in dir_edges) {
+	    var edge = dir_edges[edge_index];
+	    var node_a_id = edge._node_a.getID();
+	    var node_b_id = edge._node_b.getID();
+
+	    array[i + 2] = nodes_obj[node_a_id].getFeature('coords').z;
+	    array[i + 5] = nodes_obj[node_b_id].getFeature('coords').z;
+	    i += 6;
+	  }
+	  
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function nodeIntersection() {
+	  var attributes = network.children[0].geometry.attributes;
+	  globals.raycaster.setFromCamera(mouse, camera);
+	  globals.raycaster.params.Points.threshold = 1;
+
+	  var particlesToIntersect = [];
+	  particlesToIntersect.push(network.children[0]);
+	  var intersects = globals.raycaster.intersectObjects(particlesToIntersect);
+
+	  if(intersects.length > 0 && intersects[0].index != globals.INTERSECTED.index) {
+	    //console.log("intersected objects");
+	    //console.log(intersectsParticles);
+
+	    //set previous node
+	    attributes.color.array[globals.INTERSECTED.index*3] = globals.INTERSECTED.color.r;
+	    attributes.color.array[globals.INTERSECTED.index*3 + 1] = globals.INTERSECTED.color.g;
+	    attributes.color.array[globals.INTERSECTED.index*3 + 2] = globals.INTERSECTED.color.b;
+	    
+	    globals.INTERSECTED.index = intersects[0].index;
+	    globals.INTERSECTED.color.setRGB(
+	      attributes.color.array[intersects[0].index*3], 
+	      attributes.color.array[intersects[0].index*3 + 1],
+	      attributes.color.array[intersects[0].index*3 + 2]
+	    );
+	    
+	    //set new node
+	    attributes.color.array[intersects[0].index*3] = defaults.highlight_node_color.r;
+	    attributes.color.array[intersects[0].index*3 + 1] = defaults.highlight_node_color.g;
+	    attributes.color.array[intersects[0].index*3 + 2] = defaults.highlight_node_color.b;
+	    attributes.color.needsUpdate = true;
+
+	    //TODO resize node
+	    //attributes.size.array[intersects[0].index] = 20;
+	    //attributes.size.needsUpdate = true;
+	    
+	    //get key by index
+	    var nodeID = Object.keys(nodes_obj_idx)[intersects[0].index];
+	    globals.INTERSECTED.node = window.graph.getNodeById(nodeID);
+	    
+	    //Hint: update is called in navigation
+	    //window.requestAnimationFrame(update);
+	  }
+	}
+
+	function updateNodePositionClick() {
+	  globals.selected_node._features.coords.x = Math.floor((Math.random() * dims.MAX_X) - dims.AVG_X);
+	  globals.selected_node._features.coords.y = Math.floor((Math.random() * dims.MAX_Y) - dims.AVG_Y);
+	  globals.selected_node._features.coords.z = Math.floor((Math.random() * dims.MAX_Z) - dims.AVG_Z);
+	  
+	  updateNodePosition(globals.selected_node);
+	}
+
+	function changeNodeSize(size) {
+	  if(!document.querySelector("#myonoffswitch").checked) {
+	    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
+	      nodeUI.size = size;
+	    });
+	  }
+	}
+
+	module.exports = {
+	    updateNodePosition: updateNodePosition,
+	    updateAll: updateAll,
+	    updateNodePositionClick: updateNodePositionClick,
+	    switchTo2D: switchTo2D,
+	    switchTo3D: switchTo3D,
+	    nodeIntersection: nodeIntersection,
+	    changeNodeSize: changeNodeSize
+	};
+
+
+/***/ },
+/* 63 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var keys = __webpack_require__(1).keys;
+	var globals = __webpack_require__(1).globals;
+	var camera = __webpack_require__(2).camera;
+	var defaults = __webpack_require__(1).defaults;
+	var update = __webpack_require__(2).update;
+	var network = __webpack_require__(2).network;
+	var container = __webpack_require__(1).container;
+	var mouse = __webpack_require__(1).globals.mouse;
+	var nodeIntersection = __webpack_require__(62).nodeIntersection;
+	var callbacks = __webpack_require__(1).callbacks;
+
+	// for testing purposes
+	var intersect_cb1 = function(node) {
+	  document.querySelector("#nodeID").innerHTML = node._id;
+	};
+	callbacks.node_intersects.push(intersect_cb1);
+
+	//rotation
+	var axis_x = new THREE.Vector3( 1, 0, 0 ),
+	    axis_y = new THREE.Vector3( 0, 1, 0 ),
+	    axis_z = new THREE.Vector3( 0, 0, 1 );
+
+	window.addEventListener('keypress', key, false);
+	function key(event) {
+	  switch (event.charCode) {
+	    case keys.KEY_W: //zoom in
+	      camera.position.y = camera.position.y - defaults.delta_distance; break;
+	    case keys.KEY_S: //zoom out
+	      camera.position.y = camera.position.y + defaults.delta_distance; break;
+	    case keys.KEY_A: //move left
+	      camera.position.x = camera.position.x + defaults.delta_distance; break;
+	    case keys.KEY_D: //move right
+	      camera.position.x = camera.position.x - defaults.delta_distance; break;
+	    case keys.KEY_R:
+	      network.translateZ(defaults.delta_distance); break;
+	    case keys.KEY_F:
+	      network.translateZ(-defaults.delta_distance); break;
+
+	    case keys.KEY_X:
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SX:
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_Y:
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SY:
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	      break;
+	    case keys.KEY_C:
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      break;
+	    case keys.KEY_SC:
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      break;
+	    default:
+	      break;
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	//zoom in and out
+	var eventWheel = 'mousewheel';
+	if(typeof InstallTrigger !== 'undefined') {
+	  eventWheel = 'wheel';
+	}
+	window.addEventListener(eventWheel, mousewheel, false);
+	function mousewheel(event) {
+	  //wheel down: negative value; firefox positive
+	  //wheel up: positive value; firefox negative
+	  if(event.altKey) {
+	    if(event.wheelDelta < 0 || event.deltaY > 0) {
+	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
+	    }
+	    else {
+	      network.rotateOnAxis(axis_y, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_y, -defaults.delta_rotation);
+	    }
+	  }
+	  else {
+	    //firefox
+	    if(typeof InstallTrigger !== 'undefined') {
+	      camera.fov -= defaults.ZOOM_FACTOR * event.deltaY;
+	    }
+	    else {
+	      camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
+	    }
+	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
+	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	window.addEventListener('mousemove', mouseMove, false);
+	function mouseMove(event) {
+
+	  if(event.shiftKey && event.buttons == 1) {
+	    if(event.movementX > 0) {
+	      network.rotateOnAxis(axis_z, defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, -defaults.delta_rotation);
+	    }
+	    else if(event.movementX < 0) {
+	      network.rotateOnAxis(axis_z, -defaults.delta_rotation);
+	      axis_x.applyAxisAngle(axis_z, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_z, defaults.delta_rotation);
+	    }
+	    else if(event.movementY > 0) {
+	      network.rotateOnAxis(axis_x, defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, -defaults.delta_rotation);
+	    }
+	    else if(event.movementY < 0) {
+	      network.rotateOnAxis(axis_x, -defaults.delta_rotation);
+	      axis_y.applyAxisAngle(axis_x, defaults.delta_rotation);
+	    }
+	  }
+	  //left mouse button
+	  else if(event.buttons == 1) {
+	    var mouseX = event.clientX / container.WIDTH;
+	    var mouseY = event.clientY / container.HEIGHT;
+
+	    var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
+	    var max_x = globals.graph_dims.MAX_X/2;
+	    var max_y = globals.graph_dims.MAX_Y/2;
+
+	    if(camera.position.x > max_x) {
+	      camera.position.x = max_x;
+	    }
+	    else if(camera.position.x < -max_x) {
+	      camera.position.x = -max_x;
+	    }
+	    else if(camera.position.y > max_y) {
+	      camera.position.y = max_y;
+	    }
+	    else if(camera.position.y < -max_y) {
+	      camera.position.y = -max_y;
+	    }
+
+	    //movement in y: up is negative, down is positive
+	    camera.position.x = camera.position.x - (mouseX * event.movementX);
+	    camera.position.y = camera.position.y + (mouseY * event.movementY);
+	  }
+
+	  //raycaster
+	  // calculate mouse position in normalized device coordinates
+	  // (-1 to +1) for both components
+	  event.preventDefault();
+	  var element = document.querySelector('#containerGraph');
+	  var rect = element.getBoundingClientRect();
+	  mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
+	  mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
+	  //intersect after init grap
+	  if(network.children[0] != null) {
+	    window.requestAnimationFrame(nodeIntersection);
+	  }
+	  window.requestAnimationFrame(update);
+	}
+
+	window.addEventListener('click', click, false);
+	function click(event) {
+	  if(globals.INTERSECTED.node != null) {
+	    globals.selected_node = globals.INTERSECTED.node;
+	    document.querySelector("#nodeInfo").style.visibility = 'visible';
+	    var ni = callbacks.node_intersects;
+	    for (var cb in ni) {
+	      if (typeof ni[cb] === 'function') {
+	        ni[cb](globals.INTERSECTED.node);
+	      }
+	    }
+	  }
+	}
+
+	module.exports = {
+	  mouse: mouse
+	};
 
 
 /***/ }

@@ -129,7 +129,7 @@ function renderConstantGraph(graph) {
 
 function renderNgraph(graph) {
   globals.forceDirectedGraph = require('ngraph.graph')();
-  for(node in node_keys) {
+  for(node in nodes_obj) {
     globals.forceDirectedGraph.addNode(nodes_obj[node].getID());
   }
   [und_edges, dir_edges].forEach(function(edges) {
@@ -140,7 +140,7 @@ function renderNgraph(graph) {
       globals.forceDirectedGraph.addLink(node_a_id, node_b_id);
     }
   });
-  
+
   var renderGraph = require('ngraph.pixel');
   globals.rendererForceDirectedGraph = renderGraph(globals.forceDirectedGraph, {
     container: document.querySelector('#containerNgraph'),
@@ -154,14 +154,14 @@ function renderNgraph(graph) {
       dragCoeff : 0.02
     }
   });
-  
+
   function createNodeUI(node) {
     return {
       color: defaults.start_node_color,
       size: defaults.fd_node_size
     };
   }
-  
+
   function createLinkUI(link) {
     return {
       fromColor: defaults.start_edge_color,
@@ -175,7 +175,7 @@ function showGraph() {
   if(document.querySelector("#myonoffswitch").checked) {
     document.querySelector("#containerNgraph").style.visibility = 'hidden';
     document.querySelector("#containerGraph").style.visibility = 'visible';
-    
+
     document.querySelector("#switch2DButton").style.visibility = 'visible';
     document.querySelector("#switch3DButton").style.visibility = 'visible';
     document.querySelector("#updateAllNodesButton").style.visibility = 'visible';
@@ -188,10 +188,10 @@ function showGraph() {
     document.querySelector("#changeNodeSize").style.visibility = 'hidden';
   }
   //force directed layout
-  else {    
+  else {
     document.querySelector("#containerNgraph").style.visibility = 'visible';
     document.querySelector("#containerGraph").style.visibility = 'hidden';
-    
+
     document.querySelector("#switch2DButton").style.visibility = 'hidden';
     document.querySelector("#switch3DButton").style.visibility = 'hidden';
     document.querySelector("#updateAllNodesButton").style.visibility = 'hidden';
@@ -219,12 +219,12 @@ function renderGraph() {
     window.dir_edges = window.graph.getDirEdges();
     window.dir_edges_keys = Object.keys(window.dir_edges);
   }
-  
+
   renderConstantGraph(graph);
-  renderNgraph(graph);  
+  // renderNgraph(graph);
   showGraph();
-  
-  console.log("render graph");
+
+  console.log("rendering graph...");
 }
 
 function rerenderGraph() {

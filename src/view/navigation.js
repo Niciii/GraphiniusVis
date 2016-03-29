@@ -10,8 +10,8 @@ var nodeIntersection = require("./interaction.js").nodeIntersection;
 var callbacks = require("../core/init.js").callbacks;
 
 // for testing purposes
-var intersect_cb1 = function(node) {  
-  document.querySelector("#nodeID").innerHTML = node._id;  
+var intersect_cb1 = function(node) {
+  document.querySelector("#nodeID").innerHTML = node._id;
 };
 callbacks.node_intersects.push(intersect_cb1);
 
@@ -77,7 +77,7 @@ window.addEventListener(eventWheel, mousewheel, false);
 function mousewheel(event) {
   //wheel down: negative value; firefox positive
   //wheel up: positive value; firefox negative
-  if(event.shiftKey) {
+  if(event.altKey) {
     if(event.wheelDelta < 0 || event.deltaY > 0) {
       network.rotateOnAxis(axis_y, -defaults.delta_rotation);
       axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
@@ -94,7 +94,7 @@ function mousewheel(event) {
     }
     else {
       camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-    }    
+    }
     camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
     camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
   }
@@ -103,7 +103,7 @@ function mousewheel(event) {
 
 window.addEventListener('mousemove', mouseMove, false);
 function mouseMove(event) {
-  
+
   if(event.shiftKey && event.buttons == 1) {
     if(event.movementX > 0) {
       network.rotateOnAxis(axis_z, defaults.delta_rotation);
@@ -131,8 +131,8 @@ function mouseMove(event) {
 
     var rest = (container.WIDTH/2) - (globals.graph_dims.MAX_X/2);
     var max_x = globals.graph_dims.MAX_X/2;
-    var max_y = globals.graph_dims.MAX_Y/2;    
-    
+    var max_y = globals.graph_dims.MAX_Y/2;
+
     if(camera.position.x > max_x) {
       camera.position.x = max_x;
     }
@@ -145,7 +145,7 @@ function mouseMove(event) {
     else if(camera.position.y < -max_y) {
       camera.position.y = -max_y;
     }
-    
+
     //movement in y: up is negative, down is positive
     camera.position.x = camera.position.x - (mouseX * event.movementX);
     camera.position.y = camera.position.y + (mouseY * event.movementY);
@@ -154,9 +154,9 @@ function mouseMove(event) {
   //raycaster
   // calculate mouse position in normalized device coordinates
   // (-1 to +1) for both components
-  event.preventDefault();  
+  event.preventDefault();
   var element = document.querySelector('#containerGraph');
-  var rect = element.getBoundingClientRect();  
+  var rect = element.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / container.WIDTH) * 2 - 1;
   mouse.y = - ((event.clientY - rect.top) / container.HEIGHT) * 2 + 1;
   //intersect after init grap
@@ -167,7 +167,7 @@ function mouseMove(event) {
 }
 
 window.addEventListener('click', click, false);
-function click(event) {  
+function click(event) {
   if(globals.INTERSECTED.node != null) {
     globals.selected_node = globals.INTERSECTED.node;
     document.querySelector("#nodeInfo").style.visibility = 'visible';
