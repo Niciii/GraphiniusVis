@@ -10,7 +10,7 @@ var network = new THREE.Group(),
     camera = new THREE.PerspectiveCamera(
       70,
       container.WIDTH / container.HEIGHT,
-      0.1, 1000),
+      0.1, 5000),
     scene = new THREE.Scene(),
     renderer = new THREE.WebGLRenderer({antialias: false}),
     //tmp object to find indices
