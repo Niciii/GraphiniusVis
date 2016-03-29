@@ -3,6 +3,7 @@ var defaults = require("./init.js").defaults;
 var mouse = require("./init.js").globals.mouse;
 var dims = require("./init.js").globals.graph_dims;
 var globals = require("./init.js").globals;
+//var fd_layout = require("../layout/force_directed.js");
 
 //basics
 var network = new THREE.Group(),
@@ -147,11 +148,13 @@ function renderNgraph(graph) {
     node: createNodeUI,
     link: createLinkUI,
     physics: {
-      springLength : 80,
-      springCoeff : 0.0002,
-      gravity: -1.2,
-      theta : 0.8,
-      dragCoeff : 0.02
+      //springLength : 30,
+      //springCoeff : 0.0008,
+      //gravity: -1.2,
+      //theta : 0,
+      dragCoeff : 0
+      //timeStep : 200,
+      //stableThreshold: 1
     }
   });
 
@@ -221,7 +224,7 @@ function renderGraph() {
   }
 
   renderConstantGraph(graph);
-  // renderNgraph(graph);
+  //renderNgraph(graph);
   showGraph();
 
   console.log("rendering graph...");

@@ -26,6 +26,8 @@
               <span class="onoffswitch-switch"></span>
           </label>
         </div><br/>
+        <input id="fdStop" value="Force Directed Layout STOP" type="button" onclick=$GV.layout.force.fdStop()><br/>
+        <input id="fdLoop" value="Force Directed Layout START" type="button" onclick=$GV.layout.force.fdLoop()><br/>
         <input id="switch2DButton" value="Switch to 2D" type="button" onclick=$GV.view.interaction.switchTo2D()><br/>
         <input id="switch3DButton" value="Switch to 3D" type="button" onclick=$GV.view.interaction.switchTo3D()><br/><br/>
         <input id="changeNodeSize" type="range" name="range" min="5" max="80" value="10" onclick=$GV.view.interaction.changeNodeSize(range.value)><br/>
@@ -39,7 +41,7 @@
         <input id="chosenDFSButton" value="DFS (click)" type="button" onclick=$GV.core.mutate.colorDFSclick()><br/><br/>
         <input id="chosenHideNodeButton" value="Hide Node (click)" type="button" onclick=$GV.core.mutate.hideNodeClick()><br/>
         <input id="chosenColorNodeButton" value="Color Node (click)" type="button" onclick=$GV.core.mutate.colorSingleNodeClick()><br/>
-        <input id="chosenUpdateNodeButton" value="Update Node (click)" type="button" onclick=$GV.view.interaction.updateNodePositionClick()>
+        <input id="chosenUpdateNodeButton" value="Update Node Position (click)" type="button" onclick=$GV.view.interaction.updateNodePositionClick()>
 
         <h3>Graph Information</h3>
         <div id="graphInfo">

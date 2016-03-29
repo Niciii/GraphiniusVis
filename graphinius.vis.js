@@ -157,7 +157,15 @@
 	    
 	    //color for colorSingleEdge/Node, addEdge
 	    edge_color: '#ff0000',
-	    node_color: '#ff0000'
+	    node_color: '#ff0000',
+	    
+	    //mouse wheel - firefox
+	    //minus: firefox has different wheel direction
+	    //chromium etc -> factor 120, firefox -> 3
+	    firefox_wheel_factor: -40,
+	    
+	    //stop calculation of force directed layout
+	    stop_fd: false
 	  },
 	  globals: {
 	    mouse: new THREE.Vector2(),
@@ -197,6 +205,7 @@
 	var mouse = __webpack_require__(1).globals.mouse;
 	var dims = __webpack_require__(1).globals.graph_dims;
 	var globals = __webpack_require__(1).globals;
+	//var fd_layout = require("../layout/force_directed.js");
 
 	//basics
 	var network = new THREE.Group(),
@@ -341,11 +350,13 @@
 	    node: createNodeUI,
 	    link: createLinkUI,
 	    physics: {
-	      springLength : 80,
-	      springCoeff : 0.0002,
-	      gravity: -1.2,
-	      theta : 0.8,
-	      dragCoeff : 0.02
+	      //springLength : 30,
+	      //springCoeff : 0.0008,
+	      //gravity: -1.2,
+	      //theta : 0,
+	      dragCoeff : 0
+	      //timeStep : 200,
+	      //stableThreshold: 1
 	    }
 	  });
 
@@ -415,7 +426,7 @@
 	  }
 
 	  renderConstantGraph(graph);
-	  // renderNgraph(graph);
+	  //renderNgraph(graph);
 	  showGraph();
 
 	  console.log("rendering graph...");
@@ -42225,9 +42236,100 @@
 
 /***/ },
 /* 59 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	
+	var defaults = __webpack_require__(1).defaults;
+	var network = __webpack_require__(2).network;
+	var update = __webpack_require__(2).update;
+	var nodes_obj_idx = __webpack_require__(2).nodes_obj_idx;
+	var dims = __webpack_require__(1).globals.graph_dims;
+
+	var cnt = true;
+	function fdLoop() {
+	  if(cnt) {
+	    init();
+	  }
+	  if(!defaults.stop_fd) {
+	    forceDirectedLayout();
+	    window.requestAnimationFrame(fdLoop);
+	  }
+	  cnt = false;
+	}
+
+	var old_coordinates = null;
+	function init() {
+	  old_coordinates = new Float32Array(graph.nrNodes() * 3);
+	  var node_obj = graph.getNodes();
+	  var i = 0;
+	  for(node in nodes_obj) {
+	    old_coordinates[i] = node_obj[node].getFeature('coords').x;
+	    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
+	    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+	    i += 3;
+	  }
+	}
+
+	function forceDirectedLayout() {
+	  console.log("hier");
+	  var time = new Date().getMilliseconds();
+	  //console.log(network);
+	  
+	  var node_obj = graph.getNodes();
+	  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+	  
+	  for(node in node_obj) {
+	    var index = nodes_obj_idx[node];
+	    node_obj[node].getFeature('coords').x = old_coordinates[index] + time * Math.random() - dims.AVG_X;
+	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + time * Math.random() - dims.AVG_Y;
+	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + time * Math.random() - dims.AVG_Z;
+
+	    old_nodes[index] = node_obj[node].getFeature('coords').x;
+	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
+	    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
+	  }
+	  
+	  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+	                    graph.getUndEdges()];
+	  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+	                    graph.getDirEdges()];
+	                    
+	  //update edges
+	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	    var i = 0;
+	    var old_edges = all_edges_of_a_node[0];
+	    var edges = all_edges_of_a_node[1];
+	    for (var edge_index in edges) {
+	      var edge = edges[edge_index];
+	      var node_a_id = edge._node_a.getID();
+	      var node_b_id = edge._node_b.getID();
+
+	      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
+	      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
+	      old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
+	      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
+	      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
+	      old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
+	      i += 6;
+	    }
+	  });
+
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function fdStop() {
+	  console.log("fds");
+	  defaults.stop_fd = true;
+	}
+
+	module.exports = {
+	  
+	  fdLoop: fdLoop,
+	  fdStop: fdStop
+	};
+
 
 /***/ },
 /* 60 */
@@ -42690,9 +42792,15 @@
 	window.addEventListener(eventWheel, mousewheel, false);
 	function mousewheel(event) {
 	  //wheel down: negative value; firefox positive
-	  //wheel up: positive value; firefox negative
+	  //wheel up: positive value; firefox negative;  
+	  
+	  var delta = event.wheelDelta; //chromium, ...
+	  if(typeof InstallTrigger !== 'undefined') { //firefox
+	    delta = event.deltaY * defaults.firefox_wheel_factor; 
+	  }
+	  
 	  if(event.altKey) {
-	    if(event.wheelDelta < 0 || event.deltaY > 0) {
+	    if(delta < 0) {
 	      network.rotateOnAxis(axis_y, -defaults.delta_rotation);
 	      axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
 	    }
@@ -42702,13 +42810,7 @@
 	    }
 	  }
 	  else {
-	    //firefox
-	    if(typeof InstallTrigger !== 'undefined') {
-	      camera.fov -= defaults.ZOOM_FACTOR * event.deltaY;
-	    }
-	    else {
-	      camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-	    }
+	    camera.fov -= defaults.ZOOM_FACTOR * delta;
 	    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
 	    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
 	  }

@@ -58,7 +58,15 @@ var config = {
     
     //color for colorSingleEdge/Node, addEdge
     edge_color: '#ff0000',
-    node_color: '#ff0000'
+    node_color: '#ff0000',
+    
+    //mouse wheel - firefox
+    //minus: firefox has different wheel direction
+    //chromium etc -> factor 120, firefox -> 3
+    firefox_wheel_factor: -40,
+    
+    //stop calculation of force directed layout
+    stop_fd: false
   },
   globals: {
     mouse: new THREE.Vector2(),

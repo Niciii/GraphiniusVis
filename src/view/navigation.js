@@ -76,9 +76,15 @@ if(typeof InstallTrigger !== 'undefined') {
 window.addEventListener(eventWheel, mousewheel, false);
 function mousewheel(event) {
   //wheel down: negative value; firefox positive
-  //wheel up: positive value; firefox negative
+  //wheel up: positive value; firefox negative;  
+  
+  var delta = event.wheelDelta; //chromium, ...
+  if(typeof InstallTrigger !== 'undefined') { //firefox
+    delta = event.deltaY * defaults.firefox_wheel_factor; 
+  }
+  
   if(event.altKey) {
-    if(event.wheelDelta < 0 || event.deltaY > 0) {
+    if(delta < 0) {
       network.rotateOnAxis(axis_y, -defaults.delta_rotation);
       axis_x.applyAxisAngle(axis_y, defaults.delta_rotation);
     }
@@ -88,13 +94,7 @@ function mousewheel(event) {
     }
   }
   else {
-    //firefox
-    if(typeof InstallTrigger !== 'undefined') {
-      camera.fov -= defaults.ZOOM_FACTOR * event.deltaY;
-    }
-    else {
-      camera.fov -= defaults.ZOOM_FACTOR * event.wheelDeltaY;
-    }
+    camera.fov -= defaults.ZOOM_FACTOR * delta;
     camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
     camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
   }
