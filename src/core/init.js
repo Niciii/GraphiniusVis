@@ -26,10 +26,11 @@ var config = {
     tranparent: true,
     opacity: 0.5, //default is 1; range: 0.0 - 1.0
     linewidth: 1,
-    //for force directed layout
-    start_node_color: 0xff59b2,
-    start_edge_color: 0x007dc1,
-    fd_node_size: 15,
+    
+    //camera settings
+    fov: 70,
+    near: 0.1,
+    far: 5000,
     
     //raycaster
     highlight_node_color: new THREE.Color(0xf1ecfb),
@@ -87,8 +88,10 @@ var config = {
       index: 0, color: new THREE.Color(), node: null
     },
     raycaster: new THREE.Raycaster(),
-    rendererForceDirectedGraph: null,
-    forceDirectedGraph: null
+    renderer: new THREE.WebGLRenderer({antialias: false}),
+    scene: new THREE.Scene(),
+    network: new THREE.Group(),
+    camera: null
   },
   callbacks: {
     node_intersects: []

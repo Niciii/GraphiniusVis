@@ -1,7 +1,7 @@
-var network = require("./render.js").network;
+var network = require("./init.js").globals.network;
 var update = require("./render.js").update;
-var nodes_obj_idx = require("./render.js").nodes_obj_idx;
-var edges_obj_idx = require("./render.js").edges_obj_idx;
+var nodes_obj_idx = require("../layout/constant_layout.js").nodes_obj_idx;
+var edges_obj_idx = require("../layout/constant_layout.js").edges_obj_idx;
 var globals = require("./init.js").globals;
 var dims = require("./init.js").globals.graph_dims;
 var defaults = require("./init.js").defaults;
@@ -158,24 +158,17 @@ function colorAllNodes(hexColor) {
     hexColor = defaults.randomColors[randomIndex];
   }
 
-  if(document.querySelector("#myonoffswitch").checked) {
-    var newColor = new THREE.Color(hexColor);
-    var nodeColors = network.children[0].geometry.getAttribute('color').array;
+  var newColor = new THREE.Color(hexColor);
+  var nodeColors = network.children[0].geometry.getAttribute('color').array;
 
-    for(var i = 0; i < nodeColors.length;) {
-      nodeColors[i] = newColor.r;
-      nodeColors[i + 1] = newColor.g;
-      nodeColors[i + 2] = newColor.b;
-      i += 3;
-    }
-    network.children[0].geometry.attributes.color.needsUpdate = true;
-    window.requestAnimationFrame(update);
+  for(var i = 0; i < nodeColors.length;) {
+    nodeColors[i] = newColor.r;
+    nodeColors[i + 1] = newColor.g;
+    nodeColors[i + 2] = newColor.b;
+    i += 3;
   }
-  else if (globals.rendererForceDirectedGraph) {
-    globals.rendererForceDirectedGraph.forEachNode(function (nodeUI) {
-      nodeUI.color = hexColor;
-    });
-  }
+  network.children[0].geometry.attributes.color.needsUpdate = true;
+  window.requestAnimationFrame(update);
 }
 
 function colorSingleEdge(edge, hex_color_node_a, hex_color_node_b) {
@@ -206,30 +199,22 @@ function colorAllEdges(hexColor) {
     hexColor = defaults.randomColors[randomIndex];
   }
 
-  if(document.querySelector("#myonoffswitch").checked) {
-    var newColor = new THREE.Color(hexColor);
-    var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
-    var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
+  var newColor = new THREE.Color(hexColor);
+  var edgeColors1 = network.children[1].geometry.getAttribute('color').array;
+  var edgeColors2 = network.children[2].geometry.getAttribute('color').array;
 
-    [edgeColors1, edgeColors2].forEach(function(edgesColor) {
-      for(var i = 0; i < edgesColor.length;) {
-        edgesColor[i] = newColor.r;
-        edgesColor[i + 1] = newColor.g;
-        edgesColor[i + 2] = newColor.b;
-        i += 3;
-      }
-    });
+  [edgeColors1, edgeColors2].forEach(function(edgesColor) {
+    for(var i = 0; i < edgesColor.length;) {
+      edgesColor[i] = newColor.r;
+      edgesColor[i + 1] = newColor.g;
+      edgesColor[i + 2] = newColor.b;
+      i += 3;
+    }
+  });
 
-    network.children[1].geometry.attributes.color.needsUpdate = true;
-    network.children[2].geometry.attributes.color.needsUpdate = true;
-    window.requestAnimationFrame(update);
-  }
-  else if (globals.rendererForceDirectedGraph) {
-    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-      linkUI.fromColor = hexColor;
-      linkUI.toColor = hexColor;
-    });
-  }
+  network.children[1].geometry.attributes.color.needsUpdate = true;
+  network.children[2].geometry.attributes.color.needsUpdate = true;
+  window.requestAnimationFrame(update);
 }
 //Hint: index = node id
 function colorBFS(node) {
@@ -268,8 +253,6 @@ function colorBFS(node) {
     newColor.g = firstColor.g + (secondColor.g - firstColor.g) / half * i_mod_half;
     newColor.b = firstColor.b + (secondColor.b - firstColor.b) / half * i_mod_half;
     gradient.push(newColor);
-    //console.log("New color: ");
-    //console.log(newColor.r + " | " + newColor.g + " | " + newColor.b);
   }
 
   for(index in bfs) {
@@ -280,12 +263,6 @@ function colorBFS(node) {
 
     colorSingleNode(graph.getNodeById(index), hex_color);
     segment_color_obj[index] = hex_color;
-
-    //for force directed layout
-    if (globals.rendererForceDirectedGraph) {
-      var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
-      nodeUI.color = hex_color;
-    }
   }
 
   [und_edges, dir_edges].forEach(function(edges) {
@@ -300,16 +277,6 @@ function colorBFS(node) {
       }
     }
   });
-
-  //for force directed layout
-  if (globals.rendererForceDirectedGraph) {
-    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-      linkUI.fromColor = segment_color_obj[linkUI.from.id];
-      linkUI.toColor = segment_color_obj[linkUI.to.id];
-    });
-  }
-
-  //console.log(bfs);
   window.requestAnimationFrame(update);
 }
 
@@ -337,12 +304,6 @@ function colorDFS(node) {
     for(index in dfs[i]) {
       colorSingleNode(graph.getNodeById(index), colors[i]);
       segment_color_obj[index] = colors[i];
-
-      //for force directed layout
-      if (globals.rendererForceDirectedGraph) {
-        var nodeUI = globals.rendererForceDirectedGraph.getNode(graph.getNodeById(index)._id);
-        nodeUI.color = colors[i];
-      }
     }
   }
 
@@ -358,15 +319,6 @@ function colorDFS(node) {
       }
     }
   });
-
-  //for force directed layout
-  if (globals.rendererForceDirectedGraph) {
-    globals.rendererForceDirectedGraph.forEachLink(function (linkUI) {
-      linkUI.fromColor = segment_color_obj[linkUI.from.id];
-      linkUI.toColor = segment_color_obj[linkUI.to.id];
-    });
-  }
-
   window.requestAnimationFrame(update);
 }
 

@@ -9,28 +9,22 @@
       <div><h2>Options</h2>
       <h3>Graph Generation</h3>
         <form>
-          <input type="radio" id="undirected" name="direction" value="undirected" checked><label for="undirected">undirected graph</label><br>
-          <input type="radio" id="directed" name="direction" value="directed"><label for="directed">directed graph</label><br><br>
+          <input type="radio" id="undirected" name="direction" value="undirected" onclick><label for="undirected">undirected graph</label><br>
+          <input type="radio" id="directed" name="direction" value="directed" onclick><label for="directed">directed graph</label><br><br>
         <form>
-        <input id="input" value="Read File" class="button" type="file" onchange><br><br>
+        <input id="input" value="Read File" class="button" type="file" onchange=$GV.input.json.readJSON()><br><br>
         <input id="renderButton" value="Render Graph" type="button" onclick=$GV.core.render.renderGraph()>
-<!--
-        <input id="rerenderButton" value="Rerender Graph" type="button" onclick=$GV.core.render.rerenderGraph()>
--->
 
       <h3>Graph Activities</h3>
         <div class="onoffswitch">
-          <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch" checked onclick=$GV.core.render.showGraph()>
+          <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch" checked onclick=$GV.view.controlUI.startStopForce()>
           <label class="onoffswitch-label" for="myonoffswitch">
               <span class="onoffswitch-inner"></span>
               <span class="onoffswitch-switch"></span>
           </label>
         </div><br/>
-        <input id="fdStop" value="Force Directed Layout STOP" type="button" onclick=$GV.layout.force.fdStop()><br/>
-        <input id="fdLoop" value="Force Directed Layout START" type="button" onclick=$GV.layout.force.fdLoop()><br/>
         <input id="switch2DButton" value="Switch to 2D" type="button" onclick=$GV.view.interaction.switchTo2D()><br/>
         <input id="switch3DButton" value="Switch to 3D" type="button" onclick=$GV.view.interaction.switchTo3D()><br/><br/>
-        <input id="changeNodeSize" type="range" name="range" min="5" max="80" value="10" onclick=$GV.view.interaction.changeNodeSize(range.value)><br/>
         <input id="changeNodeColorButton" value="Change Node Color" type="button" onclick=$GV.core.mutate.colorAllNodes(0)><br/>
         <input id="changeEdgeColorButton" value="Change Edge Color" type="button" onclick=$GV.core.mutate.colorAllEdges(0)><br/><br/>
         <input id="addRandomNodesButton" value="Add Random Node" type="button" onclick=$GV.core.mutate.addRandomNodes()><br/>

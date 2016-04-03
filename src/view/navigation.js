@@ -1,9 +1,8 @@
 var keys = require("../core/init.js").keys;
 var globals = require("../core/init.js").globals;
-var camera = require("../core/render.js").camera;
 var defaults = require("../core/init.js").defaults;
 var update = require("../core/render.js").update;
-var network = require("../core/render.js").network;
+var network = require("../core/init.js").globals.network;
 var container = require("../core/init.js").container;
 var mouse = require("../core/init.js").globals.mouse;
 var nodeIntersection = require("./interaction.js").nodeIntersection;
@@ -24,13 +23,13 @@ window.addEventListener('keypress', key, false);
 function key(event) {
   switch (event.charCode) {
     case keys.KEY_W: //zoom in
-      camera.position.y = camera.position.y - defaults.delta_distance; break;
+      globals.camera.position.y = globals.camera.position.y - defaults.delta_distance; break;
     case keys.KEY_S: //zoom out
-      camera.position.y = camera.position.y + defaults.delta_distance; break;
+      globals.camera.position.y = globals.camera.position.y + defaults.delta_distance; break;
     case keys.KEY_A: //move left
-      camera.position.x = camera.position.x + defaults.delta_distance; break;
+      globals.camera.position.x = globals.camera.position.x + defaults.delta_distance; break;
     case keys.KEY_D: //move right
-      camera.position.x = camera.position.x - defaults.delta_distance; break;
+      globals.camera.position.x = globals.camera.position.x - defaults.delta_distance; break;
     case keys.KEY_R:
       network.translateZ(defaults.delta_distance); break;
     case keys.KEY_F:
@@ -94,9 +93,9 @@ function mousewheel(event) {
     }
   }
   else {
-    camera.fov -= defaults.ZOOM_FACTOR * delta;
-    camera.fov = Math.max( Math.min( camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
-    camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, container.WIDTH / container.HEIGHT, camera.near, camera.far);
+    globals.camera.fov -= defaults.ZOOM_FACTOR * delta;
+    globals.camera.fov = Math.max( Math.min( globals.camera.fov, defaults.MAX_FOV ), defaults.MIN_FOV );
+    globals.camera.projectionMatrix = new THREE.Matrix4().makePerspective(globals.camera.fov, container.WIDTH / container.HEIGHT, globals.camera.near, globals.camera.far);
   }
   window.requestAnimationFrame(update);
 }
@@ -133,22 +132,22 @@ function mouseMove(event) {
     var max_x = globals.graph_dims.MAX_X/2;
     var max_y = globals.graph_dims.MAX_Y/2;
 
-    if(camera.position.x > max_x) {
-      camera.position.x = max_x;
+    if(globals.camera.position.x > max_x) {
+      globals.camera.position.x = max_x;
     }
-    else if(camera.position.x < -max_x) {
-      camera.position.x = -max_x;
+    else if(globals.camera.position.x < -max_x) {
+      globals.camera.position.x = -max_x;
     }
-    else if(camera.position.y > max_y) {
-      camera.position.y = max_y;
+    else if(globals.camera.position.y > max_y) {
+      globals.camera.position.y = max_y;
     }
-    else if(camera.position.y < -max_y) {
-      camera.position.y = -max_y;
+    else if(globals.camera.position.y < -max_y) {
+      globals.camera.position.y = -max_y;
     }
 
     //movement in y: up is negative, down is positive
-    camera.position.x = camera.position.x - (mouseX * event.movementX);
-    camera.position.y = camera.position.y + (mouseY * event.movementY);
+    globals.camera.position.x = globals.camera.position.x - (mouseX * event.movementX);
+    globals.camera.position.y = globals.camera.position.y + (mouseY * event.movementY);
   }
 
   //raycaster

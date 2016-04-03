@@ -1,8 +1,7 @@
-var network = require("../core/render.js").network;
-var camera = require("../core/render.js").camera;
+var network = require("../core/init.js").globals.network;
 var update = require("../core/render.js").update;
-var nodes_obj_idx = require("../core/render.js").nodes_obj_idx;
-var edges_obj_idx = require("../core/render.js").edges_obj_idx;
+var nodes_obj_idx = require("../layout/constant_layout.js").nodes_obj_idx;
+var edges_obj_idx = require("../layout/constant_layout.js").edges_obj_idx;
 var dims = require("../core/init.js").globals.graph_dims;
 var mouse = require("../core/init.js").globals.mouse;
 var defaults = require("../core/init.js").defaults;
@@ -26,14 +25,14 @@ function updateNodePosition(update_node) {
   network.children[0].geometry.attributes.position.needsUpdate = true;
 
   //update edges  
-  var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
+  var undEdges = [network.children[1].geometry.getAttribute('position').array, 
                     update_node.undEdges()];
   //TODO - directed
   var in_out_edges = {};
   for (var e in update_node.inEdges()) { in_out_edges[e] = update_node.inEdges()[e]; }
   for (var e in update_node.outEdges()) { in_out_edges[e] = update_node.outEdges()[e]; }
   //----
-  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+  var dirEdges = [network.children[2].geometry.getAttribute('position').array,
                     in_out_edges];
   
   [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
@@ -231,7 +230,7 @@ function switchTo3D() {
 
 function nodeIntersection() {
   var attributes = network.children[0].geometry.attributes;
-  globals.raycaster.setFromCamera(mouse, camera);
+  globals.raycaster.setFromCamera(mouse, globals.camera);
   globals.raycaster.params.Points.threshold = 1;
 
   var particlesToIntersect = [];
@@ -239,9 +238,6 @@ function nodeIntersection() {
   var intersects = globals.raycaster.intersectObjects(particlesToIntersect);
 
   if(intersects.length > 0 && intersects[0].index != globals.INTERSECTED.index) {
-    //console.log("intersected objects");
-    //console.log(intersectsParticles);
-
     //set previous node
     attributes.color.array[globals.INTERSECTED.index*3] = globals.INTERSECTED.color.r;
     attributes.color.array[globals.INTERSECTED.index*3 + 1] = globals.INTERSECTED.color.g;

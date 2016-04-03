@@ -1,4 +1,4 @@
-var init			= require("./src/core/init.js"),
+var init            = require("./src/core/init.js"),
     render          = require("./src/core/render.js"),
     mutate          = require("./src/core/mutate.js"),
     hist_reader     = require("./src/history/history_reader.js"),
@@ -10,7 +10,8 @@ var init			= require("./src/core/init.js"),
     generic_layout  = require("./src/layout/generic_layout.js"),
     fullscreen      = require("./src/view/fullscreen.js"),
     interaction     = require("./src/view/interaction.js"),
-    navigation      = require("./src/view/navigation.js");
+    navigation      = require("./src/view/navigation.js"),
+    controlUI       = require("./src/view/controlUI.js");
 
 
 var out = typeof window !== 'undefined' ? window : global;
@@ -37,7 +38,8 @@ out.$GV = {
   view: {
     fullscreen: fullscreen,
     interaction: interaction,
-    navigation: navigation
+    navigation: navigation,
+    controlUI: controlUI
   }
 };
 

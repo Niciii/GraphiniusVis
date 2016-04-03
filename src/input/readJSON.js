@@ -1,5 +1,4 @@
-input.onchange = function(event, explicit, direction, weighted_mode) {
-
+function readJSON(event, explicit, direction, weighted_mode) {
   var explicit = typeof explicit === 'undefined' ? false : explicit;
   var direction = typeof direction === 'undefined' ? false : direction;
   var weighted_mode = typeof weighted_mode === 'undefined' ? false : weighted_mode;
@@ -49,11 +48,14 @@ input.onchange = function(event, explicit, direction, weighted_mode) {
       document.querySelector("#edges").innerHTML = parsedFile.edges;
       //document.querySelector("#time").innerHTML = parsedFile.edges;
 
-      //console.log(parsedFile.data);
       result = parsedFile.data;
     }
   }
   reader.readAsText(files[0]);
 
   return result;
+};
+
+module.exports = {
+  readJSON: readJSON
 };

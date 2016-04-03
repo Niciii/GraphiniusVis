@@ -1,46 +1,46 @@
 var defaults = require("../core/init.js").defaults;
-var network = require("../core/render.js").network;
+var network = require("../core/init.js").globals.network;
 var update = require("../core/render.js").update;
-var nodes_obj_idx = require("../core/render.js").nodes_obj_idx;
+var nodes_obj_idx = require("./constant_layout.js").nodes_obj_idx;
 var dims = require("../core/init.js").globals.graph_dims;
 var globals = require("../core/init.js").globals;
-var now = null;
 
-var cnt = true;
+var now = null,
+    init_coords = true,
+    old_coordinates = null;
+
 function fdLoop() {
-  if(cnt) {
+  if(init_coords) {
     init();
   }
-  if(!defaults.stop_fd) {
+  if(!defaults.stop_fd) {    
     forceDirectedLayout();
     window.requestAnimationFrame(fdLoop);
   }
-  cnt = false;
-}
-
-var old_coordinates = null;
-function init() {
-  now = +new Date;
-
-  old_coordinates = new Float32Array(graph.nrNodes() * 3);
-  var node_obj = graph.getNodes();
-  var i = 0;
-  for(node in nodes_obj) {
-    old_coordinates[i] = node_obj[node].getFeature('coords').x - dims.AVG_X;
-    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
-    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
-    i += 3;
+  else {
+    init_coords = true;
   }
 }
 
-function forceDirectedLayout() {
-  console.log("hier");
-  var time = (+new Date) - now;
-  console.log("Now: " + now);
-  console.log("Time: " + time);
+function init() {
+  now = +new Date;
+  old_coordinates = new Float32Array(graph.nrNodes() * 3);
+  var node_obj = graph.getNodes(),
+      i = 0;
+  for(node in nodes_obj) {
+    old_coordinates[i] = node_obj[node].getFeature('coords').x; //- dims.AVG_X
+    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
+    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+    i += 3;
+  }
+  init_coords = false;
+  defaults.stop_fd = false;
+}
 
-  var node_obj = graph.getNodes();
-  var old_nodes = network.children[0].geometry.getAttribute('position').array;
+function forceDirectedLayout() {
+  var time = (+new Date) - now,
+      node_obj = graph.getNodes(),
+      old_nodes = network.children[0].geometry.getAttribute('position').array;
 
   for(node in node_obj) {
     var index = nodes_obj_idx[node];
@@ -58,8 +58,8 @@ function forceDirectedLayout() {
   }
 
   var undEdges = [ network.children[1].geometry.getAttribute('position').array,
-                    graph.getUndEdges()];
-  var dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+                    graph.getUndEdges()],
+      dirEdges = [ network.children[2].geometry.getAttribute('position').array,
                     graph.getDirEdges()];
 
   //update edges
@@ -95,12 +95,10 @@ function forceDirectedLayout() {
 }
 
 function fdStop() {
-  console.log("fds");
   defaults.stop_fd = true;
 }
 
 module.exports = {
-
   fdLoop: fdLoop,
   fdStop: fdStop
 };
