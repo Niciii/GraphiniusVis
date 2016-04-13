@@ -8,8 +8,6 @@ var force = INIT.force_layout;
 var update = require("../core/render.js").update;
 var nodes_obj_idx = require("./constant_layout.js").nodes_obj_idx;
 
-console.log(update);
-
 var now = null,
     init_coords = true,
     old_coordinates = null;
@@ -103,11 +101,6 @@ function fdStop() {
   defaults.stop_fd = true;
 }
 
-
+//export
 force.fdLoop = fdLoop;
 force.fdStop = fdStop;
-
-// module.exports = {
-//   fdLoop: fdLoop,
-//   fdStop: fdStop
-// };

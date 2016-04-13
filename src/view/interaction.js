@@ -54,6 +54,11 @@ function updateNodePosition(update_node) {
         old_edges[edge_index + 4] = update_node.getFeature('coords').y;
         old_edges[edge_index + 5] = update_node.getFeature('coords').z;
       }
+      
+      if(globals.TWO_D_MODE) {
+        old_edges[index + 2] = 0;
+        old_edges[index + 5] = 0;
+      }
     }
   });
   
@@ -70,9 +75,11 @@ function updateAll() {
     old_coordinates[i] = node_obj[node].getFeature('coords').x;
     old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
     old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+    if(globals.TWO_D_MODE) {
+      old_coordinates[i + 2] = 0;
+    }
     i += 3;
-  }
-  
+  }  
   window.cnt = 0;
   requestAnimationFrame(updateRandomPostions);
 }
@@ -87,10 +94,13 @@ function updateRandomPostions() {
     node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.random() * 20 - 10 - dims.AVG_X;
     node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.random() * 20 - 10 - dims.AVG_Y;
     node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.random() * 20 - 10 - dims.AVG_Z;
+    if(globals.TWO_D_MODE) {
+      node_obj[node].getFeature('coords').z = 0;
+    }
 
     old_nodes[index] = node_obj[node].getFeature('coords').x;
     old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
-    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
+    old_nodes[index + 2] = node_obj[node].getFeature('coords').z;    
   }
 
   var undEdges = [ network.children[1].geometry.getAttribute('position').array, 
@@ -140,6 +150,9 @@ function updateRandomPostions() {
       old_nodes[index] = node_obj[node].getFeature('coords').x - dims.AVG_X;
       old_nodes[index + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
       old_nodes[index + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
+      if(globals.TWO_D_MODE) {
+        old_nodes[index + 2] = 0;
+      }
     }
     //set coordinates of edges
     [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
@@ -157,6 +170,10 @@ function updateRandomPostions() {
         old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x - dims.AVG_X;
         old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y - dims.AVG_Y;
         old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z - dims.AVG_Z;
+        if(globals.TWO_D_MODE) {
+          old_edges[i + 2] = 0;
+          old_edges[i + 5] = 0;
+        }
         i += 6;
       }
     });
