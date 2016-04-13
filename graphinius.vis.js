@@ -46,18 +46,18 @@
 
 	/* WEBPACK VAR INJECTION */(function(global) {var init            = __webpack_require__(1),
 	    render          = __webpack_require__(2),
-	    mutate          = __webpack_require__(4),
-	    hist_reader     = __webpack_require__(5),
-	    main_loop       = __webpack_require__(6),
-	    readCSV         = __webpack_require__(7),
-	    readJSON        = __webpack_require__(8),
+	    mutate          = __webpack_require__(6),
+	    hist_reader     = __webpack_require__(7),
+	    main_loop       = __webpack_require__(8),
+	    readCSV         = __webpack_require__(9),
+	    readJSON        = __webpack_require__(10),
 	    const_layout    = __webpack_require__(3),
-	    force_layout    = __webpack_require__(9),
-	    generic_layout  = __webpack_require__(10),
-	    fullscreen      = __webpack_require__(11),
-	    interaction     = __webpack_require__(12),
-	    navigation      = __webpack_require__(13),
-	    controlUI       = __webpack_require__(14);
+	    force_layout    = __webpack_require__(5),
+	    generic_layout  = __webpack_require__(11),
+	    fullscreen      = __webpack_require__(12),
+	    interaction     = __webpack_require__(13),
+	    navigation      = __webpack_require__(14),
+	    controlUI       = __webpack_require__(4);
 
 
 	var out = typeof window !== 'undefined' ? window : global;
@@ -196,6 +196,10 @@
 	  },
 	  callbacks: {
 	    node_intersects: []
+	  },
+	  force_layout: {
+	    fdLoop: null,
+	    fdStop: null
 	  }
 	};
 	module.exports = config;
@@ -208,7 +212,7 @@
 	var container = __webpack_require__(1).container;
 	var globals = __webpack_require__(1).globals;
 	var constant = __webpack_require__(3);
-	var controlUI = __webpack_require__(14);
+	var controlUI = __webpack_require__(4);
 
 	function renderGraph() {  
 	  var graph = graph || window.graph;
@@ -379,6 +383,172 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var force = __webpack_require__(1).force_layout;
+
+	if(localStorage.getItem("directed") == 1) {
+	  document.querySelector("#directed").checked = true;
+	  document.querySelector("#undirected").checked = false;
+	} 
+	else {
+	  document.querySelector("#directed").checked = false;
+	  document.querySelector("#undirected").checked = true;
+	}
+
+	directed.onclick = function() {
+	  localStorage.setItem("directed", Number(1));
+	  window.location.reload();
+	};
+
+	undirected.onclick = function() {
+	  localStorage.setItem("directed", Number(0));
+	  window.location.reload();
+	};
+
+	function setDirectionUnchecked() {
+	  document.querySelector("#directed").checked = false;
+	  document.querySelector("#undirected").checked = false;
+	}
+
+	function startStopForce() {
+	  //start force directed layout
+	  if(!document.querySelector("#myonoffswitch").checked) {
+	    force.fdLoop();
+	  }
+	  //stop force directed layout
+	  else {
+	    force.fdStop();
+	  }
+	}
+
+	module.exports = {
+	  startStopForce: startStopForce,
+	  setDirectionUnchecked: setDirectionUnchecked
+	};
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var INIT = __webpack_require__(1);
+	var defaults = INIT.defaults;
+	var globals = INIT.globals;
+	var network = globals.network;
+	var dims = globals.graph_dims;
+	var force = INIT.force_layout;
+	var update = __webpack_require__(2).update;
+	var nodes_obj_idx = __webpack_require__(3).nodes_obj_idx;
+
+	console.log(update);
+
+	var now = null,
+	    init_coords = true,
+	    old_coordinates = null;
+
+	function fdLoop() {
+	  if(init_coords) {
+	    init();
+	  }
+	  if(!defaults.stop_fd) {    
+	    forceDirectedLayout();
+	    window.requestAnimationFrame(fdLoop);
+	  }
+	  else {
+	    init_coords = true;
+	  }
+	}
+
+	function init() {
+	  now = +new Date;
+	  old_coordinates = new Float32Array(graph.nrNodes() * 3);
+	  var node_obj = graph.getNodes(),
+	      i = 0;
+	  for(node in nodes_obj) {
+	    old_coordinates[i] = node_obj[node].getFeature('coords').x - dims.AVG_X;
+	    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
+	    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
+	    i += 3;
+	  }
+	  init_coords = false;
+	  defaults.stop_fd = false;
+	}
+
+	function forceDirectedLayout() {
+	  var time = (+new Date) - now,
+	      node_obj = graph.getNodes(),
+	      old_nodes = network.children[0].geometry.getAttribute('position').array;
+
+	  for(node in node_obj) {
+	    var index = nodes_obj_idx[node];
+	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.sin(time/500)*150;
+	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.sin(time/500)*150;
+	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.sin(time/500)*150;
+
+	    old_nodes[index] = node_obj[node].getFeature('coords').x;
+	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
+	    if ( globals.TWO_D_MODE ) {
+	      old_nodes[index + 2] = 0;
+	    } else {
+	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
+	    }
+	  }
+
+	  var undEdges = [ network.children[1].geometry.getAttribute('position').array,
+	                    graph.getUndEdges()],
+	      dirEdges = [ network.children[2].geometry.getAttribute('position').array,
+	                    graph.getDirEdges()];
+
+	  //update edges
+	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
+	    var i = 0;
+	    var old_edges = all_edges_of_a_node[0];
+	    var edges = all_edges_of_a_node[1];
+	    for (var edge_index in edges) {
+	      var edge = edges[edge_index];
+	      var node_a_id = edge._node_a.getID();
+	      var node_b_id = edge._node_b.getID();
+
+	      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
+	      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
+	      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
+	      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
+
+	      if ( globals.TWO_D_MODE ) {
+	        old_edges[i + 2] = 0;
+	        old_edges[i + 5] = 0;
+	      } else {
+	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
+	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
+	      }
+	      i += 6;
+	    }
+	  });
+
+	  network.children[0].geometry.attributes.position.needsUpdate = true;
+	  network.children[1].geometry.attributes.position.needsUpdate = true;
+	  network.children[2].geometry.attributes.position.needsUpdate = true;
+	  window.requestAnimationFrame(update);
+	}
+
+	function fdStop() {
+	  defaults.stop_fd = true;
+	}
+
+
+	force.fdLoop = fdLoop;
+	force.fdStop = fdStop;
+
+	// module.exports = {
+	//   fdLoop: fdLoop,
+	//   fdStop: fdStop
+	// };
+
+
+/***/ },
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var network = __webpack_require__(1).globals.network;
@@ -743,13 +913,13 @@
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports) {
 
 	
@@ -771,13 +941,13 @@
 
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports) {
 
 	function readJSON(event, explicit, direction, weighted_mode) {
@@ -844,123 +1014,13 @@
 
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var defaults = __webpack_require__(1).defaults;
-	var network = __webpack_require__(1).globals.network;
-	var update = __webpack_require__(2).update;
-	var nodes_obj_idx = __webpack_require__(3).nodes_obj_idx;
-	var dims = __webpack_require__(1).globals.graph_dims;
-	var globals = __webpack_require__(1).globals;
-
-	var now = null,
-	    init_coords = true,
-	    old_coordinates = null;
-
-	function fdLoop() {
-	  if(init_coords) {
-	    init();
-	  }
-	  if(!defaults.stop_fd) {    
-	    forceDirectedLayout();
-	    window.requestAnimationFrame(fdLoop);
-	  }
-	  else {
-	    init_coords = true;
-	  }
-	}
-
-	function init() {
-	  now = +new Date;
-	  old_coordinates = new Float32Array(graph.nrNodes() * 3);
-	  var node_obj = graph.getNodes(),
-	      i = 0;
-	  for(node in nodes_obj) {
-	    old_coordinates[i] = node_obj[node].getFeature('coords').x; //- dims.AVG_X
-	    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
-	    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
-	    i += 3;
-	  }
-	  init_coords = false;
-	  defaults.stop_fd = false;
-	}
-
-	function forceDirectedLayout() {
-	  var time = (+new Date) - now,
-	      node_obj = graph.getNodes(),
-	      old_nodes = network.children[0].geometry.getAttribute('position').array;
-
-	  for(node in node_obj) {
-	    var index = nodes_obj_idx[node];
-	    node_obj[node].getFeature('coords').x = old_coordinates[index] + Math.sin(time/500)*150;
-	    node_obj[node].getFeature('coords').y = old_coordinates[index + 1] + Math.sin(time/500)*150;
-	    node_obj[node].getFeature('coords').z = old_coordinates[index + 2] + Math.sin(time/500)*150;
-
-	    old_nodes[index] = node_obj[node].getFeature('coords').x;
-	    old_nodes[index + 1] = node_obj[node].getFeature('coords').y;
-	    if ( globals.TWO_D_MODE ) {
-	      old_nodes[index + 2] = 0;
-	    } else {
-	      old_nodes[index + 2] = node_obj[node].getFeature('coords').z;
-	    }
-	  }
-
-	  var undEdges = [ network.children[1].geometry.getAttribute('position').array,
-	                    graph.getUndEdges()],
-	      dirEdges = [ network.children[2].geometry.getAttribute('position').array,
-	                    graph.getDirEdges()];
-
-	  //update edges
-	  [undEdges, dirEdges].forEach(function(all_edges_of_a_node) {
-	    var i = 0;
-	    var old_edges = all_edges_of_a_node[0];
-	    var edges = all_edges_of_a_node[1];
-	    for (var edge_index in edges) {
-	      var edge = edges[edge_index];
-	      var node_a_id = edge._node_a.getID();
-	      var node_b_id = edge._node_b.getID();
-
-	      old_edges[i] = node_obj[node_a_id].getFeature('coords').x;
-	      old_edges[i + 1] = node_obj[node_a_id].getFeature('coords').y;
-	      old_edges[i + 3] = node_obj[node_b_id].getFeature('coords').x;
-	      old_edges[i + 4] = node_obj[node_b_id].getFeature('coords').y;
-
-	      if ( globals.TWO_D_MODE ) {
-	        old_edges[i + 2] = 0;
-	        old_edges[i + 5] = 0;
-	      } else {
-	        old_edges[i + 2] = node_obj[node_a_id].getFeature('coords').z;
-	        old_edges[i + 5] = node_obj[node_b_id].getFeature('coords').z;
-	      }
-	      i += 6;
-	    }
-	  });
-
-	  network.children[0].geometry.attributes.position.needsUpdate = true;
-	  network.children[1].geometry.attributes.position.needsUpdate = true;
-	  network.children[2].geometry.attributes.position.needsUpdate = true;
-	  window.requestAnimationFrame(update);
-	}
-
-	function fdStop() {
-	  defaults.stop_fd = true;
-	}
-
-	module.exports = {
-	  fdLoop: fdLoop,
-	  fdStop: fdStop
-	};
-
-
-/***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	var FSelem = {
@@ -1027,7 +1087,7 @@
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var network = __webpack_require__(1).globals.network;
@@ -1329,7 +1389,7 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var keys = __webpack_require__(1).keys;
@@ -1339,7 +1399,7 @@
 	var network = __webpack_require__(1).globals.network;
 	var container = __webpack_require__(1).container;
 	var mouse = __webpack_require__(1).globals.mouse;
-	var nodeIntersection = __webpack_require__(12).nodeIntersection;
+	var nodeIntersection = __webpack_require__(13).nodeIntersection;
 	var callbacks = __webpack_require__(1).callbacks;
 
 	// for testing purposes
@@ -1515,53 +1575,6 @@
 
 	module.exports = {
 	  mouse: mouse
-	};
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var force = __webpack_require__(9);
-
-	if(localStorage.getItem("directed") == 1) {
-	  document.querySelector("#directed").checked = true;
-	  document.querySelector("#undirected").checked = false;
-	} 
-	else {
-	  document.querySelector("#directed").checked = false;
-	  document.querySelector("#undirected").checked = true;
-	}
-
-	directed.onclick = function() {
-	  localStorage.setItem("directed", Number(1));
-	  window.location.reload();
-	}
-
-	undirected.onclick = function() {
-	  localStorage.setItem("directed", Number(0));
-	  window.location.reload();
-	}
-
-	function setDirectionUnchecked() {
-	  document.querySelector("#directed").checked = false;
-	  document.querySelector("#undirected").checked = false;
-	}
-
-	function startStopForce() {
-	  //start force directed layout
-	  if(!document.querySelector("#myonoffswitch").checked) {
-	    force.fdLoop();
-	  }
-	  //stop force directed layout
-	  else {
-	    force.fdStop();
-	  }
-	}
-
-	module.exports = {
-	  startStopForce: startStopForce,
-	  setDirectionUnchecked: setDirectionUnchecked
 	};
 
 

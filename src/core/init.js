@@ -95,6 +95,10 @@ var config = {
   },
   callbacks: {
     node_intersects: []
+  },
+  force_layout: {
+    fdLoop: null,
+    fdStop: null
   }
 };
 module.exports = config;

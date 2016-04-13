@@ -1,4 +1,4 @@
-var force = require("../layout/force_directed.js");
+var force = require("../core/init.js").force_layout;
 
 if(localStorage.getItem("directed") == 1) {
   document.querySelector("#directed").checked = true;
@@ -12,12 +12,12 @@ else {
 directed.onclick = function() {
   localStorage.setItem("directed", Number(1));
   window.location.reload();
-}
+};
 
 undirected.onclick = function() {
   localStorage.setItem("directed", Number(0));
   window.location.reload();
-}
+};
 
 function setDirectionUnchecked() {
   document.querySelector("#directed").checked = false;

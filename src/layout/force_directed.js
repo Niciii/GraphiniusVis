@@ -1,9 +1,14 @@
-var defaults = require("../core/init.js").defaults;
-var network = require("../core/init.js").globals.network;
+
+var INIT = require("../core/init.js");
+var defaults = INIT.defaults;
+var globals = INIT.globals;
+var network = globals.network;
+var dims = globals.graph_dims;
+var force = INIT.force_layout;
 var update = require("../core/render.js").update;
 var nodes_obj_idx = require("./constant_layout.js").nodes_obj_idx;
-var dims = require("../core/init.js").globals.graph_dims;
-var globals = require("../core/init.js").globals;
+
+console.log(update);
 
 var now = null,
     init_coords = true,
@@ -28,9 +33,9 @@ function init() {
   var node_obj = graph.getNodes(),
       i = 0;
   for(node in nodes_obj) {
-    old_coordinates[i] = node_obj[node].getFeature('coords').x; //- dims.AVG_X
-    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y;
-    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z;
+    old_coordinates[i] = node_obj[node].getFeature('coords').x - dims.AVG_X;
+    old_coordinates[i + 1] = node_obj[node].getFeature('coords').y - dims.AVG_Y;
+    old_coordinates[i + 2] = node_obj[node].getFeature('coords').z - dims.AVG_Z;
     i += 3;
   }
   init_coords = false;
@@ -98,7 +103,11 @@ function fdStop() {
   defaults.stop_fd = true;
 }
 
-module.exports = {
-  fdLoop: fdLoop,
-  fdStop: fdStop
-};
+
+force.fdLoop = fdLoop;
+force.fdStop = fdStop;
+
+// module.exports = {
+//   fdLoop: fdLoop,
+//   fdStop: fdStop
+// };
